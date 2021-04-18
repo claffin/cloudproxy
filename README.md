@@ -10,7 +10,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-The purpose of CloudProxy is to hide your scarpers IP behind the cloud. It allows you to spin up a pool of proxies using popular cloud providers with just an API token. No configuration needed. 
+The purpose of CloudProxy is to hide your scrapers IP behind the cloud. It allows you to spin up a pool of proxies using popular cloud providers with just an API token. No configuration needed. 
 
 CloudProxy exposes an API with the IPs and credentials of the provisioned proxies. 
 

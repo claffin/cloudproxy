@@ -1,9 +1,14 @@
-from fastapi import FastAPI
-from cloudproxy.providers import settings, manager
-from uvicorn_loguru_integration import run_uvicorn_loguru
-import uvicorn
+import os
 import random
+import sys
 
+import uvicorn
+from fastapi import FastAPI
+from uvicorn_loguru_integration import run_uvicorn_loguru
+
+from cloudproxy.providers import settings, manager
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 app = FastAPI()
 
 settings.init()

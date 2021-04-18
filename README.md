@@ -1,1 +1,191 @@
-# cloudproxy
+<!--
+*** Thanks for checking out the Best-README-Template. If you have a suggestion
+*** that would make this better, please fork the repo and create a pull request
+*** or simply open an issue with the tag "enhancement".
+*** Thanks again! Now go create something AMAZING! :D
+***
+***
+***
+*** To avoid retyping too much info. Do a search and replace for the following:
+*** claffin, cloudproxy, christianlaffin, christian.laffin@gmail.com, project_title, project_description
+-->
+
+
+
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+# CloudProxy
+
+
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+The purpose of CloudProxy is to hide your scarpers IP behind the cloud. It allows you to spin up a pool of proxies using popular cloud providers with just an API token. No configuration needed. 
+
+CloudProxy exposes an API with the IPs and credentials of the provisioned proxies. 
+
+### Providers supported:
+* DigitalOcean
+
+### Planned:
+* AWS
+* Google Cloud
+* Azure
+* Scaleway
+* Vultr
+
+
+
+### Inspired by
+This project was inspired by [Scrapoxy](https://github.com/fabienvauchelles/scrapoxy), though that project no longer seem actively maintained. 
+
+The primary advantage of CloudProxy over Scrapoxy is that CloudProxy only requires an API token from a cloud provider. CloudProxy automatically deploys and configures the proxy on the cloud instances without the user needing to preconfigure or copy an image.
+
+
+<!-- GETTING STARTED -->
+## Getting Started
+
+To get a local copy up and running follow these simple steps.
+
+### Prerequisites
+
+This is an example of how to list things you need to use the software and how to install them.
+* Python 3.8
+
+### Installation
+
+#### Docker (recommended)
+
+To be completed.
+
+#### Run locally
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/claffin/cloudproxy.git
+   ```
+2. Create a Python virtual environment 
+   ```sh
+   python3 -m venv /path/to/new/virtual/environment
+   ```
+3. Activate new virtual environment 
+   ```sh
+   source /path/to/new/virtual/environment/bin/activate
+   ```
+4. Install requirements
+   ```sh
+   pip install -requirements
+   ```
+5. Create .env file in the project root to set environment variables
+   ```sh
+   DIGITALOCEAN_ACCESS_TOKEN=YOUR_DO_TOKEN 
+   DIGITALOCEAN_MIN_SCALE=2 # number of proxies to deploy
+   USERNAME=username # username for http auth for proxies
+   PASSWORD=password # password for http auth for prxoies
+   ```
+6. Start CloudProxy
+    ```sh
+    python cloudproxy/main.py
+    ```
+
+<!-- USAGE EXAMPLES -->
+## Usage
+
+CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers. Then your application can use those IPs to proxy.
+
+
+### List available proxy servers
+#### Request
+
+`GET /`
+
+    curl http://localhost:8000/
+
+#### Response
+
+    {"ips":["http://username:password:192.168.0.1:8899", "http://username:password:192.168.0.2:8899"]}
+
+### List random proxy server
+#### Request
+
+`GET /random`
+
+    curl http://localhost:8000/random
+
+#### Response
+
+    ["http://username:password:192.168.0.1:8899"]
+
+<!-- ROADMAP -->
+## Roadmap
+
+The project is at early alpha with limited features. In the future more providers will be supported, autoscaling will be implemented and a rich API to allow for blacklisting and recycling of proxies.
+
+See the [open issues](https://github.com/claffin/cloudproxy/issues) for a list of proposed features (and known issues).
+
+
+
+<!-- CONTRIBUTING -->
+## Contributing
+
+Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+
+
+<!-- LICENSE -->
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+
+
+<!-- CONTACT -->
+## Contact
+
+Your Name - [@christianlaffin](https://twitter.com/christianlaffin) - christian.laffin@gmail.com
+
+Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin/cloudproxy)
+
+
+
+<!-- ACKNOWLEDGEMENTS -->
+## Acknowledgements
+
+* []()
+* []()
+* []()
+
+
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[contributors-shield]: https://img.shields.io/github/contributors/claffin/cloudproxy.svg?style=for-the-badge
+[contributors-url]: https://github.com/claffin/cloudproxy/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/claffin/cloudproxy.svg?style=for-the-badge
+[forks-url]: https://github.com/claffin/cloudproxy/network/members
+[stars-shield]: https://img.shields.io/github/stars/claffin/cloudproxy.svg?style=for-the-badge
+[stars-url]: https://github.com/claffin/cloudproxy/stargazers
+[issues-shield]: https://img.shields.io/github/issues/claffin/cloudproxy.svg?style=for-the-badge
+[issues-url]: https://github.com/claffin/cloudproxy/issues
+[license-shield]: https://img.shields.io/github/license/claffin/cloudproxy.svg?style=for-the-badge
+[license-url]: https://github.com/claffin/cloudproxy/blob/master/LICENSE.txt

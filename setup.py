@@ -3,6 +3,9 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 setuptools.setup(
     name="cloudproxy",                     # This is the name of the package
     version="0.0.1",                        # The initial release version
@@ -16,5 +19,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],                                      # Information to filter the project on PyPi website
-    install_requires=[]                     # Install other dependencies if any
+    install_requires=requirements                     # Install other dependencies if any
 )

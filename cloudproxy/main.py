@@ -11,9 +11,6 @@ from cloudproxy.providers import settings, manager
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 app = FastAPI()
 
-settings.init()
-manager.init_schedule()
-
 
 def main():
     run_uvicorn_loguru(

@@ -1,6 +1,6 @@
 import requests as requests
 
-from cloudproxy.providers.digitalocean.config import username, password
+from cloudproxy.providers.settings import username, password
 
 
 def check_alive(ip_address):

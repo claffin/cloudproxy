@@ -1,7 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from cloudproxy.providers import settings
-from cloudproxy.providers.digitalocean.config import username, password
+from cloudproxy.providers.settings import username, password
 from cloudproxy.providers.digitalocean.main import initatedo
 
 

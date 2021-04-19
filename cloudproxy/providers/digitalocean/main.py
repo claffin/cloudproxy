@@ -5,8 +5,8 @@ import dateparser
 from loguru import logger
 
 from cloudproxy.check import check_alive
-from cloudproxy.providers.digitalocean.config import min_scaling
 from cloudproxy.providers.digitalocean.functions import create_proxy, list_droplets, delete_proxy
+from cloudproxy.providers.settings import min_scaling
 
 
 def do_deployment():

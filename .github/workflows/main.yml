@@ -14,6 +14,7 @@ on:
 
 jobs:
   docker:
+    name: Docker Build and Push
     runs-on: ubuntu-latest
     steps:
       -
@@ -35,7 +36,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1

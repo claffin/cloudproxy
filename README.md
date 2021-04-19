@@ -1,3 +1,4 @@
+[![Docker Cloud Build Status][docker-shield]][docker-url]
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -167,3 +168,5 @@ Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin
 [issues-url]: https://github.com/claffin/cloudproxy/issues
 [license-shield]: https://img.shields.io/github/license/claffin/cloudproxy.svg?style=for-the-badge
 [license-url]: https://github.com/claffin/cloudproxy/blob/master/LICENSE.txt
+[docker-url]: https://hub.docker.com/r/laffin/cloudproxy
+[docker-shield]: https://img.shields.io/docker/cloud/build/laffin/cloudproxy?style=for-the-badge

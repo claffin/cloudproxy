@@ -47,7 +47,13 @@ This is an example of how to list things you need to use the software and how to
 
 #### Docker (recommended)
 
-To be completed.
+   ```shell
+   docker run -e USERNAME='CHANGE_THIS_USERNAME' \
+       -e PASSWORD='CHANGE_THIS_PASSWORD' \
+       -e DIGITALOCEAN_ACCESS_TOKEN='YOUR SECRET ACCESS KEY' \
+       -e DIGITALOCEAN_MIN_SCALE=2 \
+       -it -p 8000:8000 laffin/cloudproxy:main
+   ```
 
 #### Run locally
 

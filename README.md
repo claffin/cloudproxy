@@ -1,3 +1,4 @@
+[![CodeCov Coverage][codecov-shield]][codecov-url]
 [![Docker Cloud Build Status][docker-shield]][docker-url]
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
@@ -176,3 +177,5 @@ Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin
 [license-url]: https://github.com/claffin/cloudproxy/blob/master/LICENSE.txt
 [docker-url]: https://hub.docker.com/r/laffin/cloudproxy
 [docker-shield]: https://img.shields.io/github/workflow/status/claffin/cloudproxy/CI?style=for-the-badge
+[codecov-url]: https://app.codecov.io/gh/claffin/cloudproxy
+[codecov-shield]: https://img.shields.io/codecov/c/github/claffin/cloudproxy?style=for-the-badge

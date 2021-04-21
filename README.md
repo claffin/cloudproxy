@@ -72,7 +72,7 @@ This is an example of how to list things you need to use the software and how to
    ```
 4. Install requirements
    ```sh
-   pip install -r requirements
+   pip install -r requirements.txt
    ```
 5. Create .env file in the project root to set environment variables
    ```sh
@@ -89,7 +89,7 @@ This is an example of how to list things you need to use the software and how to
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers. Then your application can use those IPs to proxy.
+CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy.
 
 
 ### List available proxy servers
@@ -97,7 +97,7 @@ CloudProxy exposes an API on localhost:8000. Your application can use the below 
 
 `GET /`
 
-    curl http://localhost:8000/
+    curl -X 'GET' 'http://localhost:8000/' -H 'accept: application/json'
 
 #### Response
 
@@ -108,11 +108,64 @@ CloudProxy exposes an API on localhost:8000. Your application can use the below 
 
 `GET /random`
 
-    curl http://localhost:8000/random
+    curl -X 'GET' 'http://localhost:8000/random' -H 'accept: application/json'
 
 #### Response
 
     ["http://username:password:192.168.0.1:8899"]
+
+### Remove proxy server
+#### Request
+
+`DELETE /destroy`
+
+    curl -X 'DELETE' 'http://localhost:8000/destroy?ip_address=192.1.1.1' -H 'accept: application/json'
+
+#### Response
+
+    ["Proxy to be destroyed"]
+
+### Get provider
+#### Request
+
+`DELETE /provider/digitalocean`
+
+    curl -X 'GET' 'http://localhost:8000/providers/digitalocean' -H 'accept: application/json'
+
+#### Response
+
+      {
+        "ips": [
+          "http://changeme:changeme@192.1.1.2:8899",
+          "http://changeme:changeme@192.1.1.3:8899"
+        ],
+        "scaling": {
+          "min_scaling": 2,
+          "max_scaling": 2
+        }
+      }
+
+### Update provider
+#### Request
+
+`PATCH /provider/digitalocean`
+
+    curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean?min_scaling=5&max_scaling=5' -H 'accept: application/json'
+
+#### Response
+
+      {
+        "ips": [
+          "http://changeme:changeme@192.1.1.2:8899",
+          "http://changeme:changeme@192.1.1.3:8899"
+        ],
+        "scaling": {
+          "min_scaling": 5,
+          "max_scaling": 5
+        }
+      }
+
+CloudProxy runs on a schedule of every 30 seconds, it will check if the minimum scaling has been met, if not then it will deploy the required number of proxies. The new proxy info will appear in IPs once they are deployed and ready to be used.
 
 <!-- ROADMAP -->
 ## Roadmap

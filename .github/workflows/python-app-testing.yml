@@ -5,7 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ develop ]
+    branches:
+    - develop
+    - main
   pull_request:
     branches:
     - develop
@@ -25,8 +27,17 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-mock
+        pip install pytest pytest-mock pytest-cov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
         pytest
+    - name: Generate coverage report
+      if: github.ref == 'refs/heads/main'
+      run: |
+        pytest --cov=./ --cov-report=xml
+    - name: Upload coverage to Codecov
+      if: github.ref == 'refs/heads/main'
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}

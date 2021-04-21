@@ -48,7 +48,7 @@ def read_random():
 
 @app.delete("/remove")
 def remove_proxy(ip_address: str):
-    if re.findall( r'[0-9]+(?:\.[0-9]+){3}', ip_address):
+    if re.findall(r'[0-9]+(?:\.[0-9]+){3}', ip_address):
         ip = re.findall(r'[0-9]+(?:\.[0-9]+){3}', ip_address)
         delete_queue.append(ip[0])
         return {"Success"}

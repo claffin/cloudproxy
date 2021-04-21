@@ -1,3 +1,3 @@
-from cloudproxy.providers import settings, manager
+from cloudproxy.providers import manager
 
 manager.init_schedule()

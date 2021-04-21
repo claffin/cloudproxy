@@ -89,7 +89,24 @@ This is an example of how to list things you need to use the software and how to
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy.
+CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy. 
+
+The logic to cycle through IPs for proxying will need to be in your application, for example:
+
+```python
+import random
+import requests as requests
+
+
+# Returns a random proxy from CloudProxy
+def random_proxy():
+    ips = requests.get("http://localhost:8000").json()
+    return random.choice(ips['ips'])
+
+
+proxies = {"http": random_proxy(), "https": random_proxy()}
+my_request = requests.get("https://api.ipify.org", proxies=proxies)
+```
 
 
 ### List available proxy servers

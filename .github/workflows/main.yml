@@ -29,8 +29,9 @@ jobs:
         pytest
         
   docker:
-    name: Docker Build and Push
+    name: Build and Push
     runs-on: ubuntu-latest
+    needs: testing
     steps:
       -
         name: Checkout

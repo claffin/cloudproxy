@@ -1,13 +1,12 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from cloudproxy.providers import settings
-from cloudproxy.providers.settings import username, password
-from cloudproxy.providers.digitalocean.main import initatedo
+from cloudproxy.providers.digitalocean.main import initiatedo
 
 
 def returnips():
-    ip_list = initatedo()
-    settings.ip_list = ["http://" + username + ":" + password + "@" + ip + ":8899" for ip in ip_list]
+    ip_list = initiatedo()
+    settings.config["providers"]["digitalocean"]["ips"] = ["http://" + settings.config["auth"]["username"] + ":" + settings.config["auth"]["password"] + "@" + ip + ":8899" for ip in ip_list]
 
 
 def init_schedule():

@@ -37,7 +37,7 @@ def test_providers_digitalocean():
         "ips": [],
         "scaling": {
             "min_scaling": 2,
-            "max_scaling": 1
+            "max_scaling": 2
         }
     }
 

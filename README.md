@@ -17,7 +17,7 @@ The purpose of CloudProxy is to hide your scrapers IP behind the cloud. It allow
 CloudProxy exposes an API with the IPs and credentials of the provisioned proxies. 
 
 ### Providers supported:
-* DigitalOcean
+* [DigitalOcean](docs/digitalocean.md)
 
 ### Planned:
 * AWS

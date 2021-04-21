@@ -46,12 +46,12 @@ def read_random():
         return random.choice(ip_list)
 
 
-@app.delete("/remove")
+@app.delete("/destroy")
 def remove_proxy(ip_address: str):
     if re.findall(r'[0-9]+(?:\.[0-9]+){3}', ip_address):
         ip = re.findall(r'[0-9]+(?:\.[0-9]+){3}', ip_address)
         delete_queue.append(ip[0])
-        return {"Success"}
+        return {"Proxy to be destroyed"}
     else:
         raise HTTPException(status_code=422, detail="IP not found")
 

@@ -7,7 +7,7 @@
 [![MIT License][license-shield]][license-url]
 # CloudProxy
 
-
+![cloudproxy](docs/images/cloudproxy.gif)
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
@@ -89,7 +89,24 @@ This is an example of how to list things you need to use the software and how to
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy.
+CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy. 
+
+The logic to cycle through IPs for proxying will need to be in your application, for example:
+
+```python
+import random
+import requests as requests
+
+
+# Returns a random proxy from CloudProxy
+def random_proxy():
+    ips = requests.get("http://localhost:8000").json()
+    return random.choice(ips['ips'])
+
+
+proxies = {"http": random_proxy(), "https": random_proxy()}
+my_request = requests.get("https://api.ipify.org", proxies=proxies)
+```
 
 
 ### List available proxy servers
@@ -218,17 +235,17 @@ Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/claffin/cloudproxy.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/claffin/cloudproxy.svg?style=flat-square
 [contributors-url]: https://github.com/claffin/cloudproxy/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/claffin/cloudproxy.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/claffin/cloudproxy.svg?style=flat-square
 [forks-url]: https://github.com/claffin/cloudproxy/network/members
-[stars-shield]: https://img.shields.io/github/stars/claffin/cloudproxy.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/claffin/cloudproxy.svg?style=flat-square
 [stars-url]: https://github.com/claffin/cloudproxy/stargazers
-[issues-shield]: https://img.shields.io/github/issues/claffin/cloudproxy.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/claffin/cloudproxy.svg?style=flat-square
 [issues-url]: https://github.com/claffin/cloudproxy/issues
-[license-shield]: https://img.shields.io/github/license/claffin/cloudproxy.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/claffin/cloudproxy.svg?style=flat-square
 [license-url]: https://github.com/claffin/cloudproxy/blob/master/LICENSE.txt
 [docker-url]: https://hub.docker.com/r/laffin/cloudproxy
-[docker-shield]: https://img.shields.io/github/workflow/status/claffin/cloudproxy/CI?style=for-the-badge
+[docker-shield]: https://img.shields.io/github/workflow/status/claffin/cloudproxy/CI?style=flat-square
 [codecov-url]: https://app.codecov.io/gh/claffin/cloudproxy
-[codecov-shield]: https://img.shields.io/codecov/c/github/claffin/cloudproxy?style=for-the-badge
+[codecov-shield]: https://img.shields.io/codecov/c/github/claffin/cloudproxy?style=flat-square

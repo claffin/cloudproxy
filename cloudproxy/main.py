@@ -15,14 +15,7 @@ app = FastAPI()
 
 
 def main():
-    run_uvicorn_loguru(
-        uvicorn.Config(
-            app,
-            host="0.0.0.0",
-            port=8000,
-            log_level="info"
-        )
-    )
+    run_uvicorn_loguru(uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info"))
 
 
 @app.get("/")
@@ -48,8 +41,8 @@ def read_random():
 
 @app.delete("/destroy")
 def remove_proxy(ip_address: str):
-    if re.findall(r'[0-9]+(?:\.[0-9]+){3}', ip_address):
-        ip = re.findall(r'[0-9]+(?:\.[0-9]+){3}', ip_address)
+    if re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address):
+        ip = re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address)
         delete_queue.append(ip[0])
         return {"Proxy to be destroyed"}
     else:

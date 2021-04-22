@@ -4,9 +4,13 @@ from cloudproxy.providers import settings
 
 
 def fetch_ip(ip_address):
-    auth = settings.config["auth"]["username"] + ":" + settings.config["auth"]["password"]
-    proxies = {"http": "http://" + auth + "@" + ip_address + ":8899",
-               "https": "http://" + auth + "@" + ip_address + ":8899"}
+    auth = (
+        settings.config["auth"]["username"] + ":" + settings.config["auth"]["password"]
+    )
+    proxies = {
+        "http": "http://" + auth + "@" + ip_address + ":8899",
+        "https": "http://" + auth + "@" + ip_address + ":8899",
+    }
     fetched_ip = requests.get("https://api.ipify.org", proxies=proxies)
     return fetched_ip.text
 

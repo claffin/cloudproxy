@@ -6,7 +6,7 @@ import uuid as uuid
 from cloudproxy.providers import settings
 from cloudproxy.providers.digitalocean.config import set_auth
 
-manager = digitalocean.Manager(token=settings.config["providers"]["digitalocean"]["access_token"])
+manager = digitalocean.Manager(token=settings.config["providers"]["digitalocean"]["secrets"]["access_token"])
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 

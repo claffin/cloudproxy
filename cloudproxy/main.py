@@ -60,8 +60,8 @@ def remove_proxy(ip_address: str):
 def providers(provider: str):
     if provider in settings.config["providers"]:
         response = settings.config["providers"][provider]
-        if "access_token" in response:
-            response.pop("access_token")
+        if "secrets" in response:
+            response.pop("secrets")
         return JSONResponse(response)
     else:
         raise HTTPException(status_code=404, detail="Provider not found")
@@ -73,8 +73,8 @@ def configure(provider: str, min_scaling: int, max_scaling: int):
         settings.config["providers"][provider]["scaling"]["min_scaling"] = min_scaling
         settings.config["providers"][provider]["scaling"]["max_scaling"] = max_scaling
         response = settings.config["providers"][provider]
-        if "access_token" in response:
-            response.pop("access_token")
+        if "secrets" in response:
+            response.pop("secrets")
         return JSONResponse(response)
     else:
         raise HTTPException(status_code=404, detail="Provider not found")

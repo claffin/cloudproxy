@@ -1,4 +1,4 @@
-from cloudproxy.providers.digitalocean.main import do_deployment, do_check_alive, initiatedo
+from cloudproxy.providers.digitalocean.main import do_deployment, initiatedo
 from tests.test_providers_digitalocean_functions import test_list_droplets, test_create_proxy, test_delete_proxy
 
 

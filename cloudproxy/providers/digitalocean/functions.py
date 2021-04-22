@@ -13,9 +13,9 @@ __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file
 def create_proxy():
     user_data = set_auth(settings.config["auth"]["username"], settings.config["auth"]["password"])
     digitalocean.Droplet(name=str(uuid.uuid1()),
-                         region="lon1",
+                         region=settings.config["providers"]["digitalocean"]["region"],
                          image="ubuntu-20-04-x64",
-                         size_slug="s-1vcpu-1gb",
+                         size_slug=settings.config["providers"]["digitalocean"]["size"],
                          backups=False,
                          user_data=user_data,
                          tags="cloudproxy").create()

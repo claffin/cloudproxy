@@ -23,3 +23,7 @@ Now you have your token, you can now use DigitalOcean as a proxy provider, on th
 Default value: 2
 
 ``DIGITALOCEAN_MAX_SCALING`` - this is currently unused, however will be when autoscaling is implemented. We recommend you set this as the same as the minimum scaling to avoid future issues for now. Default value: 2
+
+``DIGITALOCEAN_SIZE``  - this sets the droplet size, we recommend the smallest droplet as the volume even a small droplet can handle is high. Default value: s-1vcpu-1gb
+
+``DIGITALOCEAN_REGION`` - this sets the region where the droplet is deployed. Some websites may redirect to the language of the country your IP is from. Default value: lon1

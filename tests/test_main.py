@@ -38,7 +38,9 @@ def test_providers_digitalocean():
         "scaling": {
             "min_scaling": 2,
             "max_scaling": 2
-        }
+        },
+        "size": "s-1vcpu-1gb",
+        "region": "lon1"
     }
 
 
@@ -55,5 +57,7 @@ def test_configure():
         "scaling": {
             "min_scaling": 4,
             "max_scaling": 4
-        }
+        },
+        "size": "s-1vcpu-1gb",
+        "region": "lon1"
     }

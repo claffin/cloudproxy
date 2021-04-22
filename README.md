@@ -1,4 +1,5 @@
 [![CodeCov Coverage][codecov-shield]][codecov-url]
+[![Codacy Quality][codacy-shield]][codacy-url]
 [![Docker Cloud Build Status][docker-shield]][docker-url]
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
@@ -249,3 +250,5 @@ Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin
 [docker-shield]: https://img.shields.io/github/workflow/status/claffin/cloudproxy/CI?style=flat-square
 [codecov-url]: https://app.codecov.io/gh/claffin/cloudproxy
 [codecov-shield]: https://img.shields.io/codecov/c/github/claffin/cloudproxy?style=flat-square
+[codacy-shield]: https://img.shields.io/codacy/grade/39a9788caa854baebe01beb720e9c5a8?style=flat-square
+[codacy-url]: https://www.codacy.com/gh/claffin/cloudproxy/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=claffin/cloudproxy&amp;utm_campaign=Badge_Grade

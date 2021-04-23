@@ -32,7 +32,9 @@ config["auth"]["username"] = os.environ.get("USERNAME", "changeme")
 config["auth"]["password"] = os.environ.get("PASSWORD", "changeme")
 
 # Set DigitalOceana config
-config["providers"]["digitalocean"]["enabled"] = os.environ.get("DIGITALOCEAN_ENABLED", False)
+config["providers"]["digitalocean"]["enabled"] = os.environ.get(
+    "DIGITALOCEAN_ENABLED", False
+)
 config["providers"]["digitalocean"]["secrets"]["access_token"] = os.environ.get(
     "DIGITALOCEAN_ACCESS_TOKEN"
 )

@@ -67,4 +67,3 @@ def list_instances():
     ]
     instances = ec2_client.describe_instances(Filters=filters)
     return instances["Reservations"]
-

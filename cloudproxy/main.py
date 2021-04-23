@@ -18,25 +18,28 @@ def main():
     run_uvicorn_loguru(uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info"))
 
 
-@app.get("/")
-def read_root():
+def get_ip_list():
     ip_list = []
     if settings.config["providers"]["digitalocean"]["ips"]:
         for ip in settings.config["providers"]["digitalocean"]["ips"]:
             ip_list.append(ip)
-    return {"ips": ip_list}
+    if settings.config["providers"]["aws"]["ips"]:
+        for ip in settings.config["providers"]["aws"]["ips"]:
+            ip_list.append(ip)
+    return ip_list
+
+
+@app.get("/")
+def read_root():
+    return {"ips": get_ip_list()}
 
 
 @app.get("/random")
 def read_random():
-    ip_list = []
-    if settings.config["providers"]["digitalocean"]["ips"]:
-        for ip in settings.config["providers"]["digitalocean"]["ips"]:
-            ip_list.append(ip)
-    if not ip_list:
+    if not get_ip_list():
         return {}
     else:
-        return random.choice(ip_list)
+        return {random.choice(get_ip_list())}
 
 
 @app.delete("/destroy")

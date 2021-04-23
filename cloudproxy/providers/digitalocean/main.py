@@ -57,7 +57,7 @@ def do_check_alive():
     return ip_ready
 
 
-def check_delete():
+def do_check_delete():
     for droplet in list_droplets():
         if droplet.ip_address in delete_queue:
             delete_proxy(droplet)
@@ -68,10 +68,10 @@ def check_delete():
             return False
 
 
-def initiatedo():
+def do_start():
     do_deployment(
         settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"]
     )
     ip_ready = do_check_alive()
-    check_delete()
+    do_check_delete()
     return ip_ready

@@ -1,6 +1,6 @@
 import os
 
-from cloudproxy.providers.digitalocean.config import set_auth
+from cloudproxy.providers.config import set_auth
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 

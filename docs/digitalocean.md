@@ -16,6 +16,8 @@ Now you have your token, you can now use DigitalOcean as a proxy provider, on th
 ## Configuration options
 ### Environment variables: 
 #### Required:
+`` DIGITALOCEAN_ENABLED`` - to enable DigitalOcean as a provider, set as True. Default value: False
+
 `` DIGITALOCEAN_ACCESS_TOKEN`` - the token to allow CloudProxy access to your account. 
 
 #### Optional:

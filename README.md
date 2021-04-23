@@ -19,9 +19,9 @@ CloudProxy exposes an API with the IPs and credentials of the provisioned proxie
 
 ### Providers supported:
 * [DigitalOcean](docs/digitalocean.md)
+* [AWS](docs/aws.md)
 
 ### Planned:
-* AWS
 * Google Cloud
 * Azure
 * Scaleway
@@ -52,6 +52,7 @@ This is an example of how to list things you need to use the software and how to
    ```shell
    docker run -e USERNAME='CHANGE_THIS_USERNAME' \
        -e PASSWORD='CHANGE_THIS_PASSWORD' \
+       -e DIGITALOCEAN_ENABLED=True \
        -e DIGITALOCEAN_ACCESS_TOKEN='YOUR SECRET ACCESS KEY' \
        -e DIGITALOCEAN_MIN_SCALE=2 \
        -it -p 8000:8000 laffin/cloudproxy:main

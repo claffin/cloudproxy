@@ -5,7 +5,7 @@ __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file
 
 
 def set_auth(username, password):
-    with open(os.path.join(__location__, 'user_data.sh')) as file:
+    with open(os.path.join(__location__, "user_data.sh")) as file:
         filedata = file.read()
         filedata = filedata.replace("username:password", username + ":" + password)
     return filedata

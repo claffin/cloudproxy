@@ -3,22 +3,32 @@ import os
 import digitalocean
 import uuid as uuid
 
+from cloudproxy.check import check_alive
 from cloudproxy.providers import settings
-from cloudproxy.providers.digitalocean.config import set_auth
+from cloudproxy.providers.config import set_auth
 
-manager = digitalocean.Manager(token=settings.config["providers"]["digitalocean"]["secrets"]["access_token"])
+manager = digitalocean.Manager(
+    token=settings.config["providers"]["digitalocean"]["secrets"]["access_token"]
+)
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
+token = settings.config["providers"]["digitalocean"]["secrets"]["access_token"]
+
 
 
 def create_proxy():
-    user_data = set_auth(settings.config["auth"]["username"], settings.config["auth"]["password"])
-    digitalocean.Droplet(name=str(uuid.uuid1()),
-                         region=settings.config["providers"]["digitalocean"]["region"],
-                         image="ubuntu-20-04-x64",
-                         size_slug=settings.config["providers"]["digitalocean"]["size"],
-                         backups=False,
-                         user_data=user_data,
-                         tags="cloudproxy").create()
+    user_data = set_auth(
+        settings.config["auth"]["username"], settings.config["auth"]["password"]
+    )
+    digitalocean.Droplet(
+        name=str(uuid.uuid1()),
+        region=settings.config["providers"]["digitalocean"]["region"],
+        image="ubuntu-20-04-x64",
+        size_slug=settings.config["providers"]["digitalocean"]["size"],
+        backups=False,
+        user_data=user_data,
+        tags="cloudproxy",
+    ).create()
     return True
 
 

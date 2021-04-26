@@ -34,6 +34,7 @@ def test_providers_digitalocean():
     response = client.get("/providers/digitalocean")
     assert response.status_code == 200
     assert response.json() == {
+        "enabled": False,
         "ips": [],
         "scaling": {
             "min_scaling": 2,
@@ -53,6 +54,7 @@ def test_configure():
     response = client.patch("/providers/digitalocean?min_scaling=4&max_scaling=4")
     assert response.status_code == 200
     assert response.json() == {
+        "enabled": False,
         "ips": [],
         "scaling": {
             "min_scaling": 4,

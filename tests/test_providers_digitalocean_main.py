@@ -1,4 +1,4 @@
-from cloudproxy.providers.digitalocean.main import do_deployment, do_check_alive
+from cloudproxy.providers.digitalocean.main import do_deployment, do_start
 from tests.test_providers_digitalocean_functions import test_list_droplets, test_create_proxy, test_delete_proxy
 
 
@@ -16,3 +16,19 @@ def test_do_deployment(mocker):
         return_value=test_delete_proxy(mocker)
     )
     assert do_deployment(1) == 1
+
+
+def test_initiatedo(mocker):
+    mocker.patch(
+        'cloudproxy.providers.digitalocean.main.do_deployment',
+        return_value=2
+    )
+    mocker.patch(
+        'cloudproxy.providers.digitalocean.main.do_check_alive',
+        return_value=["192.1.1.1"]
+    )
+    mocker.patch(
+        'cloudproxy.providers.digitalocean.main.do_check_delete',
+        return_value=True
+    )
+    assert do_start() == ["192.1.1.1"]

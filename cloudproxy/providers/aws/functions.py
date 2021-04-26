@@ -9,8 +9,8 @@ from cloudproxy.providers.settings import config
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-ec2 = boto3.resource("ec2")
-ec2_client = boto3.client("ec2")
+ec2 = boto3.resource("ec2", region_name=config["providers"]["aws"]["region"])
+ec2_client = boto3.client("ec2", region_name=config["providers"]["aws"]["region"])
 tags = [{"Key": "cloudproxy", "Value": "cloudproxy"}]
 tag_specification = [
     {"ResourceType": "instance", "Tags": tags},

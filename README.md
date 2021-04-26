@@ -47,46 +47,21 @@ This is an example of how to list things you need to use the software and how to
 
 ### Installation
 
+See individual provider pages for environment variables required in above providers supported section.
+
 #### Docker (recommended)
+
+For example:
 
    ```shell
    docker run -e USERNAME='CHANGE_THIS_USERNAME' \
        -e PASSWORD='CHANGE_THIS_PASSWORD' \
        -e DIGITALOCEAN_ENABLED=True \
        -e DIGITALOCEAN_ACCESS_TOKEN='YOUR SECRET ACCESS KEY' \
-       -e DIGITALOCEAN_MIN_SCALE=2 \
        -it -p 8000:8000 laffin/cloudproxy:main
    ```
 
-#### Run locally
-
-1. Clone the repo
-   ```sh
-   git clone https://github.com/claffin/cloudproxy.git
-   ```
-2. Create a Python virtual environment 
-   ```sh
-   python3 -m venv /path/to/new/virtual/environment
-   ```
-3. Activate new virtual environment 
-   ```sh
-   source /path/to/new/virtual/environment/bin/activate
-   ```
-4. Install requirements
-   ```sh
-   pip install -r requirements.txt
-   ```
-5. Create .env file in the project root to set environment variables
-   ```sh
-   DIGITALOCEAN_ACCESS_TOKEN=YOUR_DO_TOKEN 
-   DIGITALOCEAN_MIN_SCALE=2 # number of proxies to deploy
-   USERNAME=username # username for http auth for proxies
-   PASSWORD=password # password for http auth for prxoies
-   ```
-6. Start CloudProxy
-    ```sh
-    python cloudproxy/main.py
-    ```
+It is recommended to use a Docker image tagged to a version e.g. ```laffin/cloudproxy:0.2.1-beta```
 
 <!-- USAGE EXAMPLES -->
 ## Usage

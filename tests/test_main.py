@@ -22,7 +22,7 @@ def test_remove_proxy():
     response = client.delete("/destroy?ip_address=192.168.0.0")
     assert response.status_code == 200
     assert response.json() == ["Proxy to be destroyed"]
-    assert delete_queue == ["192.168.0.0"]
+    assert delete_queue == {"192.168.0.0"}
 
 
 def test_remove_proxy_failure():

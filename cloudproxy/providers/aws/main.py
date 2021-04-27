@@ -61,7 +61,7 @@ def aws_check_alive():
                     logger.info(
                         "Waiting: AWS -> " + instance["Instances"][0]["PublicIpAddress"]
                     )
-        except TypeError:
+        except (TypeError, KeyError):
             logger.info("Pending: AWS allocating")
     return ip_ready
 

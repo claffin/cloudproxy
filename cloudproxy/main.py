@@ -4,14 +4,29 @@ import sys
 import re
 
 import uvicorn
+import json
+from loguru import logger
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from uvicorn_loguru_integration import run_uvicorn_loguru
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 app = FastAPI()
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+logger.add("cloudproxy.log", rotation="20 MB")
 
 
 def main():
@@ -42,14 +57,37 @@ def read_random():
         return {random.choice(get_ip_list())}
 
 
+def set_default(obj):
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError
+
+
+@app.get("/destroy")
+def remove_proxy_list():
+    response = set_default(delete_queue)
+    return JSONResponse(response)
+
+
 @app.delete("/destroy")
 def remove_proxy(ip_address: str):
     if re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address):
         ip = re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address)
-        delete_queue.append(ip[0])
+        delete_queue.add(ip[0])
         return {"Proxy to be destroyed"}
     else:
         raise HTTPException(status_code=422, detail="IP not found")
+
+
+@app.get("/providers")
+def providers():
+    settings_response = settings.config["providers"]
+    for provider in settings_response:
+        try:
+            settings_response[provider].pop("secrets")
+        except KeyError:
+            pass
+    return JSONResponse(settings_response)
 
 
 @app.get("/providers/{provider}")

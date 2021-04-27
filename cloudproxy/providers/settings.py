@@ -23,7 +23,7 @@ config = {
     },
 }
 
-delete_queue = []
+delete_queue = set()
 
 load_dotenv()
 

@@ -37,10 +37,26 @@ def get_ip_list():
     ip_list = []
     if settings.config["providers"]["digitalocean"]["ips"]:
         for ip in settings.config["providers"]["digitalocean"]["ips"]:
-            ip_list.append(ip)
+            ip_list.append(
+                "http://"
+                + settings.config["auth"]["username"]
+                + ":"
+                + settings.config["auth"]["password"]
+                + "@"
+                + ip
+                + ":8899"
+            )
     if settings.config["providers"]["aws"]["ips"]:
         for ip in settings.config["providers"]["aws"]["ips"]:
-            ip_list.append(ip)
+            ip_list.append(
+                "http://"
+                + settings.config["auth"]["username"]
+                + ":"
+                + settings.config["auth"]["password"]
+                + "@"
+                + ip
+                + ":8899"
+            )
     return ip_list
 
 

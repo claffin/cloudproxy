@@ -24,6 +24,12 @@
 <script>
 export default {
   name: "ListProxies.vue",
+  mounted: function () {
+  window.setInterval(() => {
+    this.getName(),
+    this.listremoveProxy()
+  }, 3000)
+},
   data() {
     return {
       data: {},

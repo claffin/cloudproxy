@@ -48,7 +48,7 @@ export default {
       this.data = data;
     },
     async removeProxy(proxy){
-      const remove_res = await fetch('http://localhost:8000/destroy?ip_address=' + proxy, {method: 'DELETE', body: JSON.stringify(proxy)})
+      const remove_res = await fetch("http://localhost:8000/destroy?ip_address=" + proxy, {method: 'DELETE', body: JSON.stringify(proxy)})
       const remove_data = await remove_res.json();
       this.remove_data = remove_data
     },

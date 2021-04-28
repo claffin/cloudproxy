@@ -15,7 +15,6 @@ __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file
 token = settings.config["providers"]["digitalocean"]["secrets"]["access_token"]
 
 
-
 def create_proxy():
     user_data = set_auth(
         settings.config["auth"]["username"], settings.config["auth"]["password"]

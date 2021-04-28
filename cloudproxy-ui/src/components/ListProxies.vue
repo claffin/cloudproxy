@@ -65,7 +65,7 @@ export default {
     makeToast(ips, append = false) {
       this.toastCount++
       this.$bvToast.toast(`${ips}`, {
-        title: 'Removing proxy from pool',
+        title: "Removing proxy from pool",
         autoHideDelay: 5000,
         appendToast: append
       })

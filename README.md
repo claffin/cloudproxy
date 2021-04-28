@@ -89,7 +89,7 @@ my_request = requests.get("https://api.ipify.org", proxies=proxies)
 
 You can manage CloudProxy via an API and UI. You can access the UI at ```http://localhost/ui```.
 
-You scale up and down your proxies and remove them for each provider via the UI. 
+You can scale up and down your proxies and remove them for each provider via the UI. 
 
 ## CloudProxy API
 ### List available proxy servers

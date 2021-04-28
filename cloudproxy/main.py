@@ -4,17 +4,24 @@ import sys
 import re
 
 import uvicorn
-import json
+
 from loguru import logger
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn_loguru_integration import run_uvicorn_loguru
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 app = FastAPI()
+
+app.mount("/ui", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist")), html=True), name="static")
+app.mount("/css", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist/css")), html=True), name="cssstatic")
+app.mount("/js", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist/js"))), name="jsstatic")
 
 origins = ["*"]
 
@@ -132,3 +139,4 @@ def configure(provider: str, min_scaling: int, max_scaling: int):
 
 if __name__ == "__main__":
     main()
+

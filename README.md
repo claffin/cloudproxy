@@ -42,8 +42,8 @@ To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
-* Python 3.8
+All you need is:
+* Docker
 
 ### Installation
 
@@ -128,7 +128,7 @@ You can scale up and down your proxies and remove them for each provider via the
 ### Get provider
 #### Request
 
-`DELETE /provider/digitalocean`
+`GET /provider/digitalocean`
 
     curl -X 'GET' 'http://localhost:8000/providers/digitalocean' -H 'accept: application/json'
 
@@ -136,8 +136,8 @@ You can scale up and down your proxies and remove them for each provider via the
 
       {
         "ips": [
-          "http://changeme:changeme@192.1.1.2:8899",
-          "http://changeme:changeme@192.1.1.3:8899"
+          "192.1.1.2",
+          "192.1.1.3"
         ],
         "scaling": {
           "min_scaling": 2,
@@ -156,8 +156,8 @@ You can scale up and down your proxies and remove them for each provider via the
 
       {
         "ips": [
-          "http://changeme:changeme@192.1.1.2:8899",
-          "http://changeme:changeme@192.1.1.3:8899"
+          "192.1.1.2",
+          "192.1.1.3"
         ],
         "scaling": {
           "min_scaling": 5,

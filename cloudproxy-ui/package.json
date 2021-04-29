@@ -18,20 +18,20 @@
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
+    "@vue/eslint-config-prettier": "^6.0.0",
     "babel-eslint": "^10.1.0",
     "bootstrap": "^4.5.2",
     "eslint": "^6.7.2",
+    "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-vue": "^6.2.2",
     "mutationobserver-shim": "^0.3.7",
     "popper.js": "^1.16.1",
     "portal-vue": "^2.1.7",
+    "prettier": "^2.2.1",
     "sass": "^1.26.11",
     "sass-loader": "^10.0.2",
     "vue-cli-plugin-bootstrap-vue": "~0.7.0",
     "vue-template-compiler": "^2.6.11"
-  },
-   "optionalDependencies": {
-    "fsevents": "*"
   },
   "eslintConfig": {
     "root": true,
@@ -40,7 +40,8 @@
     },
     "extends": [
       "plugin:vue/essential",
-      "eslint:recommended"
+      "eslint:recommended",
+      "@vue/prettier"
     ],
     "parserOptions": {
       "parser": "babel-eslint"
@@ -51,5 +52,8 @@
     "> 1%",
     "last 2 versions",
     "not dead"
-  ]
+  ],
+  "optionalDependencies": {
+    "fsevents": "*"
+  }
 }

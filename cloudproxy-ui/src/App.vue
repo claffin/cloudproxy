@@ -1,39 +1,42 @@
 <template>
   <b-container>
-  <div id="app">
-    <b-row>
-      <b-col><h1>CloudProxy</h1></b-col>
-      <b-col cols="12" class="pt-2" md="auto"><b-button @click="reloadPage" variant="success">Refresh</b-button></b-col>
-    </b-row>
-    <br>
-    <div>
-      <b-card no-body>
-        <b-tabs card>
-          <b-tab title="Proxies" active>
-            <ListProxies />
-          </b-tab>
-        </b-tabs>
-
-      </b-card>
+    <div id="app">
+      <b-row>
+        <b-col><h1>CloudProxy</h1></b-col>
+        <b-col cols="12" class="pt-2" md="auto"
+          ><b-button @click="reloadPage" variant="success"
+            >Refresh</b-button
+          ></b-col
+        >
+      </b-row>
+      <br />
+      <div>
+        <b-card no-body>
+          <b-tabs card>
+            <b-tab title="Proxies" active>
+              <ListProxies />
+            </b-tab>
+          </b-tabs>
+        </b-card>
+      </div>
     </div>
-  </div>
-    </b-container>
+  </b-container>
 </template>
 
 <script>
-import ListProxies from './components/ListProxies.vue'
+import ListProxies from "./components/ListProxies.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
     ListProxies,
   },
   methods: {
     reloadPage() {
       window.location.reload();
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style>

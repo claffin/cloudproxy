@@ -10,21 +10,19 @@ export default {
   data() {
     return {
       data: {},
-    }
+    };
   },
-  beforeMount(){
+  beforeMount() {
     this.getLogs();
   },
   methods: {
-    async getLogs(){
+    async getLogs() {
       const res = await fetch("http://localhost:8000/logs");
       const data = await res.json();
       this.data = data;
     },
-  }
-}
+  },
+};
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

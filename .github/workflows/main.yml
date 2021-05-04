@@ -44,7 +44,7 @@ jobs:
             laffin/cloudproxy
           # generate Docker tags based on the following events/attributes
           flavor: |
-            latest=auto
+            latest=true
           tags: |
             type=ref,event=branch
             type=ref,event=pr

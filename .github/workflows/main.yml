@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  schedule:
-    - cron: '0 10 * * *' # everyday at 10am
   push:
     branches:
       - '**'
@@ -44,10 +42,10 @@ jobs:
           # list of Docker images to use as base name for tags
           images: |
             laffin/cloudproxy
-          tag-custom: latest
           # generate Docker tags based on the following events/attributes
+          flavor: |
+            latest=auto
           tags: |
-            type=schedule
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}

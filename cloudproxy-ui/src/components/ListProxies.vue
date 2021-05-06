@@ -84,26 +84,26 @@ export default {
   },
   methods: {
     async getName() {
-      const res = await fetch("http://localhost:8000/providers");
+      const res = await fetch("/providers");
       const data = await res.json();
       this.data = data;
     },
     async removeProxy(proxy) {
       const remove_res = await fetch(
-        "http://localhost:8000/destroy?ip_address=" + proxy,
+        "/destroy?ip_address=" + proxy,
         { method: "DELETE", body: JSON.stringify(proxy) }
       );
       const remove_data = await remove_res.json();
       this.remove_data = remove_data;
     },
     async listremoveProxy() {
-      const listremove_res = await fetch("http://localhost:8000/destroy");
+      const listremove_res = await fetch("/destroy");
       const listremove_data = await listremove_res.json();
       this.listremove_data = listremove_data;
     },
     async updateProvider(provider, min_scaling) {
       const updateProvider_res = await fetch(
-        "http://localhost:8000/providers/" +
+        "/providers/" +
           provider +
           "?min_scaling=" +
           min_scaling +

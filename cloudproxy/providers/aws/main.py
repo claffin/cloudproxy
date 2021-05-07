@@ -42,15 +42,21 @@ def aws_check_alive():
     ip_ready = []
     for instance in list_instances():
         try:
-            if check_alive(instance["Instances"][0]["PublicIpAddress"]):
+            elapsed = datetime.datetime.now(
+                datetime.timezone.utc
+            ) - dateparser.parse(instance["Instances"][0]["LaunchTime"])
+            if config["age_limit"] > 0:
+                if elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                    delete_proxy(instance["Instances"][0]["InstanceId"])
+                    logger.info(
+                        "Recycling droplet, reached age limit -> " + instance["Instances"][0]["PublicIpAddress"]
+                    )
+            elif check_alive(instance["Instances"][0]["PublicIpAddress"]):
                 logger.info(
                     "Alive: AWS -> " + instance["Instances"][0]["PublicIpAddress"]
                 )
                 ip_ready.append(instance["Instances"][0]["PublicIpAddress"])
             else:
-                elapsed = datetime.datetime.now(
-                    datetime.timezone.utc
-                ) - dateparser.parse(instance["Instances"][0]["LaunchTime"])
                 if elapsed > datetime.timedelta(minutes=10):
                     delete_proxy(instance["Instances"][0]["InstanceId"])
                     logger.info(

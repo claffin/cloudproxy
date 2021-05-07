@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 config = {
     "auth": {"username": "", "password": ""},
+    "age_limit": 0,
     "providers": {
         "digitalocean": {
             "enabled": False,
@@ -30,6 +31,7 @@ load_dotenv()
 # Set proxy authentication
 config["auth"]["username"] = os.environ.get("USERNAME", "changeme")
 config["auth"]["password"] = os.environ.get("PASSWORD", "changeme")
+config["age_limit"] = int(os.environ.get('AGE_LIMIT', 0))
 
 # Set DigitalOceana config
 config["providers"]["digitalocean"]["enabled"] = os.environ.get(

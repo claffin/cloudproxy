@@ -11,7 +11,7 @@ from cloudproxy.providers.digitalocean.functions import (
     delete_proxy,
 )
 from cloudproxy.providers import settings
-from cloudproxy.providers.settings import delete_queue
+from cloudproxy.providers.settings import delete_queue, config
 
 
 def do_deployment(min_scaling):
@@ -38,13 +38,19 @@ def do_check_alive():
     ip_ready = []
     for droplet in list_droplets():
         try:
-            if check_alive(droplet.ip_address):
+            elapsed = datetime.datetime.now(
+                datetime.timezone.utc
+            ) - dateparser.parse(droplet.created_at)
+            if config["age_limit"] > 0:
+                if elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                    delete_proxy(droplet)
+                    logger.info(
+                        "Recycling droplet, reached age limit -> " + str(droplet.ip_address)
+                    )
+            elif check_alive(droplet.ip_address):
                 logger.info("Alive: DO -> " + str(droplet.ip_address))
                 ip_ready.append(droplet.ip_address)
             else:
-                elapsed = datetime.datetime.now(
-                    datetime.timezone.utc
-                ) - dateparser.parse(droplet.created_at)
                 if elapsed > datetime.timedelta(minutes=10):
                     delete_proxy(droplet)
                     logger.info(

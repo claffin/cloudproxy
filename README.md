@@ -47,6 +47,17 @@ All you need is:
 
 ### Installation
 
+#### Environment variables:
+
+##### Required
+`` USERNAME`` - set the username for the forward proxy.
+
+`` PASSWORD`` - set the password for the forward proxy.
+
+##### Optional
+
+`` AGE_LIMIT`` - set the age limit for your forward proxies in seconds. Once the age limit is reached, the proxy is replaced. A value of 0 disables the feature. Default value: 0.
+
 See individual provider pages for environment variables required in above providers supported section.
 
 #### Docker (recommended)

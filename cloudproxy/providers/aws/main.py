@@ -1,7 +1,6 @@
 import datetime
 import itertools
 
-import dateparser
 from loguru import logger
 
 from cloudproxy.check import check_alive
@@ -44,7 +43,7 @@ def aws_check_alive():
         try:
             elapsed = datetime.datetime.now(
                 datetime.timezone.utc
-            ) - dateparser.parse(instance["Instances"][0]["LaunchTime"])
+            ) - instance["Instances"][0]["LaunchTime"]
             if config["age_limit"] > 0:
                 if elapsed > datetime.timedelta(seconds=config["age_limit"]):
                     delete_proxy(instance["Instances"][0]["InstanceId"])

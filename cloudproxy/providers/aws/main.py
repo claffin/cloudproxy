@@ -73,16 +73,13 @@ def aws_check_alive():
 
 def aws_check_delete():
     for instance in list_instances():
-        if instance["Instances"][0]["PublicIpAddress"] in delete_queue:
+        if instance["Instances"][0].get("PublicIpAddress") in delete_queue:
             delete_proxy(instance["Instances"][0]["InstanceId"])
             logger.info(
                 "Destroyed: not wanted -> "
                 + instance["Instances"][0]["PublicIpAddress"]
             )
             delete_queue.remove(instance["Instances"][0]["PublicIpAddress"])
-            return True
-        else:
-            return False
 
 
 def aws_start():

@@ -83,7 +83,7 @@ def aws_check_delete():
 
 
 def aws_start():
+    aws_check_delete()
     aws_deployment(config["providers"]["aws"]["scaling"]["min_scaling"])
     ip_ready = aws_check_alive()
-    aws_check_delete()
     return ip_ready

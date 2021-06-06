@@ -44,26 +44,28 @@ def get_ip_list():
     ip_list = []
     if settings.config["providers"]["digitalocean"]["ips"]:
         for ip in settings.config["providers"]["digitalocean"]["ips"]:
-            ip_list.append(
-                "http://"
-                + settings.config["auth"]["username"]
-                + ":"
-                + settings.config["auth"]["password"]
-                + "@"
-                + ip
-                + ":8899"
-            )
+            if ip not in delete_queue:
+                ip_list.append(
+                    "http://"
+                    + settings.config["auth"]["username"]
+                    + ":"
+                    + settings.config["auth"]["password"]
+                    + "@"
+                    + ip
+                    + ":8899"
+                )
     if settings.config["providers"]["aws"]["ips"]:
         for ip in settings.config["providers"]["aws"]["ips"]:
-            ip_list.append(
-                "http://"
-                + settings.config["auth"]["username"]
-                + ":"
-                + settings.config["auth"]["password"]
-                + "@"
-                + ip
-                + ":8899"
-            )
+            if ip not in delete_queue:
+                ip_list.append(
+                    "http://"
+                    + settings.config["auth"]["username"]
+                    + ":"
+                    + settings.config["auth"]["password"]
+                    + "@"
+                    + ip
+                    + ":8899"
+                )
     return ip_list
 
 
@@ -97,7 +99,7 @@ def remove_proxy(ip_address: str):
     if re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address):
         ip = re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address)
         delete_queue.add(ip[0])
-        return {"Proxy to be destroyed"}
+        return {"Proxy <{}> to be destroyed".format(ip[0])}
     else:
         raise HTTPException(status_code=422, detail="IP not found")
 

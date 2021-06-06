@@ -69,15 +69,10 @@ def do_check_delete():
             delete_proxy(droplet)
             logger.info("Destroyed: not wanted -> " + str(droplet.ip_address))
             delete_queue.remove(droplet.ip_address)
-            return True
-        else:
-            return False
 
 
 def do_start():
-    do_deployment(
-        settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"]
-    )
-    ip_ready = do_check_alive()
     do_check_delete()
+    do_deployment(settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"])
+    ip_ready = do_check_alive()
     return ip_ready

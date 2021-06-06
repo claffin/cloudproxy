@@ -41,10 +41,10 @@ config["providers"]["digitalocean"]["secrets"]["access_token"] = os.environ.get(
     "DIGITALOCEAN_ACCESS_TOKEN"
 )
 config["providers"]["digitalocean"]["scaling"]["min_scaling"] = int(
-    os.environ.get("DIGITALOCEAN_MIN_SCALE", 2)
+    os.environ.get("DIGITALOCEAN_MIN_SCALING", 2)
 )
 config["providers"]["digitalocean"]["scaling"]["max_scaling"] = int(
-    os.environ.get("DIGITALOCEAN_MAX_SCALE", 2)
+    os.environ.get("DIGITALOCEAN_MAX_SCALING", 2)
 )
 config["providers"]["digitalocean"]["size"] = os.environ.get(
     "DIGITALOCEAN_SIZE", "s-1vcpu-1gb"
@@ -62,10 +62,10 @@ config["providers"]["aws"]["secrets"]["secret_access_key"] = os.environ.get(
     "AWS_SECRET_ACCESS_KEY"
 )
 config["providers"]["aws"]["scaling"]["min_scaling"] = int(
-    os.environ.get("AWS_MIN_SCALE", 2)
+    os.environ.get("AWS_MIN_SCALING", 2)
 )
 config["providers"]["aws"]["scaling"]["max_scaling"] = int(
-    os.environ.get("AWS_MAX_SCALE", 2)
+    os.environ.get("AWS_MAX_SCALING", 2)
 )
 config["providers"]["aws"]["size"] = os.environ.get("AWS_SIZE", "t2.micro")
 config["providers"]["aws"]["region"] = os.environ.get("AWS_REGION", "eu-west-2")

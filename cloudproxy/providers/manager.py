@@ -20,11 +20,13 @@ def aws_manager():
 def init_schedule():
     sched = BackgroundScheduler()
     sched.start()
-    if settings.config["providers"]["digitalocean"]["enabled"]:
+    if settings.config["providers"]["digitalocean"]["enabled"] == 'True':
         sched.add_job(do_manager, "interval", seconds=20)
+        do_manager()
     else:
         logger.info("DigitalOcean not enabled")
-    if settings.config["providers"]["aws"]["enabled"]:
+    if settings.config["providers"]["aws"]["enabled"] == 'True':
         sched.add_job(aws_manager, "interval", seconds=20)
+        aws_manager()
     else:
         logger.info("AWS not enabled")

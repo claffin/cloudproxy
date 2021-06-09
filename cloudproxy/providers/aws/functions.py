@@ -36,6 +36,9 @@ def create_proxy():
         sg.authorize_ingress(
             CidrIp="0.0.0.0/0", IpProtocol="tcp", FromPort=8899, ToPort=8899
         )
+        sg.authorize_ingress(
+            CidrIp="0.0.0.0/0", IpProtocol="tcp", FromPort=22, ToPort=22
+        )
     except botocore.exceptions.ClientError:
         pass
     sg_id = ec2_client.describe_security_groups(GroupNames=["cloudproxy"])
@@ -60,10 +63,22 @@ def delete_proxy(instance_id):
     return deleted
 
 
+def stop_proxy(instance_id):
+    ids = [instance_id]
+    stopped = ec2.instances.filter(InstanceIds=ids).stop()
+    return stopped
+
+
+def start_proxy(instance_id):
+    ids = [instance_id]
+    started = ec2.instances.filter(InstanceIds=ids).start()
+    return started
+
+
 def list_instances():
     filters = [
         {"Name": "tag:cloudproxy", "Values": ["cloudproxy"]},
-        {"Name": "instance-state-name", "Values": ["pending", "running"]},
+        {"Name": "instance-state-name", "Values": ["pending", "running", "stopped", "stopping"]},
     ]
     instances = ec2_client.describe_instances(Filters=filters)
     return instances["Reservations"]

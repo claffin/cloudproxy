@@ -25,6 +25,7 @@ config = {
 }
 
 delete_queue = set()
+restart_queue = set()
 
 load_dotenv()
 

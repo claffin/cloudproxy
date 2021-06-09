@@ -8,4 +8,4 @@ __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file
 def test_set_auth():
     with open(os.path.join(__location__, 'test_user_data.sh')) as file:
         filedata = file.read()
-    assert set_auth("testingusername", "testingusername") == filedata
+    assert set_auth("testingusername", "testinguserpassword") == filedata

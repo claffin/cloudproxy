@@ -37,14 +37,15 @@ def fetch_ip(ip_address):
     s.proxies = proxies
 
     fetched_ip = requests_retry_session(session=s).get(
-        "https://api.ipify.org", proxies=proxies
+        "https://api.ipify.org", proxies=proxies, timeout=10
     )
     return fetched_ip.text
 
 
 def check_alive(ip_address):
     try:
-        if ip_address == fetch_ip(ip_address):
+        result = requests.get("http://" + ip_address + ":8899", timeout=3)
+        if result.status_code in (200, 407):
             return True
         else:
             return False

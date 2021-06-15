@@ -8,8 +8,10 @@ from cloudproxy.providers.aws.functions import (
     list_instances,
     create_proxy,
     delete_proxy,
+    stop_proxy,
+    start_proxy,
 )
-from cloudproxy.providers.settings import delete_queue, config
+from cloudproxy.providers.settings import delete_queue, restart_queue, config
 
 
 def aws_deployment(min_scaling):
@@ -50,6 +52,20 @@ def aws_check_alive():
                     logger.info(
                         "Recycling droplet, reached age limit -> " + instance["Instances"][0]["PublicIpAddress"]
                     )
+            elif instance["Instances"][0]["State"]["Name"] == "stopped":
+                logger.info(
+                    "Waking up: AWS -> Instance " + instance["Instances"][0]["InstanceId"]
+                )
+                start_proxy(instance["Instances"][0]["InstanceId"])
+            elif instance["Instances"][0]["State"]["Name"] == "stopping":
+                logger.info(
+                    "Stopping: AWS -> " + instance["Instances"][0]["PublicIpAddress"]
+                )
+            elif instance["Instances"][0]["State"]["Name"] == "pending":
+                logger.info(
+                    "Pending: AWS -> " + instance["Instances"][0]["PublicIpAddress"]
+                )
+            # Must be "pending" if none of the above, check if alive or not.
             elif check_alive(instance["Instances"][0]["PublicIpAddress"]):
                 logger.info(
                     "Alive: AWS -> " + instance["Instances"][0]["PublicIpAddress"]
@@ -67,7 +83,7 @@ def aws_check_alive():
                         "Waiting: AWS -> " + instance["Instances"][0]["PublicIpAddress"]
                     )
         except (TypeError, KeyError):
-            logger.info("Pending: AWS allocating")
+            logger.info("Pending: AWS -> allocating ip")
     return ip_ready
 
 
@@ -82,8 +98,20 @@ def aws_check_delete():
             delete_queue.remove(instance["Instances"][0]["PublicIpAddress"])
 
 
+def aws_check_stop():
+    for instance in list_instances():
+        if instance["Instances"][0].get("PublicIpAddress") in restart_queue:
+            stop_proxy(instance["Instances"][0]["InstanceId"])
+            logger.info(
+                "Stopped: getting new IP -> "
+                + instance["Instances"][0]["PublicIpAddress"]
+            )
+            restart_queue.remove(instance["Instances"][0]["PublicIpAddress"])
+
+
 def aws_start():
+    aws_check_delete()
+    aws_check_stop()
     aws_deployment(config["providers"]["aws"]["scaling"]["min_scaling"])
     ip_ready = aws_check_alive()
-    aws_check_delete()
     return ip_ready

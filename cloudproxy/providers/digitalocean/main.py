@@ -11,7 +11,7 @@ from cloudproxy.providers.digitalocean.functions import (
     delete_proxy,
 )
 from cloudproxy.providers import settings
-from cloudproxy.providers.settings import delete_queue, config
+from cloudproxy.providers.settings import delete_queue, restart_queue, config
 
 
 def do_deployment(min_scaling):
@@ -65,19 +65,14 @@ def do_check_alive():
 
 def do_check_delete():
     for droplet in list_droplets():
-        if droplet.ip_address in delete_queue:
+        if droplet.ip_address in delete_queue or droplet.ip_address in restart_queue:
             delete_proxy(droplet)
             logger.info("Destroyed: not wanted -> " + str(droplet.ip_address))
             delete_queue.remove(droplet.ip_address)
-            return True
-        else:
-            return False
 
 
 def do_start():
-    do_deployment(
-        settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"]
-    )
-    ip_ready = do_check_alive()
     do_check_delete()
+    do_deployment(settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"])
+    ip_ready = do_check_alive()
     return ip_ready

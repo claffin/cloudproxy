@@ -31,3 +31,6 @@ Now you have your access key and secret access key, you can now use AWS as a pro
 ``AWS_SIZE``  - this sets the droplet size, we recommend the smallest droplet as the volume even a small droplet can handle is high. Default value: t2.micro
 
 ``AWS_REGION`` - this sets the region where the droplet is deployed. Some websites may redirect to the language of the country your IP is from. Default value: eu-west-2
+
+``AWS_SPOT`` - use this to launch instances as spot instances. The available options are 'persistent' (if you want to be able to restart them) or 'one-time' (if you plan to terminate them). Not all sizes are able to be launched as spot instances. Default value: False
+

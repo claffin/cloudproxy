@@ -56,7 +56,11 @@ def aws_check_alive():
                 logger.info(
                     "Waking up: AWS -> Instance " + instance["Instances"][0]["InstanceId"]
                 )
-                start_proxy(instance["Instances"][0]["InstanceId"])
+                started = start_proxy(instance["Instances"][0]["InstanceId"])
+                if not started:
+                    logger.info(
+                        "Could not wake up due to IncorrectSpotRequestState, trying again later."
+                    )
             elif instance["Instances"][0]["State"]["Name"] == "stopping":
                 logger.info(
                     "Stopping: AWS -> " + instance["Instances"][0]["PublicIpAddress"]

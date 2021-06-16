@@ -2,7 +2,7 @@ import boto3
 import os
 import json
 import botocore as botocore
-
+import botocore.exceptions
 
 from cloudproxy.providers.config import set_auth
 from cloudproxy.providers.settings import config
@@ -110,7 +110,13 @@ def stop_proxy(instance_id):
 
 def start_proxy(instance_id):
     ids = [instance_id]
-    started = ec2.instances.filter(InstanceIds=ids).start()
+    try:
+        started = ec2.instances.filter(InstanceIds=ids).start()
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'IncorrectSpotRequestState':
+            return None
+        else:
+            raise error
     return started
 
 

@@ -20,6 +20,7 @@ config = {
             "size": "",
             "region": "",
             "secrets": {"access_key_id": "", "secret_access_key": ""},
+            "spot": False,
         },
     },
 }
@@ -70,3 +71,4 @@ config["providers"]["aws"]["scaling"]["max_scaling"] = int(
 )
 config["providers"]["aws"]["size"] = os.environ.get("AWS_SIZE", "t2.micro")
 config["providers"]["aws"]["region"] = os.environ.get("AWS_REGION", "eu-west-2")
+config["providers"]["aws"]["spot"] = os.environ.get("AWS_SPOT", False)

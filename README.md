@@ -20,6 +20,7 @@ CloudProxy exposes an API with the IPs and credentials of the provisioned proxie
 ### Providers supported:
 * [DigitalOcean](docs/digitalocean.md)
 * [AWS](docs/aws.md)
+* [Hetzner](docs/hetzner.md)
 
 ### Planned:
 * Google Cloud

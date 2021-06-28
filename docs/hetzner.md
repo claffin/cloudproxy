@@ -1,6 +1,6 @@
 # Hetzner Configuration
 
-To use Hetzner as a provider, you’ll first generate an API token.
+To use Hetzner as a provider, you’ll first need to generate an API token.
 
 ## Steps
 

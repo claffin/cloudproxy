@@ -20,6 +20,7 @@ CloudProxy exposes an API with the IPs and credentials of the provisioned proxie
 ### Providers supported:
 * [DigitalOcean](docs/digitalocean.md)
 * [AWS](docs/aws.md)
+* [Hetzner](docs/hetzner.md)
 
 ### Planned:
 * Google Cloud
@@ -34,6 +35,7 @@ This project was inspired by [Scrapoxy](https://github.com/fabienvauchelles/scra
 
 The primary advantage of CloudProxy over Scrapoxy is that CloudProxy only requires an API token from a cloud provider. CloudProxy automatically deploys and configures the proxy on the cloud instances without the user needing to preconfigure or copy an image.
 
+Please always scrape nicely, respectfully and do not slam servers.
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -196,7 +198,8 @@ The project is at early alpha with limited features. In the future more provider
 
 See the [open issues](https://github.com/claffin/cloudproxy/issues) for a list of proposed features (and known issues).
 
-
+## Limitations
+This method of scraping via cloud providers has limitations, many websites have anti-bot protections and blacklists in place which can limit the effectiveness of CloudProxy. Many websites block datacenter IPs and IPs may be tarnished already due to IP recycling. Rotating the CloudProxy proxies regularly may improve results. The best solution for scraping is via proxy services providing residential IPs, which are less likely to be blocked, however are much more expensive. CloudProxy is a much cheaper alternative for scraping sites that do not block datacenter IPs nor have advanced anti-bot protection. This a point frequently made when people share this project which is why I am including this in the README. 
 
 <!-- CONTRIBUTING -->
 ## Contributing

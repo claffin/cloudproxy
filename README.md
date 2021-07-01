@@ -136,7 +136,18 @@ You can scale up and down your proxies and remove them for each provider via the
 
 #### Response
 
-    ["Proxy to be destroyed"]
+    ["Proxy <{IP}> to be destroyed"]
+
+### Restart proxy server (AWS only)
+#### Request
+
+`DELETE /restart`
+
+    curl -X 'DELETE' 'http://localhost:8000/restart?ip_address=192.1.1.1' -H 'accept: application/json'
+
+#### Restart
+
+    [""Proxy <{IP}> to be restarted"]
 
 ### Get provider
 #### Request

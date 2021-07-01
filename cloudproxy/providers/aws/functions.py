@@ -2,7 +2,7 @@ import boto3
 import os
 import json
 import botocore as botocore
-
+import botocore.exceptions
 
 from cloudproxy.providers.config import set_auth
 from cloudproxy.providers.settings import config
@@ -43,17 +43,56 @@ def create_proxy():
         pass
     sg_id = ec2_client.describe_security_groups(GroupNames=["cloudproxy"])
     sg_id = sg_id["SecurityGroups"][0]["GroupId"]
-    instance = ec2.create_instances(
-        ImageId=config["providers"]["aws"]["ami"],
-        MinCount=1,
-        MaxCount=1,
-        InstanceType=config["providers"]["aws"]["size"],
-        NetworkInterfaces=[
-            {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
-        ],
-        TagSpecifications=tag_specification,
-        UserData=user_data,
-    )
+    if config["providers"]["aws"]["spot"] == 'persistent':
+        instance = ec2.create_instances(
+            ImageId=config["providers"]["aws"]["ami"],
+            MinCount=1,
+            MaxCount=1,
+            InstanceType=config["providers"]["aws"]["size"],
+            NetworkInterfaces=[
+                {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+            ],
+            InstanceMarketOptions={
+                "MarketType": "spot",
+                "SpotOptions": {
+                    "InstanceInterruptionBehavior": "stop",
+                    "SpotInstanceType": "persistent"
+                }
+            },
+            TagSpecifications=tag_specification,
+            UserData=user_data,
+        )
+    elif config["providers"]["aws"]["spot"] == 'one-time':
+            instance = ec2.create_instances(
+                ImageId=config["providers"]["aws"]["ami"],
+                MinCount=1,
+                MaxCount=1,
+                InstanceType=config["providers"]["aws"]["size"],
+                NetworkInterfaces=[
+                    {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+                ],
+                InstanceMarketOptions={
+                    "MarketType": "spot",
+                    "SpotOptions": {
+                        "InstanceInterruptionBehavior": "terminate",
+                        "SpotInstanceType": "one-time"
+                    }
+                },
+                TagSpecifications=tag_specification,
+                UserData=user_data,
+            )
+    else:
+        instance = ec2.create_instances(
+            ImageId=config["providers"]["aws"]["ami"],
+            MinCount=1,
+            MaxCount=1,
+            InstanceType=config["providers"]["aws"]["size"],
+            NetworkInterfaces=[
+                {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+            ],
+            TagSpecifications=tag_specification,
+            UserData=user_data,
+        )
     return instance
 
 
@@ -71,7 +110,13 @@ def stop_proxy(instance_id):
 
 def start_proxy(instance_id):
     ids = [instance_id]
-    started = ec2.instances.filter(InstanceIds=ids).start()
+    try:
+        started = ec2.instances.filter(InstanceIds=ids).start()
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'IncorrectSpotRequestState':
+            return None
+        else:
+            raise error
     return started
 
 

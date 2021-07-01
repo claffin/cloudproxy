@@ -45,7 +45,7 @@ def create_proxy():
     sg_id = sg_id["SecurityGroups"][0]["GroupId"]
     if config["providers"]["aws"]["spot"] == 'persistent':
         instance = ec2.create_instances(
-            ImageId="ami-096cb92bb3580c759",
+            ImageId=config["providers"]["aws"]["ami"],
             MinCount=1,
             MaxCount=1,
             InstanceType=config["providers"]["aws"]["size"],
@@ -64,7 +64,7 @@ def create_proxy():
         )
     elif config["providers"]["aws"]["spot"] == 'one-time':
             instance = ec2.create_instances(
-                ImageId="ami-096cb92bb3580c759",
+                ImageId=config["providers"]["aws"]["ami"],
                 MinCount=1,
                 MaxCount=1,
                 InstanceType=config["providers"]["aws"]["size"],
@@ -83,7 +83,7 @@ def create_proxy():
             )
     else:
         instance = ec2.create_instances(
-            ImageId="ami-096cb92bb3580c759",
+            ImageId=config["providers"]["aws"]["ami"],
             MinCount=1,
             MaxCount=1,
             InstanceType=config["providers"]["aws"]["size"],

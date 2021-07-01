@@ -19,6 +19,7 @@ config = {
             "scaling": {"min_scaling": 0, "max_scaling": 0},
             "size": "",
             "region": "",
+            "ami": "",
             "secrets": {"access_key_id": "", "secret_access_key": ""},
         },
         "hetzner": {
@@ -79,6 +80,8 @@ config["providers"]["aws"]["scaling"]["max_scaling"] = int(
 )
 config["providers"]["aws"]["size"] = os.environ.get("AWS_SIZE", "t2.micro")
 config["providers"]["aws"]["region"] = os.environ.get("AWS_REGION", "eu-west-2")
+
+config["providers"]["aws"]["ami"] = os.environ.get("AWS_AMI", "ami-096cb92bb3580c759")
 
 # Set Hetzner config
 config["providers"]["hetzner"]["enabled"] = os.environ.get(

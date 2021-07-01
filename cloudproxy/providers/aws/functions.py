@@ -44,7 +44,7 @@ def create_proxy():
     sg_id = ec2_client.describe_security_groups(GroupNames=["cloudproxy"])
     sg_id = sg_id["SecurityGroups"][0]["GroupId"]
     instance = ec2.create_instances(
-        ImageId="ami-096cb92bb3580c759",
+        ImageId=config["providers"]["aws"]["ami"],
         MinCount=1,
         MaxCount=1,
         InstanceType=config["providers"]["aws"]["size"],

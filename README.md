@@ -20,10 +20,10 @@ CloudProxy exposes an API with the IPs and credentials of the provisioned proxie
 ### Providers supported:
 * [DigitalOcean](docs/digitalocean.md)
 * [AWS](docs/aws.md)
+* [Google Cloud](docs/gcp.md)
 * [Hetzner](docs/hetzner.md)
 
 ### Planned:
-* Google Cloud
 * Azure
 * Scaleway
 * Vultr
@@ -138,7 +138,7 @@ You can scale up and down your proxies and remove them for each provider via the
 
     ["Proxy <{IP}> to be destroyed"]
 
-### Restart proxy server (AWS only)
+### Restart proxy server (AWS & GCP only)
 #### Request
 
 `DELETE /restart`

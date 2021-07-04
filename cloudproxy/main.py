@@ -42,42 +42,19 @@ def main():
 
 def get_ip_list():
     ip_list = []
-    if settings.config["providers"]["digitalocean"]["ips"]:
-        for ip in settings.config["providers"]["digitalocean"]["ips"]:
-            if ip not in delete_queue and ip not in restart_queue:
-                ip_list.append(
-                    "http://"
-                    + settings.config["auth"]["username"]
-                    + ":"
-                    + settings.config["auth"]["password"]
-                    + "@"
-                    + ip
-                    + ":8899"
-                )
-    if settings.config["providers"]["aws"]["ips"]:
-        for ip in settings.config["providers"]["aws"]["ips"]:
-            if ip not in delete_queue and ip not in restart_queue:
-                ip_list.append(
-                    "http://"
-                    + settings.config["auth"]["username"]
-                    + ":"
-                    + settings.config["auth"]["password"]
-                    + "@"
-                    + ip
-                    + ":8899"
-                )
-    if settings.config["providers"]["hetzner"]["ips"]:
-        for ip in settings.config["providers"]["hetzner"]["ips"]:
-            if ip not in delete_queue and ip not in restart_queue:
-                ip_list.append(
-                    "http://"
-                    + settings.config["auth"]["username"]
-                    + ":"
-                    + settings.config["auth"]["password"]
-                    + "@"
-                    + ip
-                    + ":8899"
-                )
+    for provider in ['digitalocean', 'aws', 'gcp', 'hetzner']:
+        if settings.config["providers"][provider]["ips"]:
+            for ip in settings.config["providers"][provider]["ips"]:
+                if ip not in delete_queue and ip not in restart_queue:
+                    ip_list.append(
+                        "http://"
+                        + settings.config["auth"]["username"]
+                        + ":"
+                        + settings.config["auth"]["password"]
+                        + "@"
+                        + ip
+                        + ":8899"
+                    )
     return ip_list
 
 

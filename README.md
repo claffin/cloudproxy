@@ -138,7 +138,7 @@ You can scale up and down your proxies and remove them for each provider via the
 
     ["Proxy <{IP}> to be destroyed"]
 
-### Restart proxy server (AWS only)
+### Restart proxy server (AWS & GCP only)
 #### Request
 
 `DELETE /restart`

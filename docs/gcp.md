@@ -41,7 +41,9 @@ You can now use GCP as a proxy provider, below details of the environment variab
 
 ``GCP_PROJECT`` - GCP project ID where to create proxy instances. 
 
-``GCP_SERVICE_ACCOUNT_KEY`` - the service account key to allow CloudProxy access to your account. Please note this is not the path to the key, but the key itself.
+``GCP_SERVICE_ACCOUNT_KEY`` - the service account key to allow CloudProxy access to your account. Please note this is not the path to the key, but the key itself. 
+
+The easiest method to set the ``GCP_SERVICE_ACCOUNT_KEY`` is to use a shell variable. For example, ``GCP_KEY=$(cat /path/to/service_account.json)`` and then use the new variable ``$GCP_KEY``.
 
 #### Optional:
 ``GCP_MIN_SCALING`` - this is the minimal proxies you require to be provisioned. Default value: 2

@@ -9,6 +9,8 @@ from cloudproxy.providers.digitalocean.functions import (
     create_proxy,
     list_droplets,
     delete_proxy,
+    create_firewall,
+    DOFirewallExistsException,
 )
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue, config
@@ -70,8 +72,17 @@ def do_check_delete():
             logger.info("Destroyed: not wanted -> " + str(droplet.ip_address))
             delete_queue.remove(droplet.ip_address)
 
+def do_fw():
+    try:
+        create_firewall()
+        logger.info("Created firewall 'cloudproxy'")
+    except DOFirewallExistsException as e:
+        pass
+    except Exception as e:
+        logger.error(e)
 
 def do_start():
+    do_fw()
     do_check_delete()
     do_deployment(settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"])
     ip_ready = do_check_alive()

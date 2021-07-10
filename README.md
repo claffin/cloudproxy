@@ -52,9 +52,8 @@ All you need is:
 #### Environment variables:
 
 ##### Required
-`` USERNAME`` - set the username for the forward proxy.
-
-`` PASSWORD`` - set the password for the forward proxy.
+- `USERNAME` - set the username for the forward proxy.
+- `PASSWORD` - set the password for the forward proxy.
 
 ##### Optional
 
@@ -74,7 +73,7 @@ For example:
        -it -p 8000:8000 laffin/cloudproxy:latest
    ```
 
-It is recommended to use a Docker image tagged to a version e.g. ```laffin/cloudproxy:0.3.0-beta```, see [releases](https://github.com/claffin/cloudproxy/releases) for latest version.
+It is recommended to use a Docker image tagged to a version e.g. `laffin/cloudproxy:0.6.0-beta`, see [releases](https://github.com/claffin/cloudproxy/releases) for latest version.
 
 <!-- USAGE EXAMPLES -->
 ## Usage
@@ -100,7 +99,7 @@ my_request = requests.get("https://api.ipify.org", proxies=proxies)
 
 ![cloudproxy-ui](docs/images/cloudproxy-ui.png)
 
-You can manage CloudProxy via an API and UI. You can access the UI at ```http://localhost/ui```.
+You can manage CloudProxy via an API and UI. You can access the UI at `http://localhost:8000/ui`.
 
 You can scale up and down your proxies and remove them for each provider via the UI. 
 

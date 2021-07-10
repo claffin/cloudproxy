@@ -148,30 +148,95 @@ You can scale up and down your proxies and remove them for each provider via the
 
     [""Proxy <{IP}> to be restarted"]
 
-### Get provider
+### Get providers
 #### Request
 
-`GET /provider/digitalocean`
+`GET /providers`
+
+    curl -X 'GET' 'http://localhost:8000/providers' -H 'accept: application/json'
+
+#### Response
+
+```json
+{
+  "digitalocean": {
+    "enabled": "True",
+    "ips": [
+      "x.x.x.x"
+    ],
+    "scaling": {
+      "min_scaling": 1,
+      "max_scaling": 2
+    },
+    "size": "s-1vcpu-1gb",
+    "region": "lon1"
+  },
+  "aws": {
+    "enabled": false,
+    "ips": [],
+    "scaling": {
+      "min_scaling": 2,
+      "max_scaling": 2
+    },
+    "size": "t2.micro",
+    "region": "eu-west-2",
+    "ami": "ami-096cb92bb3580c759",
+    "spot": false
+  },
+  "gcp": {
+    "enabled": false,
+    "project": null,
+    "ips": [],
+    "scaling": {
+      "min_scaling": 2,
+      "max_scaling": 2
+    },
+    "size": "f1-micro",
+    "zone": "us-central1-a",
+    "image_project": "ubuntu-os-cloud",
+    "image_family": "ubuntu-minimal-2004-lts"
+  },
+  "hetzner": {
+    "enabled": false,
+    "ips": [],
+    "scaling": {
+      "min_scaling": 2,
+      "max_scaling": 2
+    },
+    "size": "cx11",
+    "location": "nbg1",
+    "datacenter": ""
+  }
+}
+```
+
+#### Request
+
+`GET /providers/digitalocean`
 
     curl -X 'GET' 'http://localhost:8000/providers/digitalocean' -H 'accept: application/json'
 
 #### Response
 
-      {
-        "ips": [
-          "192.1.1.2",
-          "192.1.1.3"
-        ],
-        "scaling": {
-          "min_scaling": 2,
-          "max_scaling": 2
-        }
-      }
+```json
+{
+  "enabled": "True",
+  "ips": [
+    "x.x.x.x"
+  ],
+  "scaling": {
+    "min_scaling": 2,
+    "max_scaling": 2
+  },
+  "size": "s-1vcpu-1gb",
+  "region": "lon1"
+}
+```
 
 ### Update provider
 #### Request
 
-`PATCH /provider/digitalocean`
+`PATCH /providers/digitalocean`
 
     curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean?min_scaling=5&max_scaling=5' -H 'accept: application/json'
 

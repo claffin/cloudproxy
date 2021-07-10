@@ -51,15 +51,15 @@ restart_queue = set()
 
 load_dotenv()
 
+is_enabled = lambda x: True if os.environ.get(x, False) in ["True", "true", "1"] else False
+
 # Set proxy authentication
 config["auth"]["username"] = os.environ.get("USERNAME", "changeme")
 config["auth"]["password"] = os.environ.get("PASSWORD", "changeme")
 config["age_limit"] = int(os.environ.get('AGE_LIMIT', 0))
 
 # Set DigitalOcean config
-config["providers"]["digitalocean"]["enabled"] = os.environ.get(
-    "DIGITALOCEAN_ENABLED", False
-)
+config["providers"]["digitalocean"]["enabled"] = is_enabled("DIGITALOCEAN_ENABLED")
 config["providers"]["digitalocean"]["secrets"]["access_token"] = os.environ.get(
     "DIGITALOCEAN_ACCESS_TOKEN"
 )
@@ -77,7 +77,7 @@ config["providers"]["digitalocean"]["region"] = os.environ.get(
 )
 
 # Set AWS Config
-config["providers"]["aws"]["enabled"] = os.environ.get("AWS_ENABLED", False)
+config["providers"]["aws"]["enabled"] = is_enabled("AWS_ENABLED")
 config["providers"]["aws"]["secrets"]["access_key_id"] = os.environ.get(
     "AWS_ACCESS_KEY_ID"
 )
@@ -96,7 +96,7 @@ config["providers"]["aws"]["spot"] = os.environ.get("AWS_SPOT", False)
 config["providers"]["aws"]["ami"] = os.environ.get("AWS_AMI", "ami-096cb92bb3580c759")
 
 # Set GCP Config
-config["providers"]["gcp"]["enabled"] = os.environ.get("GCP_ENABLED", False)
+config["providers"]["gcp"]["enabled"] = is_enabled("GCP_ENABLED")
 config["providers"]["gcp"]["project"] = os.environ.get("GCP_PROJECT")
 config["providers"]["gcp"]["secrets"]["service_account_key"] = os.environ.get(
     "GCP_SERVICE_ACCOUNT_KEY"
@@ -114,9 +114,7 @@ config["providers"]["gcp"]["image_project"] = os.environ.get("GCP_IMAGE_PROJECT"
 config["providers"]["gcp"]["image_family"] = os.environ.get("GCP_IMAGE_FAMILY", "ubuntu-minimal-2004-lts")
 
 # Set Hetzner config
-config["providers"]["hetzner"]["enabled"] = os.environ.get(
-    "HETZNER_ENABLED", False
-)
+config["providers"]["hetzner"]["enabled"] = is_enabled("HETZNER_ENABLED")
 config["providers"]["hetzner"]["secrets"]["access_token"] = os.environ.get(
     "HETZNER_ACCESS_TOKEN"
 )

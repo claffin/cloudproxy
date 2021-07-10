@@ -4,6 +4,7 @@
       <b-list-group>
         <div class="d-flex w-100 justify-content-between mb-2">
           <h2>{{ key }}</h2>
+          <div v-if="item.enabled">
           <b-form v-on:click="updateProvider(key, item.scaling.min_scaling)"
             ><label for="sb-inline" class="mr-2"
               >{{ item.ips.length }} ready of</label
@@ -14,7 +15,12 @@
               inline
             ></b-form-spinbutton
           ></b-form>
+          </div>
+          <div v-else>
+            Disabled
+          </div>
         </div>
+        <template v-if="item.enabled">
         <b-list-group-item
           href="#"
           class="flex-column align-items-start"
@@ -58,6 +64,7 @@
             ></b-progress
           >
         </b-list-group-item>
+        </template>
       </b-list-group>
     </div>
   </div>

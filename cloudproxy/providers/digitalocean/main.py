@@ -41,12 +41,11 @@ def do_check_alive():
             elapsed = datetime.datetime.now(
                 datetime.timezone.utc
             ) - dateparser.parse(droplet.created_at)
-            if config["age_limit"] > 0:
-                if elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                    delete_proxy(droplet)
-                    logger.info(
-                        "Recycling droplet, reached age limit -> " + str(droplet.ip_address)
-                    )
+            if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                delete_proxy(droplet)
+                logger.info(
+                    "Recycling droplet, reached age limit -> " + str(droplet.ip_address)
+                )
             elif check_alive(droplet.ip_address):
                 logger.info("Alive: DO -> " + str(droplet.ip_address))
                 ip_ready.append(droplet.ip_address)

@@ -46,12 +46,11 @@ def aws_check_alive():
             elapsed = datetime.datetime.now(
                 datetime.timezone.utc
             ) - instance["Instances"][0]["LaunchTime"]
-            if config["age_limit"] > 0:
-                if elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                    delete_proxy(instance["Instances"][0]["InstanceId"])
-                    logger.info(
-                        "Recycling droplet, reached age limit -> " + instance["Instances"][0]["PublicIpAddress"]
-                    )
+            if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                delete_proxy(instance["Instances"][0]["InstanceId"])
+                logger.info(
+                    "Recycling droplet, reached age limit -> " + instance["Instances"][0]["PublicIpAddress"]
+                )
             elif instance["Instances"][0]["State"]["Name"] == "stopped":
                 logger.info(
                     "Waking up: AWS -> Instance " + instance["Instances"][0]["InstanceId"]

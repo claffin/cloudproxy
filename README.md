@@ -112,9 +112,9 @@ You can scale up and down your proxies and remove them for each provider via the
     curl -X 'GET' 'http://localhost:8000/' -H 'accept: application/json'
 
 #### Response
-
-    {"ips":["http://username:password:192.168.0.1:8899", "http://username:password:192.168.0.2:8899"]}
-
+```json
+{"ips":["http://username:password:192.168.0.1:8899", "http://username:password:192.168.0.2:8899"]}
+```
 ### List random proxy server
 #### Request
 
@@ -123,9 +123,9 @@ You can scale up and down your proxies and remove them for each provider via the
     curl -X 'GET' 'http://localhost:8000/random' -H 'accept: application/json'
 
 #### Response
-
-    ["http://username:password:192.168.0.1:8899"]
-
+```json
+["http://username:password:192.168.0.1:8899"]
+```
 ### Remove proxy server
 #### Request
 
@@ -134,9 +134,9 @@ You can scale up and down your proxies and remove them for each provider via the
     curl -X 'DELETE' 'http://localhost:8000/destroy?ip_address=192.1.1.1' -H 'accept: application/json'
 
 #### Response
-
-    ["Proxy <{IP}> to be destroyed"]
-
+```json
+["Proxy <{IP}> to be destroyed"]
+```
 ### Restart proxy server (AWS & GCP only)
 #### Request
 
@@ -145,9 +145,9 @@ You can scale up and down your proxies and remove them for each provider via the
     curl -X 'DELETE' 'http://localhost:8000/restart?ip_address=192.1.1.1' -H 'accept: application/json'
 
 #### Restart
-
-    [""Proxy <{IP}> to be restarted"]
-
+```json
+["Proxy <{IP}> to be restarted"]
+```
 ### Get providers
 #### Request
 
@@ -241,18 +241,18 @@ You can scale up and down your proxies and remove them for each provider via the
     curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean?min_scaling=5&max_scaling=5' -H 'accept: application/json'
 
 #### Response
-
-      {
-        "ips": [
-          "192.1.1.2",
-          "192.1.1.3"
-        ],
-        "scaling": {
-          "min_scaling": 5,
-          "max_scaling": 5
-        }
-      }
-
+```json
+{
+  "ips": [
+    "192.1.1.2",
+    "192.1.1.3"
+  ],
+  "scaling": {
+    "min_scaling": 5,
+    "max_scaling": 5
+  }
+}
+```
 CloudProxy runs on a schedule of every 30 seconds, it will check if the minimum scaling has been met, if not then it will deploy the required number of proxies. The new proxy info will appear in IPs once they are deployed and ready to be used.
 
 <!-- ROADMAP -->
@@ -276,7 +276,7 @@ Contributions are what make the open source community such an amazing place to b
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-
+My target is to review all PRs within a week of being submitted, though sometimes it may be sooner or later.
 
 <!-- LICENSE -->
 ## License

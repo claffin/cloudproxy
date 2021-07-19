@@ -10,7 +10,8 @@ from cloudproxy.providers.config import set_auth
 from cloudproxy.providers.settings import config
 
 gcp = config["providers"]["gcp"]
-if gcp["enabled"]:
+
+if gcp["enabled"] == 'True':
     try:
         credentials = service_account.Credentials.from_service_account_info(
             json.loads(gcp["secrets"]["service_account_key"])

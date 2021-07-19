@@ -36,12 +36,11 @@ def hetzner_check_alive():
         elapsed = datetime.datetime.now(
             datetime.timezone.utc
         ) - dateparser.parse(str(proxy.created))
-        if config["age_limit"] > 0:
-            if elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                delete_proxy(proxy)
-                logger.info(
-                    "Recycling proxy, reached age limit -> " + str(proxy.public_net.ipv4.ip)
-                )
+        if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
+            delete_proxy(proxy)
+            logger.info(
+                "Recycling proxy, reached age limit -> " + str(proxy.public_net.ipv4.ip)
+            )
         elif check_alive(proxy.public_net.ipv4.ip):
             logger.info("Alive: Hetzner -> " + str(proxy.public_net.ipv4.ip))
             ip_ready.append(proxy.public_net.ipv4.ip)

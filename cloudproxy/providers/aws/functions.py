@@ -99,6 +99,20 @@ def create_proxy():
 def delete_proxy(instance_id):
     ids = [instance_id]
     deleted = ec2.instances.filter(InstanceIds=ids).terminate()
+    if config["providers"]["aws"]["spot"]:
+        associated_spot_instance_requests = ec2_client.describe_spot_instance_requests(
+            Filters=[
+                {
+                    'Name': 'instance-id',
+                    'Values': ids
+                }
+            ]
+        )
+        spot_instance_id_list = []
+        for spot_instance in associated_spot_instance_requests["SpotInstanceRequests"]:
+            spot_instance_id_list.append(spot_instance.get("SpotInstanceRequestId"))
+        if spot_instance_id_list:
+            ec2_client.cancel_spot_instance_requests(SpotInstanceRequestIds=spot_instance_id_list)
     return deleted
 
 

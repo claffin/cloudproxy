@@ -8,10 +8,16 @@ on:
     branches:
     - develop
     - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches:
     - develop
     - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 jobs:
   

@@ -9,6 +9,8 @@ from cloudproxy.providers.digitalocean.functions import (
     create_proxy,
     list_droplets,
     delete_proxy,
+    create_firewall,
+    DOFirewallExistsException,
 )
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue, config
@@ -41,12 +43,11 @@ def do_check_alive():
             elapsed = datetime.datetime.now(
                 datetime.timezone.utc
             ) - dateparser.parse(droplet.created_at)
-            if config["age_limit"] > 0:
-                if elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                    delete_proxy(droplet)
-                    logger.info(
-                        "Recycling droplet, reached age limit -> " + str(droplet.ip_address)
-                    )
+            if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                delete_proxy(droplet)
+                logger.info(
+                    "Recycling droplet, reached age limit -> " + str(droplet.ip_address)
+                )
             elif check_alive(droplet.ip_address):
                 logger.info("Alive: DO -> " + str(droplet.ip_address))
                 ip_ready.append(droplet.ip_address)
@@ -70,8 +71,17 @@ def do_check_delete():
             logger.info("Destroyed: not wanted -> " + str(droplet.ip_address))
             delete_queue.remove(droplet.ip_address)
 
+def do_fw():
+    try:
+        create_firewall()
+        logger.info("Created firewall 'cloudproxy'")
+    except DOFirewallExistsException as e:
+        pass
+    except Exception as e:
+        logger.error(e)
 
 def do_start():
+    do_fw()
     do_check_delete()
     do_deployment(settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"])
     ip_ready = do_check_alive()

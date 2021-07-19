@@ -10,13 +10,14 @@ from cloudproxy.providers.config import set_auth
 from cloudproxy.providers.settings import config
 
 gcp = config["providers"]["gcp"]
-try:
-    credentials = service_account.Credentials.from_service_account_info(
-        json.loads(gcp["secrets"]["service_account_key"])
-    )
-    compute = googleapiclient.discovery.build('compute', 'v1', credentials=credentials)
-except TypeError:
-    logger.error("GCP -> Invalid service account key")
+if gcp["enabled"] == 'True':
+    try:
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(gcp["secrets"]["service_account_key"])
+        )
+        compute = googleapiclient.discovery.build('compute', 'v1', credentials=credentials)
+    except TypeError:
+        logger.error("GCP -> Invalid service account key")
 
 
 def create_proxy():

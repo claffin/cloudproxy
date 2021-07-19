@@ -99,7 +99,7 @@ def create_proxy():
 def delete_proxy(instance_id):
     ids = [instance_id]
     deleted = ec2.instances.filter(InstanceIds=ids).terminate()
-    if config["providers"]["aws"]["spot"] == 'one-time':
+    if config["providers"]["aws"]["spot"]:
         associated_spot_instance_requests = ec2_client.describe_spot_instance_requests(
             Filters=[
                 {

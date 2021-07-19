@@ -288,7 +288,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@christianlaffin](https://twitter.com/christianlaffin) - christian.laffin@gmail.com
+Christian Laffin - [@christianlaffin](https://twitter.com/christianlaffin) - christian.laffin@gmail.com
 
 Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin/cloudproxy)
 

@@ -16,12 +16,16 @@ from cloudproxy.providers.settings import delete_queue, restart_queue
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+__location__ = os.path.realpath(os.path.join(
+    os.getcwd(), os.path.dirname(__file__)))
 app = FastAPI()
 
-app.mount("/ui", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist")), html=True), name="static")
-app.mount("/css", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist/css")), html=True), name="cssstatic")
-app.mount("/js", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist/js"))), name="jsstatic")
+app.mount("/ui", StaticFiles(directory=(os.path.join(__location__,
+                                                     "../cloudproxy-ui/dist")), html=True), name="static")
+app.mount("/css", StaticFiles(directory=(os.path.join(__location__,
+                                                      "../cloudproxy-ui/dist/css")), html=True), name="cssstatic")
+app.mount("/js", StaticFiles(directory=(os.path.join(__location__,
+                                                     "../cloudproxy-ui/dist/js"))), name="jsstatic")
 
 origins = ["*"]
 
@@ -37,7 +41,8 @@ logger.add("cloudproxy.log", rotation="20 MB")
 
 
 def main():
-    run_uvicorn_loguru(uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info"))
+    run_uvicorn_loguru(uvicorn.Config(
+        app, host="0.0.0.0", port=8000, log_level="info"))
 
 
 def get_ip_list():
@@ -144,6 +149,17 @@ def configure(provider: str, min_scaling: int, max_scaling: int):
         raise HTTPException(status_code=404, detail="Provider not found")
 
 
+@app.patch("/providers/{provider}/location")
+def configure(provider: str, location: str):
+    if provider in settings.config["providers"]:
+        settings.config["providers"][provider]["location"] = location
+        response = settings.config["providers"][provider]
+        if "secrets" in response:
+            response.pop("secrets")
+        return JSONResponse(response)
+    else:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+
 if __name__ == "__main__":
     main()
-

@@ -43,27 +43,28 @@ def create_proxy():
         pass
     sg_id = ec2_client.describe_security_groups(GroupNames=["cloudproxy"])
     sg_id = sg_id["SecurityGroups"][0]["GroupId"]
-    if config["providers"]["aws"]["spot"] == 'persistent':
-        instance = ec2.create_instances(
-            ImageId=config["providers"]["aws"]["ami"],
-            MinCount=1,
-            MaxCount=1,
-            InstanceType=config["providers"]["aws"]["size"],
-            NetworkInterfaces=[
-                {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
-            ],
-            InstanceMarketOptions={
-                "MarketType": "spot",
-                "SpotOptions": {
-                    "InstanceInterruptionBehavior": "stop",
-                    "SpotInstanceType": "persistent"
-                }
-            },
-            KeyName=config["providers"]["aws"]["key_name"],
-            TagSpecifications=tag_specification,
-            UserData=user_data,
-        )
-    elif config["providers"]["aws"]["spot"] == 'one-time':
+    if (config["providers"]["aws"]["key_name"] != ""):
+        if config["providers"]["aws"]["spot"] == 'persistent':
+            instance = ec2.create_instances(
+                ImageId=config["providers"]["aws"]["ami"],
+                MinCount=1,
+                MaxCount=1,
+                InstanceType=config["providers"]["aws"]["size"],
+                NetworkInterfaces=[
+                    {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+                ],
+                InstanceMarketOptions={
+                    "MarketType": "spot",
+                    "SpotOptions": {
+                        "InstanceInterruptionBehavior": "stop",
+                        "SpotInstanceType": "persistent"
+                    }
+                },
+                KeyName=config["providers"]["aws"]["key_name"],
+                TagSpecifications=tag_specification,
+                UserData=user_data,
+            )
+        elif config["providers"]["aws"]["spot"] == 'one-time':
             instance = ec2.create_instances(
                 ImageId=config["providers"]["aws"]["ami"],
                 MinCount=1,
@@ -83,19 +84,70 @@ def create_proxy():
                 TagSpecifications=tag_specification,
                 UserData=user_data,
             )
+        else:
+            instance = ec2.create_instances(
+                ImageId=config["providers"]["aws"]["ami"],
+                MinCount=1,
+                MaxCount=1,
+                InstanceType=config["providers"]["aws"]["size"],
+                NetworkInterfaces=[
+                    {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+                ],
+                KeyName=config["providers"]["aws"]["key_name"],
+                TagSpecifications=tag_specification,
+                UserData=user_data,
+            )
     else:
-        instance = ec2.create_instances(
-            ImageId=config["providers"]["aws"]["ami"],
-            MinCount=1,
-            MaxCount=1,
-            InstanceType=config["providers"]["aws"]["size"],
-            NetworkInterfaces=[
-                {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
-            ],
-            KeyName=config["providers"]["aws"]["key_name"],
-            TagSpecifications=tag_specification,
-            UserData=user_data,
-        )
+        if config["providers"]["aws"]["spot"] == 'persistent':
+            instance = ec2.create_instances(
+                ImageId=config["providers"]["aws"]["ami"],
+                MinCount=1,
+                MaxCount=1,
+                InstanceType=config["providers"]["aws"]["size"],
+                NetworkInterfaces=[
+                    {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+                ],
+                InstanceMarketOptions={
+                    "MarketType": "spot",
+                    "SpotOptions": {
+                        "InstanceInterruptionBehavior": "stop",
+                        "SpotInstanceType": "persistent"
+                    }
+                },
+                TagSpecifications=tag_specification,
+                UserData=user_data,
+            )
+        elif config["providers"]["aws"]["spot"] == 'one-time':
+            instance = ec2.create_instances(
+                ImageId=config["providers"]["aws"]["ami"],
+                MinCount=1,
+                MaxCount=1,
+                InstanceType=config["providers"]["aws"]["size"],
+                NetworkInterfaces=[
+                    {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+                ],
+                InstanceMarketOptions={
+                    "MarketType": "spot",
+                    "SpotOptions": {
+                        "InstanceInterruptionBehavior": "terminate",
+                        "SpotInstanceType": "one-time"
+                    }
+                },
+                TagSpecifications=tag_specification,
+                    UserData=user_data,
+            )
+        else:
+            instance = ec2.create_instances(
+                ImageId=config["providers"]["aws"]["ami"],
+                MinCount=1,
+                MaxCount=1,
+                InstanceType=config["providers"]["aws"]["size"],
+                NetworkInterfaces=[
+                    {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
+                ],
+                TagSpecifications=tag_specification,
+                UserData=user_data,
+            ) 
     return instance
 
 

@@ -5,7 +5,7 @@ import uuid as uuid
 
 from cloudproxy.check import check_alive
 from cloudproxy.providers import settings
-from cloudproxy.providers.config import set_auth
+from cloudproxy.providers.config import set_proxy
 
 manager = digitalocean.Manager(
     token=settings.config["providers"]["digitalocean"]["secrets"]["access_token"]
@@ -18,8 +18,11 @@ class DOFirewallExistsException(Exception):
     pass
 
 def create_proxy():
-    user_data = set_auth(
-        settings.config["auth"]["username"], settings.config["auth"]["password"], settings.config["auth"]["allowed_ip"]
+    user_data = set_proxy(
+        settings.config["auth"]["username"],
+        settings.config["auth"]["password"],
+        settings.config["auth"]["allowed_ip"],
+        settings.config["auth"]["proxy_stealth"]
     )
     digitalocean.Droplet(
         name=str(uuid.uuid1()),

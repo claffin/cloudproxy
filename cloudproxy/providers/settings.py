@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 config = {
     "auth": {"username": "", "password": "", "allowed_ip": ""},
+    "proxy_stealth": False,
     "age_limit": 0,
     "providers": {
         "digitalocean": {
@@ -57,6 +58,9 @@ config["auth"]["username"] = os.environ.get("USERNAME", "changeme")
 config["auth"]["password"] = os.environ.get("PASSWORD", "changeme")
 config["auth"]["allowed_ip"] = os.environ.get("ALLOWED_IP", "")
 config["age_limit"] = int(os.environ.get('AGE_LIMIT', 0))
+
+# Set proxy behaviour
+config["proxy_stealth"] = os.environ.get("PROXY_STEALTH", False)
 
 # Set DigitalOcean config
 config["providers"]["digitalocean"]["enabled"] = os.environ.get(

@@ -6,7 +6,7 @@ from loguru import logger
 import googleapiclient.discovery
 from google.oauth2 import service_account
 
-from cloudproxy.providers.config import set_auth
+from cloudproxy.providers.config import set_proxy
 from cloudproxy.providers.settings import config
 
 gcp = config["providers"]["gcp"]
@@ -61,7 +61,7 @@ def create_proxy():
         'metadata': {
             'items': [{
                 'key': 'startup-script',
-                'value': set_auth(config["auth"]["username"], config["auth"]["password"], config["auth"]["allowed_ip"])
+                'value': set_proxy(config["auth"]["username"], config["auth"]["password"], config["auth"]["allowed_ip"], config["proxy_stealth"])
             }]
         }
     }

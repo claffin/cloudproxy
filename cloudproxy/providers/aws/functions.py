@@ -4,7 +4,7 @@ import json
 import botocore as botocore
 import botocore.exceptions
 
-from cloudproxy.providers.config import set_auth
+from cloudproxy.providers.config import set_proxy
 from cloudproxy.providers.settings import config
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
@@ -28,7 +28,7 @@ def create_proxy():
 
         if response["Vpcs"][0]["IsDefault"]:
             default_vpc = response["Vpcs"][0]["VpcId"]
-    user_data = set_auth(config["auth"]["username"], config["auth"]["password"], config["auth"]["allowed_ip"])
+    user_data = set_proxy(config["auth"]["username"], config["auth"]["password"], config["auth"]["allowed_ip"], config["proxy_stealth"])
     try:
         sg = ec2.create_security_group(
             Description="SG for CloudProxy", GroupName="cloudproxy", VpcId=default_vpc

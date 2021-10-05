@@ -54,10 +54,13 @@ All you need is:
 ##### Required
 - `USERNAME` - set the username for the forward proxy.
 - `PASSWORD` - set the password for the forward proxy.
+or/and
+- `ALLOWED_IP` - set allowed ip to use proxy.
 
 ##### Optional
 
 `` AGE_LIMIT`` - set the age limit for your forward proxies in seconds. Once the age limit is reached, the proxy is replaced. A value of 0 disables the feature. Default value: 0.
+`` PROXY_STEALTH `` remove request proxy headers. Tinyproxy quote: "Note that RFC 2616 requires proxies to set the Via header, so by enabling this option, you break compliance. Don't disable the Via header unless you know what you are doing..." Default: false
 
 See individual provider pages for environment variables required in above providers supported section.
 
@@ -68,7 +71,7 @@ For example:
    ```shell
    docker run -e USERNAME='CHANGE_THIS_USERNAME' \
        -e PASSWORD='CHANGE_THIS_PASSWORD' \
-       -e DIGITALOCEAN_ENABLED=True \
+       -e DIGITALOCEAN_ENABLED=true \
        -e DIGITALOCEAN_ACCESS_TOKEN='YOUR SECRET ACCESS KEY' \
        -it -p 8000:8000 laffin/cloudproxy:latest
    ```

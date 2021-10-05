@@ -8,15 +8,18 @@ from hcloud.datacenters.domain import Datacenter
 from hcloud.locations.domain import Location
 
 from cloudproxy.providers import settings
-from cloudproxy.providers.config import set_auth
+from cloudproxy.providers.config import set_proxy
 
 client = Client(token=settings.config["providers"]["hetzner"]["secrets"]["access_token"])
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
 def create_proxy():
-    user_data = set_auth(
-        settings.config["auth"]["username"], settings.config["auth"]["password"], settings.config["auth"]["allowed_ip"]
+    user_data = set_proxy(
+        settings.config["auth"]["username"],
+        settings.config["auth"]["password"],
+        settings.config["auth"]["allowed_ip"],
+        settings.config["proxy_stealth"]
     )
     client.servers.create(name=str(uuid.uuid1()),
                           server_type=ServerType("cx11"),

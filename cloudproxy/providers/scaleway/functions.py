@@ -1,7 +1,7 @@
 import uuid as uuid
 import json
 from cloudproxy.providers import settings
-from cloudproxy.providers.config import set_auth
+from cloudproxy.providers.config import set_proxy
 from scaleway.apis import ComputeAPI
 from slumber.exceptions import HttpClientError
 
@@ -11,7 +11,7 @@ compute_api = ComputeAPI(
 
 
 def create_proxy():
-    user_data = set_auth(
+    user_data = set_proxy(
         settings.config["auth"]["username"], settings.config["auth"]["password"], settings.config["auth"]["allowed_ip"]
     )
     # try:

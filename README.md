@@ -54,7 +54,9 @@ All you need is:
 ##### Required
 - `USERNAME` - set the username for the forward proxy.
 - `PASSWORD` - set the password for the forward proxy.
+
 or/and
+
 - `ALLOWED_IP` - set allowed ip to use proxy.
 
 ##### Optional

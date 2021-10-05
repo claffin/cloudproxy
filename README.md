@@ -60,6 +60,7 @@ or/and
 ##### Optional
 
 `` AGE_LIMIT`` - set the age limit for your forward proxies in seconds. Once the age limit is reached, the proxy is replaced. A value of 0 disables the feature. Default value: 0.
+
 `` PROXY_STEALTH `` remove request proxy headers. Tinyproxy quote: "Note that RFC 2616 requires proxies to set the Via header, so by enabling this option, you break compliance. Don't disable the Via header unless you know what you are doing..." Default: false
 
 See individual provider pages for environment variables required in above providers supported section.

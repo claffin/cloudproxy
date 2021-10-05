@@ -54,6 +54,7 @@ load_dotenv()
 # Set proxy authentication
 config["auth"]["username"] = os.environ.get("USERNAME", "changeme")
 config["auth"]["password"] = os.environ.get("PASSWORD", "changeme")
+config["auth"]["allowed_ip"] = os.environ.get("ALLOWED_IP", "")
 config["age_limit"] = int(os.environ.get('AGE_LIMIT', 0))
 
 # Set DigitalOcean config

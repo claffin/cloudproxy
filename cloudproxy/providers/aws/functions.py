@@ -28,7 +28,7 @@ def create_proxy():
 
         if response["Vpcs"][0]["IsDefault"]:
             default_vpc = response["Vpcs"][0]["VpcId"]
-    user_data = set_auth(config["auth"]["username"], config["auth"]["password"])
+    user_data = set_auth(config["auth"]["username"], config["auth"]["password"], config["auth"]["allowed_ip"])
     try:
         sg = ec2.create_security_group(
             Description="SG for CloudProxy", GroupName="cloudproxy", VpcId=default_vpc

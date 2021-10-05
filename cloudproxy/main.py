@@ -46,15 +46,22 @@ def get_ip_list():
         if settings.config["providers"][provider]["ips"]:
             for ip in settings.config["providers"][provider]["ips"]:
                 if ip not in delete_queue and ip not in restart_queue:
-                    ip_list.append(
-                        "http://"
-                        + settings.config["auth"]["username"]
-                        + ":"
-                        + settings.config["auth"]["password"]
-                        + "@"
-                        + ip
-                        + ":8899"
-                    )
+                    if settings.config["auth"]["username"] != "changeme":
+                        ip_list.append(
+                            "http://"
+                            + settings.config["auth"]["username"]
+                            + ":"
+                            + settings.config["auth"]["password"]
+                            + "@"
+                            + ip
+                            + ":8899"
+                        )
+                    else:
+                        ip_list.append(
+                            "http://"
+                            + ip
+                            + ":8899"
+                        )  
     return ip_list
 
 

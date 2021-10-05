@@ -12,7 +12,7 @@ compute_api = ComputeAPI(
 
 def create_proxy():
     user_data = set_auth(
-        settings.config["auth"]["username"], settings.config["auth"]["password"]
+        settings.config["auth"]["username"], settings.config["auth"]["password"], settings.config["auth"]["allowed_ip"]
     )
     # try:
     #     res = compute_api.query().images.get()

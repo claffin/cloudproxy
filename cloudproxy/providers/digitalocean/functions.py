@@ -19,7 +19,7 @@ class DOFirewallExistsException(Exception):
 
 def create_proxy():
     user_data = set_auth(
-        settings.config["auth"]["username"], settings.config["auth"]["password"]
+        settings.config["auth"]["username"], settings.config["auth"]["password"], settings.config["auth"]["allowed_ip"]
     )
     digitalocean.Droplet(
         name=str(uuid.uuid1()),

@@ -59,6 +59,7 @@ def create_proxy():
                     "SpotInstanceType": "persistent"
                 }
             },
+            KeyName=config["providers"]["aws"]["key_name"],
             TagSpecifications=tag_specification,
             UserData=user_data,
         )
@@ -78,6 +79,7 @@ def create_proxy():
                         "SpotInstanceType": "one-time"
                     }
                 },
+                KeyName=config["providers"]["aws"]["key_name"],
                 TagSpecifications=tag_specification,
                 UserData=user_data,
             )
@@ -90,6 +92,7 @@ def create_proxy():
             NetworkInterfaces=[
                 {"DeviceIndex": 0, "AssociatePublicIpAddress": True, "Groups": [sg_id]}
             ],
+            KeyName=config["providers"]["aws"]["key_name"],
             TagSpecifications=tag_specification,
             UserData=user_data,
         )

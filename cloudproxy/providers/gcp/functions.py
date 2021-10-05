@@ -61,7 +61,7 @@ def create_proxy():
         'metadata': {
             'items': [{
                 'key': 'startup-script',
-                'value': set_auth(config["auth"]["username"], config["auth"]["password"])
+                'value': set_auth(config["auth"]["username"], config["auth"]["password"], config["auth"]["allowed_ip"])
             }]
         }
     }

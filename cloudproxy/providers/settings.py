@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 
 config = {
-    "auth": {"username": "", "password": ""},
+    "auth": {"username": "", "password": "", "allowed_ip": ""},
     "age_limit": 0,
     "providers": {
         "digitalocean": {
@@ -14,6 +14,7 @@ config = {
             "secrets": {"access_token": ""},
         },
         "aws": {
+            "allowed_ip": "",
             "enabled": False,
             "ips": [],
             "scaling": {"min_scaling": 0, "max_scaling": 0},
@@ -85,6 +86,7 @@ config["providers"]["aws"]["secrets"]["access_key_id"] = os.environ.get(
 config["providers"]["aws"]["secrets"]["secret_access_key"] = os.environ.get(
     "AWS_SECRET_ACCESS_KEY"
 )
+config["providers"]["aws"]["key_name"] = os.environ.get("AWS_KEY_NAME", "")
 config["providers"]["aws"]["scaling"]["min_scaling"] = int(
     os.environ.get("AWS_MIN_SCALING", 2)
 )

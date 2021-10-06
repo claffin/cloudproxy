@@ -48,7 +48,7 @@ def check_alive(ip_address):
             "http": "http://" + ip_address + ":8899",
             "https": "http://" + ip_address + ":8899"
         }
-        result = requests.get("http://google.es", timeout=3, proxies=proxies)
+        result = requests.get("http://google.es", timeout=6, proxies=proxies)
         if result.status_code in (200, 407):
             return True
         else:

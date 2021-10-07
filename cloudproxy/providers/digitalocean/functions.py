@@ -22,7 +22,7 @@ def create_proxy():
         settings.config["auth"]["username"],
         settings.config["auth"]["password"],
         settings.config["auth"]["allowed_ip"],
-        settings.config["auth"]["proxy_stealth"]
+        settings.config["proxy_stealth"]
     )
     digitalocean.Droplet(
         name=str(uuid.uuid1()),

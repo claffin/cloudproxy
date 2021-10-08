@@ -76,7 +76,7 @@ For example:
        -e PASSWORD='CHANGE_THIS_PASSWORD' \
        -e DIGITALOCEAN_ENABLED=true \
        -e DIGITALOCEAN_ACCESS_TOKEN='YOUR SECRET ACCESS KEY' \
-       -it -p 8000:8000 laffin/cloudproxy:latest
+       -it -p 127.0.0.1:8000:8000 laffin/cloudproxy:latest
    ```
 
 It is recommended to use a Docker image tagged to a version e.g. `laffin/cloudproxy:0.6.0-beta`, see [releases](https://github.com/claffin/cloudproxy/releases) for latest version.

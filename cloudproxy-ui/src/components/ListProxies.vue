@@ -29,7 +29,6 @@
             <b-button
               v-on:click="
                 removeProxy(ips);
-                reloadPage();
                 makeToast(ips);
               "
               variant="danger"

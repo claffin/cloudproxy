@@ -37,7 +37,7 @@ logger.add("cloudproxy.log", rotation="20 MB")
 
 
 def main():
-    run_uvicorn_loguru(uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info"))
+    run_uvicorn_loguru(uvicorn.Config(app, host="0.0.0.0", port=8888, log_level="info"))
 
 
 def get_ip_list():

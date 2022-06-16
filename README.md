@@ -55,6 +55,8 @@ All you need is:
 - `USERNAME` - set the username for the forward proxy.
 - `PASSWORD` - set the password for the forward proxy.
 
+The username and password should be alphanumeric. Using special characters may cause issues due to how URL encoding works.
+
 ##### Optional
 
 `` AGE_LIMIT`` - set the age limit for your forward proxies in seconds. Once the age limit is reached, the proxy is replaced. A value of 0 disables the feature. Default value: 0.

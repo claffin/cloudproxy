@@ -1,4 +1,4 @@
-FROM nikolaik/python-nodejs:python3.8-nodejs15-slim
+FROM nikolaik/python-nodejs:python3.11-nodejs16
 
 ENV PYTHONPATH "$PYTHONPATH:/app"
 

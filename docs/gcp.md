@@ -52,7 +52,7 @@ The easiest method to set the ``GCP_SERVICE_ACCOUNT_KEY`` is to use a shell vari
 
 ``GCP_SIZE``  - this sets the instance size, we recommend the smallest instance as the volume even a small instance can handle is high. Default value: f1-micro
 
-``GCP_ZONE`` - this sets the region & zone where the instance is deployed. Some websites may redirect to the language of the country your IP is from. Default value: us-central1-a
+``GCP_REGION`` - this sets the region & zone where the instance is deployed. Some websites may redirect to the language of the country your IP is from. Default value: us-central1-a
 
 ``GCP_IMAGE_PROJECT`` - this sets the project of the image family the instance is deployed with. The default image family project is ubuntu-os-cloud. Default value: ubuntu-os-cloud
 

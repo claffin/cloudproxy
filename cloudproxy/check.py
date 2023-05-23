@@ -25,14 +25,21 @@ def requests_retry_session(
 
 
 def fetch_ip(ip_address):
-    auth = (
-        settings.config["auth"]["username"] + ":" + settings.config["auth"]["password"]
-    )
+    if settings.config["no_auth"]:
+        proxies = {
+            "http": "http://" + ip_address + ":8899",
+            "https": "http://" + ip_address + ":8899",
+        }
+    else:
+        auth = (
+            settings.config["auth"]["username"] + ":" + settings.config["auth"]["password"]
+        )
 
-    proxies = {
-        "http": "http://" + auth + "@" + ip_address + ":8899",
-        "https": "http://" + auth + "@" + ip_address + ":8899",
-    }
+        proxies = {
+            "http": "http://" + auth + "@" + ip_address + ":8899",
+            "https": "http://" + auth + "@" + ip_address + ":8899",
+        }
+    
     s = requests.Session()
     s.proxies = proxies
 
@@ -44,7 +51,7 @@ def fetch_ip(ip_address):
 
 def check_alive(ip_address):
     try:
-        result = requests.get("http://" + ip_address + ":8899", timeout=3)
+        result = requests.get("http://ipecho.net/plain", proxies={'http': "http://" + ip_address + ":8899"}, timeout=3)
         if result.status_code in (200, 407):
             return True
         else:

@@ -19,12 +19,18 @@ from cloudproxy.providers.settings import delete_queue, restart_queue, config
 def do_deployment(min_scaling):
     total_droplets = len(list_droplets())
     if min_scaling < total_droplets:
-        logger.info("Overprovisioned: DO destroying.....")
-        for droplet in itertools.islice(
-            list_droplets(), 0, (total_droplets - min_scaling)
-        ):
+        # Only destroy droplets that aren't ready/alive yet
+        droplets_to_destroy = []
+        for droplet in list_droplets():
+            if not check_alive(droplet.ip_address):
+                droplets_to_destroy.append(droplet)
+        
+        # Only destroy excess non-ready droplets
+        excess = total_droplets - min_scaling
+        for droplet in droplets_to_destroy[:excess]:
             delete_proxy(droplet)
-            logger.info("Destroyed: DO -> " + str(droplet.ip_address))
+            logger.info("Destroyed non-ready droplet: DO -> " + str(droplet.ip_address))
+            
     if min_scaling - total_droplets < 1:
         logger.info("Minimum DO Droplets met")
     else:
@@ -83,6 +89,9 @@ def do_fw():
 def do_start():
     do_fw()
     do_check_delete()
-    do_deployment(settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"])
+    # First check which droplets are alive
     ip_ready = do_check_alive()
-    return ip_ready
+    # Then handle deployment/scaling based on ready droplets
+    do_deployment(settings.config["providers"]["digitalocean"]["scaling"]["min_scaling"])
+    # Final check for alive droplets
+    return do_check_alive()

@@ -19,7 +19,7 @@ def create_proxy():
         settings.config["auth"]["username"], settings.config["auth"]["password"]
     )
     client.servers.create(name=str(uuid.uuid1()),
-                          server_type=ServerType("cx11"),
+                          server_type=ServerType(settings.config["providers"]["hetzner"]["size"]),
                           image=Image(name="ubuntu-20.04"),
                           location=Location(name=settings.config["providers"]["hetzner"]["location"]),
                           # datacenter=Datacenter(name=settings.config["providers"]["hetzner"]["datacenter"]),

@@ -131,7 +131,7 @@ config["providers"]["hetzner"]["scaling"]["max_scaling"] = int(
     os.environ.get("HETZNER_MAX_SCALING", 2)
 )
 config["providers"]["hetzner"]["size"] = os.environ.get(
-    "HETZNER_SIZE", "cx11"
+    "HETZNER_SIZE", "cx21"
 )
 config["providers"]["hetzner"]["location"] = os.environ.get(
     "HETZNER_LOCATION", "nbg1"

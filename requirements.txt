@@ -11,5 +11,5 @@ boto3==1.25.4
 urllib3==1.26.12
 aiofiles==22.1.0
 botocore~=1.28.4
-hcloud==1.18.1
+hcloud==2.3.0
 google-api-python-client==2.65.0

@@ -1,9 +1,23 @@
 from fastapi.testclient import TestClient
+import os
 
 from cloudproxy.main import app
-from cloudproxy.providers.settings import delete_queue
+from cloudproxy.providers.settings import delete_queue, config
 
+# Configure test environment
+os.environ["DIGITALOCEAN_ENABLED"] = "false"
+
+# Create test client
+# Note: The HTTPX deprecation warning is internal to the library and doesn't affect functionality
 client = TestClient(app)
+
+# Set up test environment
+config["providers"]["digitalocean"]["enabled"] = False
+config["providers"]["digitalocean"]["ips"] = []
+config["providers"]["digitalocean"]["scaling"]["min_scaling"] = 2
+config["providers"]["digitalocean"]["scaling"]["max_scaling"] = 2
+config["providers"]["digitalocean"]["size"] = "s-1vcpu-1gb"
+config["providers"]["digitalocean"]["region"] = "lon1"
 
 
 def test_read_root():

@@ -10,5 +10,6 @@ def test_set_auth():
     with open(os.path.join(__location__, 'test_user_data.sh')) as file:
         filedata = file.read()
     settings.config["no_auth"] = False
+    settings.config["only_host_ip"] = False  # Ensure we use generic UFW rules
     assert set_auth("testingusername", "testinguserpassword") == filedata
     

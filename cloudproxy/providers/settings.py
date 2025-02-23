@@ -62,8 +62,8 @@ config["only_host_ip"] = os.environ.get("ONLY_HOST_IP", False)
 
 # Set DigitalOcean config
 config["providers"]["digitalocean"]["enabled"] = os.environ.get(
-    "DIGITALOCEAN_ENABLED", False
-)
+    "DIGITALOCEAN_ENABLED", "False"
+).lower() == "true"
 config["providers"]["digitalocean"]["secrets"]["access_token"] = os.environ.get(
     "DIGITALOCEAN_ACCESS_TOKEN"
 )
@@ -81,7 +81,7 @@ config["providers"]["digitalocean"]["region"] = os.environ.get(
 )
 
 # Set AWS Config
-config["providers"]["aws"]["enabled"] = os.environ.get("AWS_ENABLED", False)
+config["providers"]["aws"]["enabled"] = os.environ.get("AWS_ENABLED", "False").lower() == "true"
 config["providers"]["aws"]["secrets"]["access_key_id"] = os.environ.get(
     "AWS_ACCESS_KEY_ID"
 )
@@ -100,7 +100,7 @@ config["providers"]["aws"]["spot"] = os.environ.get("AWS_SPOT", False)
 config["providers"]["aws"]["ami"] = os.environ.get("AWS_AMI", "ami-096cb92bb3580c759")
 
 # Set GCP Config
-config["providers"]["gcp"]["enabled"] = os.environ.get("GCP_ENABLED", False)
+config["providers"]["gcp"]["enabled"] = os.environ.get("GCP_ENABLED", "False").lower() == "true"
 config["providers"]["gcp"]["project"] = os.environ.get("GCP_PROJECT")
 config["providers"]["gcp"]["secrets"]["service_account_key"] = os.environ.get(
     "GCP_SERVICE_ACCOUNT_KEY"
@@ -119,8 +119,8 @@ config["providers"]["gcp"]["image_family"] = os.environ.get("GCP_IMAGE_FAMILY", 
 
 # Set Hetzner config
 config["providers"]["hetzner"]["enabled"] = os.environ.get(
-    "HETZNER_ENABLED", False
-)
+    "HETZNER_ENABLED", "False"
+).lower() == "true"
 config["providers"]["hetzner"]["secrets"]["access_token"] = os.environ.get(
     "HETZNER_ACCESS_TOKEN"
 )

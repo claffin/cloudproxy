@@ -4,15 +4,21 @@
       <div class="provider-header">
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
-            <b-icon :icon="getProviderIcon(key)" class="mr-2" font-scale="1.5"></b-icon>
+            <div class="provider-icon-wrapper mr-2">
+              <i :class="'bi bi-' + getProviderIcon(key)" style="font-size: 1.5rem;"></i>
+            </div>
             <h2 class="mb-0">{{ formatProviderName(key) }}</h2>
           </div>
           <b-form class="scaling-control" @submit.prevent="updateProvider(key, item.scaling.min_scaling)">
             <div class="d-flex align-items-center">
-              <span class="status-badge" :class="{'status-active': item.ips.length > 0}">
+              <span class="status-badge" :class="{'status-active': item.ips.length > 0}" v-b-tooltip.hover title="Number of active proxy instances">
+                <i class="bi bi-hdd-stack mr-1"></i>
                 {{ item.ips.length }} Active
               </span>
-              <label for="sb-inline" class="mx-3">Scale to</label>
+              <label for="sb-inline" class="mx-3">
+                <i class="bi bi-sliders mr-1"></i>
+                Scale to
+              </label>
               <b-form-spinbutton
                 v-model="item.scaling.min_scaling"
                 min="0"
@@ -20,6 +26,7 @@
                 inline
                 @change="updateProvider(key, $event)"
                 class="custom-spinbutton"
+                v-b-tooltip.hover title="Set the number of proxy instances"
               ></b-form-spinbutton>
             </div>
           </b-form>
@@ -28,18 +35,48 @@
 
       <div class="proxy-list">
         <div
+          v-if="item.enabled && item.ips.length === 0 && item.scaling.min_scaling === 0"
+          class="empty-state"
+        >
+          <div class="text-center py-4">
+            <i class="bi bi-cloud-slash text-muted mb-2" style="font-size: 2rem;"></i>
+            <p class="mb-0">No proxies configured</p>
+            <small class="text-muted">Use the scaling control above to deploy proxies</small>
+          </div>
+        </div>
+
+        <div
           class="proxy-item"
           v-for="ips in item.ips"
           :key="ips"
         >
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
-              <div class="proxy-status">
-                <b-icon icon="circle-fill" class="status-icon"></b-icon>
+              <div class="proxy-status" v-b-tooltip.hover title="Proxy is active and responding">
+                <i class="bi bi-check-circle-fill status-icon"></i>
               </div>
               <div>
-                <p class="mb-0 proxy-ip">{{ ips }}</p>
-                <small class="text-muted">HTTP/HTTPS Proxy</small>
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-hdd-network mr-2 text-gray"></i>
+                  <p class="mb-0 proxy-ip">{{ ips }}</p>
+                  <b-button 
+                    variant="link" 
+                    size="sm" 
+                    class="copy-btn ml-2" 
+                    @click="copyToClipboard(ips)"
+                    v-b-tooltip.hover title="Copy proxy address"
+                  >
+                    <i class="bi bi-clipboard-plus"></i>
+                  </b-button>
+                </div>
+                <small class="text-muted d-flex align-items-center">
+                  <i class="bi bi-shield-lock mr-1"></i>
+                  <span class="mr-2">HTTP/HTTPS Proxy</span>
+                  <span class="region-indicator">
+                    <i class="bi bi-geo-alt-fill mr-1"></i>
+                    {{ item.region || item.zone || item.location }}
+                  </span>
+                </small>
               </div>
             </div>
             <div>
@@ -49,13 +86,14 @@
                 :disabled="listremove_data.includes(ips)"
                 @click="removeProxy(ips); makeToast(ips);"
                 class="remove-btn"
+                v-b-tooltip.hover title="Remove this proxy instance"
               >
                 <template v-if="listremove_data.includes(ips)">
                   <b-spinner small></b-spinner>
                   <span class="ml-2">Removing...</span>
                 </template>
                 <template v-else>
-                  <b-icon icon="trash"></b-icon>
+                  <i class="bi bi-x-circle"></i>
                   <span class="ml-2">Remove</span>
                 </template>
               </b-button>
@@ -68,13 +106,14 @@
           class="progress-item"
         >
           <div class="text-center mb-3">
-            <b-icon icon="arrow-clockwise" animation="spin" class="text-purple"></b-icon>
+            <i class="bi bi-arrow-clockwise text-purple"></i>
             <span class="ml-2 text-gray-600">Deploying new proxies...</span>
           </div>
           <b-progress
             :max="item.scaling.min_scaling"
             height="8px"
             class="custom-progress"
+            v-b-tooltip.hover :title="'Deploying ' + (item.scaling.min_scaling - item.ips.length) + ' new proxies'"
           >
             <b-progress-bar :value="item.ips.length"></b-progress-bar>
           </b-progress>
@@ -119,12 +158,12 @@ export default {
     },
     getProviderIcon(provider) {
       const icons = {
-        digitalocean: 'droplet',
-        aws: 'cloud',
-        gcp: 'cloud-fill',
-        hetzner: 'server'
+        digitalocean: 'water',
+        aws: 'cloud-fill',
+        gcp: 'google',
+        hetzner: 'hdd-rack'
       };
-      return icons[provider] || 'cloud';
+      return icons[provider] || 'cloud-fill';
     },
     async getName() {
       const res = await fetch("/providers");
@@ -166,6 +205,17 @@ export default {
         solid: true,
         autoHideDelay: 5000,
         appendToast: append,
+      });
+    },
+    copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        this.$bvToast.toast('Proxy address copied to clipboard', {
+          title: 'Copied!',
+          variant: 'success',
+          toaster: 'b-toaster-bottom-right',
+          solid: true,
+          autoHideDelay: 2000,
+        });
       });
     },
   },
@@ -279,7 +329,7 @@ export default {
 }
 
 .status-icon {
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   color: #48bb78;
 }
 
@@ -289,6 +339,30 @@ export default {
   color: var(--text-dark);
   font-weight: 500;
   letter-spacing: -0.3px;
+}
+
+.copy-btn {
+  color: var(--text-gray);
+  padding: 0.25rem;
+  transition: color 0.2s ease;
+}
+
+.copy-btn:hover {
+  color: var(--primary-purple);
+}
+
+.region-indicator {
+  font-size: 0.75rem;
+  color: var(--text-gray);
+  display: inline-flex;
+  align-items: center;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--border-color);
+}
+
+.empty-state {
+  color: var(--text-gray);
+  background-color: #f7fafc;
 }
 
 .remove-btn {
@@ -321,5 +395,16 @@ export default {
 .custom-progress .progress-bar {
   background-color: var(--primary-purple);
   border-radius: 9999px;
+}
+
+.provider-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(107, 70, 193, 0.1);
+  border-radius: 8px;
+  color: var(--primary-purple);
 }
 </style>

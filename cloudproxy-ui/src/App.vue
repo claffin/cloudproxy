@@ -51,6 +51,7 @@ export default {
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css');
 
 :root {
   --primary-purple: #6b46c1;

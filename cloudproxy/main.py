@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-from pydantic import BaseModel, IPvAnyAddress, Field, validator
+from pydantic import BaseModel, IPvAnyAddress, Field, field_validator
 
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue
@@ -129,8 +129,10 @@ class ProxyAddress(BaseModel):
     auth_enabled: bool = True
     url: Optional[str] = None
 
-    @validator('url', always=True)
-    def set_url(cls, v, values):
+    @field_validator('url', mode='before')
+    @classmethod
+    def set_url(cls, v, info):
+        values = info.data
         ip = str(values.get('ip'))
         port = values.get('port', 8899)
         if values.get('auth_enabled'):
@@ -368,8 +370,10 @@ class ProviderUpdateRequest(BaseModel):
     min_scaling: int = Field(ge=0, description="Minimum number of proxy instances")
     max_scaling: int = Field(ge=0, description="Maximum number of proxy instances")
 
-    @validator('max_scaling')
-    def max_scaling_must_be_greater_than_min(cls, v, values):
+    @field_validator('max_scaling')
+    @classmethod
+    def max_scaling_must_be_greater_than_min(cls, v, info):
+        values = info.data
         if 'min_scaling' in values and v < values['min_scaling']:
             raise ValueError('max_scaling must be greater than or equal to min_scaling')
         return v

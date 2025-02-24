@@ -6,6 +6,9 @@ from cloudproxy.providers.settings import delete_queue, config
 
 # Configure test environment
 os.environ["DIGITALOCEAN_ENABLED"] = "false"
+os.environ["PROXY_USERNAME"] = "test_user"
+os.environ["PROXY_PASSWORD"] = "test_pass"
+os.environ["ONLY_HOST_IP"] = "False"
 
 # Create test client
 # Note: The HTTPX deprecation warning is internal to the library and doesn't affect functionality
@@ -18,6 +21,11 @@ config["providers"]["digitalocean"]["scaling"]["min_scaling"] = 2
 config["providers"]["digitalocean"]["scaling"]["max_scaling"] = 2
 config["providers"]["digitalocean"]["size"] = "s-1vcpu-1gb"
 config["providers"]["digitalocean"]["region"] = "lon1"
+
+# Update auth config with test values
+config["auth"]["username"] = os.environ["PROXY_USERNAME"]
+config["auth"]["password"] = os.environ["PROXY_PASSWORD"]
+config["no_auth"] = False
 
 
 def test_read_root():

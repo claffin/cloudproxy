@@ -11,7 +11,10 @@ __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file
 
 ec2 = boto3.resource("ec2", region_name=config["providers"]["aws"]["region"])
 ec2_client = boto3.client("ec2", region_name=config["providers"]["aws"]["region"])
-tags = [{"Key": "cloudproxy", "Value": "cloudproxy"}]
+tags = [
+    {"Key": "cloudproxy", "Value": "cloudproxy"},
+    {"Key": "Name", "Value": "CloudProxy-Instance"}
+]
 tag_specification = [
     {"ResourceType": "instance", "Tags": tags},
 ]

@@ -54,8 +54,8 @@ restart_queue = set()
 load_dotenv()
 
 # Set proxy authentication
-config["auth"]["username"] = os.environ.get("USERNAME", "changeme")
-config["auth"]["password"] = os.environ.get("PASSWORD", "changeme")
+config["auth"]["username"] = os.environ.get("PROXY_USERNAME", "changeme")
+config["auth"]["password"] = os.environ.get("PROXY_PASSWORD", "changeme")
 config["age_limit"] = int(os.environ.get('AGE_LIMIT', 0))
 config["no_auth"] = config["auth"]["username"] == "changeme" and config["auth"]["password"] == "changeme"
 config["only_host_ip"] = os.environ.get("ONLY_HOST_IP", False)

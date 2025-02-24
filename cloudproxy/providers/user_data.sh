@@ -24,7 +24,7 @@ Allow 127.0.0.1
 ViaProxyName "tinyproxy"
 ConnectPort 443
 ConnectPort 563
-BasicAuth username password
+BasicAuth PROXY_USERNAME PROXY_PASSWORD
 EOF
 
 # Setup firewall

@@ -86,10 +86,14 @@ All you need is:
 
 #### Environment variables:
 
+Basic authentication is used for proxy access. Configure via environment variables:
+* PROXY_USERNAME
+* PROXY_PASSWORD
+
 ##### Required
 You have two available methods of proxy authentication: username and password or IP restriction. You can use either one or both simultaneously.
 
-- `USERNAME`, `PASSWORD` - set the username and password for the forward proxy. The username and password should consist of alphanumeric characters. Using special characters may cause issues due to how URL encoding works.
+- `PROXY_USERNAME`, `PROXY_PASSWORD` - set the username and password for the forward proxy. The username and password should consist of alphanumeric characters. Using special characters may cause issues due to how URL encoding works.
 - `ONLY_HOST_IP` - set this variable to true if you want to restrict access to the proxy only to the host server (i.e., the IP address of the server running the CloudProxy Docker container).
 
 ##### Optional
@@ -102,8 +106,8 @@ See individual provider pages for environment variables required in above provid
 For example:
 
    ```shell
-   docker run -e USERNAME='CHANGE_THIS_USERNAME' \
-       -e PASSWORD='CHANGE_THIS_PASSWORD' \
+   docker run -e PROXY_USERNAME='CHANGE_THIS_USERNAME' \
+       -e PROXY_PASSWORD='CHANGE_THIS_PASSWORD' \
        -e ONLY_HOST_IP=True \
        -e DIGITALOCEAN_ENABLED=True \
        -e DIGITALOCEAN_ACCESS_TOKEN='YOUR SECRET ACCESS KEY' \

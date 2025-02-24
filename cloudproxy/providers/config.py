@@ -13,11 +13,11 @@ def set_auth(username, password):
 
     if settings.config["no_auth"]:
         # Remove auth configuration for tinyproxy
-        filedata = filedata.replace('\nBasicAuth username password\n', '\n')
+        filedata = filedata.replace('\nBasicAuth PROXY_USERNAME PROXY_PASSWORD\n', '\n')
     else:
         # Replace username and password in tinyproxy config
-        filedata = filedata.replace("username", username)
-        filedata = filedata.replace("password", password)
+        filedata = filedata.replace("PROXY_USERNAME", username)
+        filedata = filedata.replace("PROXY_PASSWORD", password)
 
     if settings.config["only_host_ip"]:
         ip_address = requests.get('https://ipecho.net/plain').text.strip()

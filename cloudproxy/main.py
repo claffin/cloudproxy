@@ -324,6 +324,25 @@ class ProviderResponse(BaseModel):
     message: str
     provider: Provider
 
+class AuthSettings(BaseModel):
+    username: str
+    password: str
+    auth_enabled: bool = True
+
+@app.get("/auth", tags=["Authentication"], response_model=AuthSettings)
+def get_auth_settings():
+    """
+    Get the current authentication settings.
+    
+    Returns:
+        AuthSettings: The current username and password configuration
+    """
+    return AuthSettings(
+        username=settings.config["auth"]["username"],
+        password=settings.config["auth"]["password"],
+        auth_enabled=not settings.config["no_auth"]
+    )
+
 class ProviderUpdateRequest(BaseModel):
     min_scaling: int = Field(ge=0, description="Minimum number of proxy instances")
     max_scaling: int = Field(ge=0, description="Maximum number of proxy instances")

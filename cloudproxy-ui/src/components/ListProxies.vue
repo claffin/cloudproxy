@@ -138,7 +138,7 @@ export default {
   data() {
     return {
       data: {},
-      listremove_data: {},
+      listremove_data: [],
       toastCount: 0,
     };
   },
@@ -166,49 +166,107 @@ export default {
       return icons[provider] || 'cloud-fill';
     },
     async getName() {
-      const res = await fetch("/providers");
-      const data = await res.json();
-      this.data = data;
+      try {
+        const res = await fetch("/providers");
+        const data = await res.json();
+        this.data = data.providers;
+      } catch (error) {
+        this.$bvToast.toast('Failed to fetch providers', {
+          title: 'Error',
+          variant: 'danger',
+          toaster: 'b-toaster-bottom-right',
+          solid: true,
+        });
+      }
     },
     async removeProxy(proxy) {
-      const remove_res = await fetch(
-        "/destroy?ip_address=" + proxy,
-        { method: "DELETE", body: JSON.stringify(proxy) }
-      );
-      const remove_data = await remove_res.json();
-      this.remove_data = remove_data;
+      try {
+        const remove_res = await fetch(
+          "/destroy?ip_address=" + proxy,
+          { 
+            method: "DELETE",
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }
+        );
+        const data = await remove_res.json();
+        if (data.message) {
+          this.$bvToast.toast(data.message, {
+            title: "Success",
+            variant: 'success',
+            toaster: 'b-toaster-bottom-right',
+            solid: true,
+            autoHideDelay: 5000,
+          });
+        }
+      } catch (error) {
+        this.$bvToast.toast('Failed to remove proxy', {
+          title: 'Error',
+          variant: 'danger',
+          toaster: 'b-toaster-bottom-right',
+          solid: true,
+        });
+      }
     },
     async listremoveProxy() {
-      const listremove_res = await fetch("/destroy");
-      const listremove_data = await listremove_res.json();
-      this.listremove_data = listremove_data;
+      try {
+        const listremove_res = await fetch("/destroy");
+        const data = await listremove_res.json();
+        this.listremove_data = data.proxies.map(proxy => proxy.ip);
+      } catch (error) {
+        console.error('Failed to fetch removal list:', error);
+      }
     },
     async updateProvider(provider, min_scaling) {
-      const updateProvider_res = await fetch(
-        "/providers/" +
-          provider +
-          "?min_scaling=" +
-          min_scaling +
-          "&max_scaling=" +
-          min_scaling,
-        { method: "PATCH" }
-      );
-      const updateProvider_data = await updateProvider_res.json();
-      this.updateProvider_data = updateProvider_data;
+      try {
+        const updateProvider_res = await fetch(
+          "/providers/" + provider,
+          { 
+            method: "PATCH",
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              min_scaling: min_scaling,
+              max_scaling: min_scaling
+            })
+          }
+        );
+        const data = await updateProvider_res.json();
+        if (data.message) {
+          this.$bvToast.toast(data.message, {
+            title: "Success",
+            variant: 'success',
+            toaster: 'b-toaster-bottom-right',
+            solid: true,
+            autoHideDelay: 2000,
+          });
+        }
+      } catch (error) {
+        this.$bvToast.toast('Failed to update provider', {
+          title: 'Error',
+          variant: 'danger',
+          toaster: 'b-toaster-bottom-right',
+          solid: true,
+        });
+      }
     },
     makeToast(ips, append = false) {
       this.toastCount++;
-      this.$bvToast.toast(`${ips}`, {
+      this.$bvToast.toast(`Removing ${ips}`, {
         title: "Removing proxy from pool",
-        variant: 'danger',
+        variant: 'info',
         toaster: 'b-toaster-bottom-right',
         solid: true,
         autoHideDelay: 5000,
         appendToast: append,
       });
     },
-    copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
+    copyToClipboard(ip) {
+      // Create proxy URL with authentication
+      const url = `http://${process.env.VUE_APP_USERNAME || 'username'}:${process.env.VUE_APP_PASSWORD || 'password'}@${ip}:8899`;
+      navigator.clipboard.writeText(url).then(() => {
         this.$bvToast.toast('Proxy address copied to clipboard', {
           title: 'Copied!',
           variant: 'success',

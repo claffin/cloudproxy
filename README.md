@@ -15,7 +15,12 @@
 
 The purpose of CloudProxy is to hide your scrapers IP behind the cloud. It allows you to spin up a pool of proxies using popular cloud providers with just an API token. No configuration needed. 
 
-CloudProxy exposes an API with the IPs and credentials of the provisioned proxies. 
+CloudProxy exposes an API and modern UI for managing your proxy infrastructure. It includes:
+- Interactive API documentation with Swagger UI
+- Modern web interface for proxy management
+- Real-time proxy status monitoring
+- Easy scaling controls
+- Multi-provider support
 
 ### Providers supported:
 * [DigitalOcean](docs/digitalocean.md)
@@ -28,7 +33,14 @@ CloudProxy exposes an API with the IPs and credentials of the provisioned proxie
 * Scaleway
 * Vultr
 
-
+### Features:
+* Modern UI with real-time updates
+* Interactive API documentation
+* Multi-provider support
+* Automatic proxy rotation
+* Health monitoring
+* Easy scaling controls
+* Docker-based deployment
 
 ### Inspired by
 This project was inspired by [Scrapoxy](https://github.com/fabienvauchelles/scrapoxy), though that project no longer seems actively maintained. 
@@ -79,7 +91,26 @@ It is recommended to use a Docker image tagged to a version e.g. `laffin/cloudpr
 
 <!-- USAGE EXAMPLES -->
 ## Usage
-CloudProxy exposes an API on localhost:8000. Your application can use the below API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy. 
+
+CloudProxy provides multiple interfaces for managing your proxy infrastructure:
+
+### Web Interface
+Access the UI at `http://localhost:8000/ui` to:
+- View proxy status across all providers
+- Scale proxy instances up/down
+- Monitor health status
+- Remove individual proxies
+- View active proxy count
+
+### API Documentation
+Access the interactive API documentation at `http://localhost:8000/docs` to:
+- Explore available endpoints
+- Test API calls directly
+- View request/response schemas
+- Understand authentication requirements
+
+### Programmatic Usage
+CloudProxy exposes an API on localhost:8000. Your application can use the API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy. 
 
 The logic to cycle through IPs for proxying will need to be in your application, for example:
 
@@ -97,13 +128,8 @@ def random_proxy():
 proxies = {"http": random_proxy(), "https": random_proxy()}
 my_request = requests.get("https://api.ipify.org", proxies=proxies)
 ```
-### CloudProxy UI
 
-![cloudproxy-ui](docs/images/cloudproxy-ui.png)
-
-You can manage CloudProxy via an API and UI. You can access the UI at `http://localhost:8000/ui`.
-
-You can scale up and down your proxies and remove them for each provider via the UI. 
+For detailed API documentation, see [API Documentation](docs/api.md).
 
 ## CloudProxy API
 ### List available proxy servers

@@ -8,7 +8,6 @@
 [![Open Issues][issues-shield]][issues-url]
 [![Stars][stars-shield]][stars-url]
 [![Contributors][contributors-shield]][contributors-url]
-[![Discord][discord-shield]][discord-url]
 
 [coverage-shield]: https://img.shields.io/codecov/c/github/claffin/cloudproxy?style=for-the-badge&logo=codecov&logoColor=white
 [quality-shield]: https://img.shields.io/codacy/grade/39a9788caa854baebe01beb720e9c5a8?style=for-the-badge&logo=codacy&logoColor=white

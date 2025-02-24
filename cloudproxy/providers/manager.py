@@ -31,19 +31,19 @@ def hetzner_manager():
 def init_schedule():
     sched = BackgroundScheduler()
     sched.start()
-    if settings.config["providers"]["digitalocean"]["enabled"] == 'True':
+    if settings.config["providers"]["digitalocean"]["enabled"]:
         sched.add_job(do_manager, "interval", seconds=20)
     else:
         logger.info("DigitalOcean not enabled")
-    if settings.config["providers"]["aws"]["enabled"] == 'True':
+    if settings.config["providers"]["aws"]["enabled"]:
         sched.add_job(aws_manager, "interval", seconds=20)
     else:
         logger.info("AWS not enabled")
-    if settings.config["providers"]["gcp"]["enabled"] == 'True':
+    if settings.config["providers"]["gcp"]["enabled"]:
         sched.add_job(gcp_manager, "interval", seconds=20)
     else:
         logger.info("GCP not enabled")
-    if settings.config["providers"]["hetzner"]["enabled"] == 'True':
+    if settings.config["providers"]["hetzner"]["enabled"]:
         sched.add_job(hetzner_manager, "interval", seconds=20)
     else:
         logger.info("Hetzner not enabled")

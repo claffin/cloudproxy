@@ -1,30 +1,30 @@
 <template>
   <div>
-    <div class="provider-section" v-for="(item, key, index) in data" :key="index">
+    <div class="provider-section" v-for="provider in sortedProviders" :key="provider.key">
       <div class="provider-header">
         <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
             <div class="provider-icon-wrapper mr-2">
-              <i :class="'bi bi-' + getProviderIcon(key)" style="font-size: 1.5rem;"></i>
+              <i :class="'bi bi-' + getProviderIcon(provider.key)" style="font-size: 1.5rem;"></i>
             </div>
-            <h2 class="mb-0">{{ formatProviderName(key) }}</h2>
+            <h2 class="mb-0">{{ formatProviderName(provider.key) }}</h2>
           </div>
-          <b-form class="scaling-control" @submit.prevent="updateProvider(key, item.scaling.min_scaling)">
+          <b-form class="scaling-control" @submit.prevent="updateProvider(provider.key, provider.data.scaling.min_scaling)">
             <div class="d-flex align-items-center">
-              <span class="status-badge" :class="{'status-active': item.ips.length > 0}" v-b-tooltip.hover title="Number of active proxy instances">
+              <span class="status-badge" :class="{'status-active': provider.data.ips.length > 0}" v-b-tooltip.hover title="Number of active proxy instances">
                 <i class="bi bi-hdd-stack mr-1"></i>
-                {{ item.ips.length }} Active
+                {{ provider.data.ips.length }} Active
               </span>
               <label for="sb-inline" class="mx-3">
                 <i class="bi bi-sliders mr-1"></i>
                 Scale to
               </label>
               <b-form-spinbutton
-                v-model="item.scaling.min_scaling"
+                v-model="provider.data.scaling.min_scaling"
                 min="0"
                 max="100"
                 inline
-                @change="updateProvider(key, $event)"
+                @change="updateProvider(provider.key, $event)"
                 class="custom-spinbutton"
                 v-b-tooltip.hover title="Set the number of proxy instances"
               ></b-form-spinbutton>
@@ -35,7 +35,18 @@
 
       <div class="proxy-list">
         <div
-          v-if="item.enabled && item.ips.length === 0 && item.scaling.min_scaling === 0"
+          v-if="!provider.data.enabled"
+          class="empty-state"
+        >
+          <div class="text-center py-4">
+            <i class="bi bi-power text-muted mb-2" style="font-size: 2rem;"></i>
+            <p class="mb-0">Provider not enabled</p>
+            <small class="text-muted">Enable this provider in your environment configuration</small>
+          </div>
+        </div>
+
+        <div
+          v-else-if="provider.data.enabled && provider.data.ips.length === 0 && provider.data.scaling.min_scaling === 0"
           class="empty-state"
         >
           <div class="text-center py-4">
@@ -47,7 +58,7 @@
 
         <div
           class="proxy-item"
-          v-for="ips in item.ips"
+          v-for="ips in provider.data.ips"
           :key="ips"
         >
           <div class="d-flex justify-content-between align-items-center">
@@ -74,7 +85,7 @@
                   <span class="mr-2">HTTP/HTTPS Proxy</span>
                   <span class="region-indicator">
                     <i class="bi bi-geo-alt-fill mr-1"></i>
-                    {{ item.region || item.zone || item.location }}
+                    {{ provider.data.region || provider.data.zone || provider.data.location }}
                   </span>
                 </small>
               </div>
@@ -102,7 +113,7 @@
         </div>
 
         <div
-          v-if="item.enabled && item.scaling.min_scaling > item.ips.length"
+          v-if="provider.data.enabled && provider.data.scaling.min_scaling > provider.data.ips.length"
           class="progress-item"
         >
           <div class="text-center mb-3">
@@ -110,15 +121,15 @@
             <span class="ml-2 text-gray-600">Deploying new proxies...</span>
           </div>
           <b-progress
-            :max="item.scaling.min_scaling"
+            :max="provider.data.scaling.min_scaling"
             height="8px"
             class="custom-progress"
-            v-b-tooltip.hover :title="'Deploying ' + (item.scaling.min_scaling - item.ips.length) + ' new proxies'"
+            v-b-tooltip.hover :title="'Deploying ' + (provider.data.scaling.min_scaling - provider.data.ips.length) + ' new proxies'"
           >
-            <b-progress-bar :value="item.ips.length"></b-progress-bar>
+            <b-progress-bar :value="provider.data.ips.length"></b-progress-bar>
           </b-progress>
           <div class="text-center mt-2">
-            <small class="text-muted">{{ item.ips.length }} of {{ item.scaling.min_scaling }} proxies ready</small>
+            <small class="text-muted">{{ provider.data.ips.length }} of {{ provider.data.scaling.min_scaling }} proxies ready</small>
           </div>
         </div>
       </div>
@@ -146,6 +157,22 @@ export default {
         auth_enabled: true
       }
     };
+  },
+  computed: {
+    sortedProviders() {
+      // Convert data object to array of {key, data} pairs
+      const providers = Object.entries(this.data).map(([key, data]) => ({
+        key,
+        data
+      }));
+      
+      // Sort enabled providers first, then by name
+      return providers.sort((a, b) => {
+        if (a.data.enabled && !b.data.enabled) return -1;
+        if (!a.data.enabled && b.data.enabled) return 1;
+        return a.key.localeCompare(b.key);
+      });
+    }
   },
   beforeMount() {
     this.getName();

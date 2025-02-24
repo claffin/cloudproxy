@@ -3,15 +3,19 @@ import random
 import sys
 import re
 import logging
+import uuid
+from datetime import datetime
+from typing import List, Optional, Set, Dict
 
 import uvicorn
 from loguru import logger
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
+from pydantic import BaseModel, IPvAnyAddress, Field, validator
 
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue
@@ -114,192 +118,302 @@ def main():
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 
 
-def get_ip_list():
+# Pydantic Models for Request/Response
+class Metadata(BaseModel):
+    request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class ProxyAddress(BaseModel):
+    ip: IPvAnyAddress
+    port: int = 8899
+    auth_enabled: bool = True
+    url: Optional[str] = None
+
+    @validator('url', always=True)
+    def set_url(cls, v, values):
+        ip = str(values.get('ip'))
+        port = values.get('port', 8899)
+        if values.get('auth_enabled'):
+            return f"http://{settings.config['auth']['username']}:{settings.config['auth']['password']}@{ip}:{port}"
+        return f"http://{ip}:{port}"
+
+class ProxyList(BaseModel):
+    metadata: Metadata = Field(default_factory=Metadata)
+    total: int
+    proxies: List[ProxyAddress]
+
+class ProxyResponse(BaseModel):
+    metadata: Metadata = Field(default_factory=Metadata)
+    message: str
+    proxy: ProxyAddress
+
+class ErrorResponse(BaseModel):
+    metadata: Metadata = Field(default_factory=Metadata)
+    error: str
+    detail: str
+
+# Helper function to convert IP string to ProxyAddress
+def create_proxy_address(ip: str) -> ProxyAddress:
+    return ProxyAddress(
+        ip=ip,
+        auth_enabled=not settings.config["no_auth"]
+    )
+
+# Updated get_ip_list function
+def get_ip_list() -> List[ProxyAddress]:
     ip_list = []
     for provider in ['digitalocean', 'aws', 'gcp', 'hetzner']:
         if settings.config["providers"][provider]["ips"]:
             for ip in settings.config["providers"][provider]["ips"]:
                 if ip not in delete_queue and ip not in restart_queue:
-                    if settings.config["no_auth"]:
-                        ip_list.append("http://" + ip + ":8899")
-                    else:
-                        ip_list.append(
-                            "http://"
-                            + settings.config["auth"]["username"]
-                            + ":"
-                            + settings.config["auth"]["password"]
-                            + "@"
-                            + ip
-                            + ":8899"
-                        )
+                    ip_list.append(create_proxy_address(ip))
     return ip_list
 
-
-@app.get("/", tags=["Proxies"])
-def read_root():
+# Updated API endpoints
+@app.get("/", tags=["Proxies"], response_model=ProxyList)
+def read_root(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100)
+):
     """
     Get a list of all available proxy servers.
     
+    Args:
+        offset: Number of items to skip (pagination)
+        limit: Maximum number of items to return
+        
     Returns:
-        dict: A dictionary containing a list of proxy URLs with authentication credentials.
+        ProxyList: A paginated list of proxy servers with metadata
     """
-    return {"ips": get_ip_list()}
+    all_proxies = get_ip_list()
+    return ProxyList(
+        total=len(all_proxies),
+        proxies=all_proxies[offset:offset + limit]
+    )
 
-
-@app.get("/random", tags=["Proxies"])
+@app.get("/random", tags=["Proxies"], response_model=ProxyResponse)
 def read_random():
     """
     Get a random proxy server from the available pool.
     
     Returns:
-        dict: A dictionary containing a single random proxy URL with authentication credentials.
+        ProxyResponse: A single random proxy with metadata
+        
+    Raises:
+        HTTPException: If no proxies are available
     """
-    if not get_ip_list():
-        return {}
-    else:
-        return {random.choice(get_ip_list())}
+    proxies = get_ip_list()
+    if not proxies:
+        raise HTTPException(
+            status_code=404,
+            detail="No proxies available"
+        )
+    proxy = random.choice(proxies)
+    return ProxyResponse(
+        message="Random proxy retrieved successfully",
+        proxy=proxy
+    )
 
-
-def set_default(obj):
-    if isinstance(obj, set):
-        return list(obj)
-    raise TypeError
-
-
-@app.get("/destroy", tags=["Proxy Management"])
+@app.get("/destroy", tags=["Proxy Management"], response_model=ProxyList)
 def remove_proxy_list():
     """
     Get a list of proxies scheduled for deletion.
     
     Returns:
-        list: A list of IP addresses that are queued for deletion.
+        ProxyList: A list of proxies queued for deletion with metadata
     """
-    response = set_default(delete_queue)
-    return JSONResponse(response)
+    proxies = [create_proxy_address(ip) for ip in delete_queue]
+    return ProxyList(
+        total=len(proxies),
+        proxies=proxies
+    )
 
-
-@app.delete("/destroy", tags=["Proxy Management"])
-def remove_proxy(ip_address: str):
+@app.delete("/destroy", tags=["Proxy Management"], response_model=ProxyResponse)
+async def remove_proxy(ip_address: str):
     """
     Schedule a proxy for deletion.
     
     Args:
-        ip_address (str): The IP address of the proxy to be deleted.
+        ip_address: The IP address of the proxy to be deleted
         
     Returns:
-        dict: A confirmation message that the proxy will be destroyed.
+        ProxyResponse: Confirmation message with proxy details
         
     Raises:
-        HTTPException: If the IP address is invalid or not found.
+        HTTPException: If the IP address is invalid or not found
     """
-    if re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address):
-        ip = re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address)
-        delete_queue.add(ip[0])
-        return {"Proxy <{}> to be destroyed".format(ip[0])}
-    else:
-        raise HTTPException(status_code=422, detail="IP not found")
+    try:
+        proxy = create_proxy_address(ip_address)
+        delete_queue.add(str(proxy.ip))
+        return ProxyResponse(
+            message=f"Proxy scheduled for deletion",
+            proxy=proxy
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid IP address format"
+        )
 
-
-@app.get("/restart", tags=["Proxy Management"])
+@app.get("/restart", tags=["Proxy Management"], response_model=ProxyList)
 def restart_proxy_list():
     """
     Get a list of proxies scheduled for restart.
     
     Returns:
-        list: A list of IP addresses that are queued for restart.
+        ProxyList: A list of proxies queued for restart with metadata
     """
-    response = set_default(restart_queue)
-    return JSONResponse(response)
+    proxies = [create_proxy_address(ip) for ip in restart_queue]
+    return ProxyList(
+        total=len(proxies),
+        proxies=proxies
+    )
 
-
-@app.delete("/restart", tags=["Proxy Management"])
-def restart_proxy(ip_address: str):
+@app.delete("/restart", tags=["Proxy Management"], response_model=ProxyResponse)
+async def restart_proxy(ip_address: str):
     """
     Schedule a proxy for restart.
     
     Args:
-        ip_address (str): The IP address of the proxy to be restarted.
+        ip_address: The IP address of the proxy to be restarted
         
     Returns:
-        dict: A confirmation message that the proxy will be restarted.
+        ProxyResponse: Confirmation message with proxy details
         
     Raises:
-        HTTPException: If the IP address is invalid or not found.
+        HTTPException: If the IP address is invalid or not found
     """
-    if re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address):
-        ip = re.findall(r"[0-9]+(?:\.[0-9]+){3}", ip_address)
-        restart_queue.add(ip[0])
-        return {"Proxy <{}> to be restarted".format(ip[0])}
-    else:
-        raise HTTPException(status_code=422, detail="IP not found")
+    try:
+        proxy = create_proxy_address(ip_address)
+        restart_queue.add(str(proxy.ip))
+        return ProxyResponse(
+            message=f"Proxy scheduled for restart",
+            proxy=proxy
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid IP address format"
+        )
 
+# Add new Pydantic models for providers
+class ProviderScaling(BaseModel):
+    min_scaling: int = Field(ge=0)
+    max_scaling: int = Field(ge=0)
 
-@app.get("/providers", tags=["Provider Management"])
+class Provider(BaseModel):
+    enabled: bool
+    ips: List[str] = []
+    scaling: ProviderScaling
+    size: str
+    region: Optional[str] = None
+    location: Optional[str] = None
+    zone: Optional[str] = None
+    datacenter: Optional[str] = None
+    ami: Optional[str] = None
+    spot: Optional[bool] = None
+    image_project: Optional[str] = None
+    image_family: Optional[str] = None
+
+class ProviderList(BaseModel):
+    metadata: Metadata = Field(default_factory=Metadata)
+    providers: Dict[str, Provider]
+
+class ProviderResponse(BaseModel):
+    metadata: Metadata = Field(default_factory=Metadata)
+    message: str
+    provider: Provider
+
+class ProviderUpdateRequest(BaseModel):
+    min_scaling: int = Field(ge=0, description="Minimum number of proxy instances")
+    max_scaling: int = Field(ge=0, description="Maximum number of proxy instances")
+
+    @validator('max_scaling')
+    def max_scaling_must_be_greater_than_min(cls, v, values):
+        if 'min_scaling' in values and v < values['min_scaling']:
+            raise ValueError('max_scaling must be greater than or equal to min_scaling')
+        return v
+
+@app.get("/providers", tags=["Provider Management"], response_model=ProviderList)
 def providers():
     """
     Get configuration and status for all providers.
     
     Returns:
-        dict: Provider configurations and current status, excluding sensitive information.
+        ProviderList: Configuration and status for all providers, excluding sensitive information.
     """
-    settings_response = settings.config["providers"]
-    for provider in settings_response:
-        try:
-            settings_response[provider].pop("secrets")
-        except KeyError:
-            pass
-    return JSONResponse(settings_response)
+    providers_data = {}
+    for name, config in settings.config["providers"].items():
+        provider_config = config.copy()
+        provider_config.pop("secrets", None)
+        providers_data[name] = provider_config
+    
+    return ProviderList(
+        providers=providers_data
+    )
 
-
-@app.get("/providers/{provider}", tags=["Provider Management"])
-def providers(provider: str):
+@app.get("/providers/{provider}", tags=["Provider Management"], response_model=ProviderResponse)
+def get_provider(provider: str):
     """
     Get configuration and status for a specific provider.
     
     Args:
-        provider (str): The name of the provider (digitalocean, aws, gcp, hetzner)
+        provider: The name of the provider (digitalocean, aws, gcp, hetzner)
         
     Returns:
-        dict: Provider configuration and current status, excluding sensitive information.
+        ProviderResponse: Provider configuration and status with metadata
         
     Raises:
-        HTTPException: If the provider is not found.
+        HTTPException: If the provider is not found
     """
-    if provider in settings.config["providers"]:
-        response = settings.config["providers"][provider]
-        if "secrets" in response:
-            response.pop("secrets")
-        return JSONResponse(response)
-    else:
-        raise HTTPException(status_code=404, detail="Provider not found")
+    if provider not in settings.config["providers"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' not found"
+        )
 
+    provider_config = settings.config["providers"][provider].copy()
+    provider_config.pop("secrets", None)
+    
+    return ProviderResponse(
+        message=f"Provider '{provider}' configuration retrieved successfully",
+        provider=provider_config
+    )
 
-@app.patch("/providers/{provider}", tags=["Provider Management"])
-def configure(provider: str, min_scaling: int, max_scaling: int):
+@app.patch("/providers/{provider}", tags=["Provider Management"], response_model=ProviderResponse)
+def configure(
+    provider: str,
+    update: ProviderUpdateRequest
+):
     """
     Update scaling configuration for a specific provider.
     
     Args:
-        provider (str): The name of the provider (digitalocean, aws, gcp, hetzner)
-        min_scaling (int): Minimum number of proxy instances
-        max_scaling (int): Maximum number of proxy instances
+        provider: The name of the provider (digitalocean, aws, gcp, hetzner)
+        update: The scaling configuration to update
         
     Returns:
-        dict: Updated provider configuration, excluding sensitive information.
+        ProviderResponse: Updated provider configuration with metadata
         
     Raises:
-        HTTPException: If the provider is not found.
+        HTTPException: If the provider is not found
     """
-    if provider in settings.config["providers"]:
-        settings.config["providers"][provider]["scaling"]["min_scaling"] = min_scaling
-        settings.config["providers"][provider]["scaling"]["max_scaling"] = max_scaling
-        response = settings.config["providers"][provider]
-        if "secrets" in response:
-            response.pop("secrets")
-        return JSONResponse(response)
-    else:
-        raise HTTPException(status_code=404, detail="Provider not found")
+    if provider not in settings.config["providers"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' not found"
+        )
 
+    settings.config["providers"][provider]["scaling"]["min_scaling"] = update.min_scaling
+    settings.config["providers"][provider]["scaling"]["max_scaling"] = update.max_scaling
+    
+    provider_config = settings.config["providers"][provider].copy()
+    provider_config.pop("secrets", None)
+    
+    return ProviderResponse(
+        message=f"Provider '{provider}' scaling configuration updated successfully",
+        provider=provider_config
+    )
 
 if __name__ == "__main__":
     main()

@@ -110,40 +110,62 @@ Access the interactive API documentation at `http://localhost:8000/docs` to:
 - Understand authentication requirements
 
 ### Programmatic Usage
-CloudProxy exposes an API on localhost:8000. Your application can use the API to retrieve the IPs with auth for the proxy servers deployed. Then your application can use those IPs to proxy. 
+CloudProxy exposes a RESTful API on localhost:8000. Your application can use the API to retrieve and manage proxy servers. All responses include metadata with request ID and timestamp for tracking.
 
-The logic to cycle through IPs for proxying will need to be in your application, for example:
+Example of retrieving and using a random proxy:
 
 ```python
 import random
-import requests as requests
+import requests
 
+def get_random_proxy():
+    response = requests.get("http://localhost:8000/random").json()
+    return response["proxy"]["url"]
 
-# Returns a random proxy from CloudProxy
-def random_proxy():
-    ips = requests.get("http://localhost:8000").json()
-    return random.choice(ips['ips'])
-
-
-proxies = {"http": random_proxy(), "https": random_proxy()}
+proxies = {
+    "http": get_random_proxy(),
+    "https": get_random_proxy()
+}
 my_request = requests.get("https://api.ipify.org", proxies=proxies)
 ```
 
 For detailed API documentation, see [API Documentation](docs/api.md).
 
-## CloudProxy API
+## CloudProxy API Examples
+
 ### List available proxy servers
 #### Request
 
-`GET /`
+`GET /?offset=0&limit=10`
 
-    curl -X 'GET' 'http://localhost:8000/' -H 'accept: application/json'
+    curl -X 'GET' 'http://localhost:8000/?offset=0&limit=10' -H 'accept: application/json'
 
 #### Response
 ```json
-{"ips":["http://username:password:192.168.0.1:8899", "http://username:password:192.168.0.2:8899"]}
+{
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
+  },
+  "total": 2,
+  "proxies": [
+    {
+      "ip": "192.168.1.1",
+      "port": 8899,
+      "auth_enabled": true,
+      "url": "http://username:password@192.168.1.1:8899"
+    },
+    {
+      "ip": "192.168.1.2",
+      "port": 8899,
+      "auth_enabled": true,
+      "url": "http://username:password@192.168.1.2:8899"
+    }
+  ]
+}
 ```
-### List random proxy server
+
+### Get random proxy server
 #### Request
 
 `GET /random`
@@ -152,8 +174,21 @@ For detailed API documentation, see [API Documentation](docs/api.md).
 
 #### Response
 ```json
-["http://username:password:192.168.0.1:8899"]
+{
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
+  },
+  "message": "Random proxy retrieved successfully",
+  "proxy": {
+    "ip": "192.168.1.1",
+    "port": 8899,
+    "auth_enabled": true,
+    "url": "http://username:password@192.168.1.1:8899"
+  }
+}
 ```
+
 ### Remove proxy server
 #### Request
 
@@ -163,19 +198,45 @@ For detailed API documentation, see [API Documentation](docs/api.md).
 
 #### Response
 ```json
-["Proxy <{IP}> to be destroyed"]
+{
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
+  },
+  "message": "Proxy scheduled for deletion",
+  "proxy": {
+    "ip": "192.1.1.1",
+    "port": 8899,
+    "auth_enabled": true,
+    "url": "http://username:password@192.1.1.1:8899"
+  }
+}
 ```
-### Restart proxy server (AWS & GCP only)
+
+### Restart proxy server
 #### Request
 
 `DELETE /restart`
 
     curl -X 'DELETE' 'http://localhost:8000/restart?ip_address=192.1.1.1' -H 'accept: application/json'
 
-#### Restart
+#### Response
 ```json
-["Proxy <{IP}> to be restarted"]
+{
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
+  },
+  "message": "Proxy scheduled for restart",
+  "proxy": {
+    "ip": "192.1.1.1",
+    "port": 8899,
+    "auth_enabled": true,
+    "url": "http://username:password@192.1.1.1:8899"
+  }
+}
 ```
+
 ### Get providers
 #### Request
 
@@ -184,100 +245,66 @@ For detailed API documentation, see [API Documentation](docs/api.md).
     curl -X 'GET' 'http://localhost:8000/providers' -H 'accept: application/json'
 
 #### Response
-
 ```json
 {
-  "digitalocean": {
-    "enabled": "True",
-    "ips": [
-      "x.x.x.x"
-    ],
-    "scaling": {
-      "min_scaling": 1,
-      "max_scaling": 2
-    },
-    "size": "s-1vcpu-1gb",
-    "region": "lon1"
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
   },
-  "aws": {
-    "enabled": false,
-    "ips": [],
-    "scaling": {
-      "min_scaling": 2,
-      "max_scaling": 2
+  "providers": {
+    "digitalocean": {
+      "enabled": true,
+      "ips": ["192.168.1.1"],
+      "scaling": {
+        "min_scaling": 2,
+        "max_scaling": 2
+      },
+      "size": "s-1vcpu-1gb",
+      "region": "lon1"
     },
-    "size": "t2.micro",
-    "region": "eu-west-2",
-    "ami": "ami-096cb92bb3580c759",
-    "spot": false
-  },
-  "gcp": {
-    "enabled": false,
-    "project": null,
-    "ips": [],
-    "scaling": {
-      "min_scaling": 2,
-      "max_scaling": 2
-    },
-    "size": "f1-micro",
-    "zone": "us-central1-a",
-    "image_project": "ubuntu-os-cloud",
-    "image_family": "ubuntu-minimal-2004-lts"
-  },
-  "hetzner": {
-    "enabled": false,
-    "ips": [],
-    "scaling": {
-      "min_scaling": 2,
-      "max_scaling": 2
-    },
-    "size": "cx11",
-    "location": "nbg1",
-    "datacenter": ""
+    "aws": {
+      "enabled": false,
+      "ips": [],
+      "scaling": {
+        "min_scaling": 2,
+        "max_scaling": 2
+      },
+      "size": "t2.micro",
+      "region": "eu-west-2",
+      "ami": "ami-096cb92bb3580c759",
+      "spot": false
+    }
   }
 }
 ```
 
-#### Request
-
-`GET /providers/digitalocean`
-
-    curl -X 'GET' 'http://localhost:8000/providers/digitalocean' -H 'accept: application/json'
-
-#### Response
-
-```json
-{
-  "enabled": "True",
-  "ips": [
-    "x.x.x.x"
-  ],
-  "scaling": {
-    "min_scaling": 2,
-    "max_scaling": 2
-  },
-  "size": "s-1vcpu-1gb",
-  "region": "lon1"
-}
-```
-
-### Update provider
+### Update provider scaling
 #### Request
 
 `PATCH /providers/digitalocean`
 
-    curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean?min_scaling=5&max_scaling=5' -H 'accept: application/json'
+    curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean' \
+      -H 'accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d '{"min_scaling": 5, "max_scaling": 5}'
 
 #### Response
 ```json
 {
-  "ips": [
-    "192.1.1.2",
-    "192.1.1.3"
-  ],
-  "scaling": {
-    "min_scaling": 5,
-    "max_scaling": 5
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
+  },
+  "message": "Provider 'digitalocean' scaling configuration updated successfully",
+  "provider": {
+    "enabled": true,
+    "ips": ["192.168.1.1", "192.168.1.2"],
+    "scaling": {
+      "min_scaling": 5,
+      "max_scaling": 5
+    },
+    "size": "s-1vcpu-1gb",
+    "region": "lon1"
   }
 }
 ```

@@ -12,11 +12,10 @@ def set_auth(username, password):
         filedata = file.read()
 
     if settings.config["no_auth"]:
-        # Remove auth configuration for 3proxy
-        filedata = filedata.replace('users username:CL:password\nauth strong cache 60\n', '')
-        filedata = filedata.replace('allow username * *', 'allow * * *')
+        # Remove auth configuration for tinyproxy
+        filedata = filedata.replace('\nBasicAuth username password\n', '\n')
     else:
-        # Replace username and password in 3proxy config
+        # Replace username and password in tinyproxy config
         filedata = filedata.replace("username", username)
         filedata = filedata.replace("password", password)
 
@@ -25,7 +24,7 @@ def set_auth(username, password):
         # Update UFW rules
         filedata = filedata.replace("sudo ufw allow 22/tcp", f"sudo ufw allow from {ip_address} to any port 22 proto tcp")
         filedata = filedata.replace("sudo ufw allow 8899/tcp", f"sudo ufw allow from {ip_address} to any port 8899 proto tcp")
-        # Update 3proxy access rule to require both username and IP
-        filedata = filedata.replace("allow username * *", f"allow username * {ip_address}")
+        # Update tinyproxy access rule
+        filedata = filedata.replace("Allow 127.0.0.1", f"Allow 127.0.0.1\nAllow {ip_address}")
 
     return filedata

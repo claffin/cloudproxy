@@ -1,33 +1,31 @@
 #!/bin/bash
-sudo apt-get -y update
-sudo apt-get install -y ca-certificates 3proxy
 
-# Create 3proxy config directory and config
-sudo mkdir -p /etc/3proxy
-sudo cat > /etc/3proxy/3proxy.cfg << EOF
-# Main settings
-daemon
-maxconn 100
-nserver 1.1.1.1
-nserver 8.8.8.8
-nscache 65536
-timeouts 1 5 30 60 180 1800 15 60
+# Update package list and install required packages
+sudo apt-get update
+sudo apt-get install -y ca-certificates tinyproxy
 
-# Access control and authentication
-users username:CL:password
-auth strong cache 60
-
-# Privacy settings
-deny * * 127.0.0.1,192.168.1.1-192.168.255.255
-# IP-based access will be configured here if enabled
-allow username * *
-
-# Proxy settings
-proxy -p8899 -n -a
+# Configure tinyproxy
+sudo cat > /etc/tinyproxy/tinyproxy.conf << EOF
+User tinyproxy
+Group tinyproxy
+Port 8899
+Timeout 600
+DefaultErrorFile "/usr/share/tinyproxy/default.html"
+StatFile "/usr/share/tinyproxy/stats.html"
+LogFile "/var/log/tinyproxy/tinyproxy.log"
+LogLevel Info
+PidFile "/run/tinyproxy/tinyproxy.pid"
+MaxClients 100
+MinSpareServers 5
+MaxSpareServers 20
+StartServers 10
+MaxRequestsPerChild 0
+Allow 127.0.0.1
+ViaProxyName "tinyproxy"
+ConnectPort 443
+ConnectPort 563
+BasicAuth username password
 EOF
-
-# Create log directory
-sudo mkdir -p /var/log/3proxy
 
 # Setup firewall
 sudo ufw default deny incoming
@@ -35,6 +33,9 @@ sudo ufw allow 22/tcp
 sudo ufw allow 8899/tcp
 sudo ufw --force enable
 
-# Start service
-sudo systemctl enable 3proxy
-sudo systemctl start 3proxy
+# Enable and start service
+sudo systemctl enable tinyproxy
+sudo systemctl restart tinyproxy
+
+# Wait for service to start
+sleep 5

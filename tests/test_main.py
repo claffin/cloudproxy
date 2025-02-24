@@ -23,31 +23,72 @@ config["providers"]["digitalocean"]["region"] = "lon1"
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"ips": []}
+    data = response.json()
+    assert "metadata" in data
+    assert "total" in data
+    assert "proxies" in data
+    assert isinstance(data["proxies"], list)
+    assert data["total"] == 0
 
 
 def test_random():
     response = client.get("/random")
+    assert response.status_code == 404
+    assert response.json() == {"detail": "No proxies available"}
+
+
+def test_remove_proxy_list():
+    response = client.get("/destroy")
     assert response.status_code == 200
-    assert response.json() == {}
+    data = response.json()
+    assert "metadata" in data
+    assert "total" in data
+    assert "proxies" in data
+    assert isinstance(data["proxies"], list)
+    assert data["total"] == len(data["proxies"])
 
 
 def test_remove_proxy():
-    response = client.delete("/destroy?ip_address=192.168.0.0")
+    response = client.delete("/destroy?ip_address=192.168.1.1")
     assert response.status_code == 200
-    assert response.json() == ["Proxy <192.168.0.0> to be destroyed"]
-    assert delete_queue == {"192.168.0.0"}
+    data = response.json()
+    assert "metadata" in data
+    assert "message" in data
+    assert "proxy" in data
+    assert data["message"] == "Proxy scheduled for deletion"
+    assert data["proxy"]["ip"] == "192.168.1.1"
 
 
-def test_remove_proxy_failure():
-    response = client.delete("/destroy?ip_address=thisisnotanip")
-    assert response.status_code == 422
+def test_restart_proxy_list():
+    response = client.get("/restart")
+    assert response.status_code == 200
+    data = response.json()
+    assert "metadata" in data
+    assert "total" in data
+    assert "proxies" in data
+    assert isinstance(data["proxies"], list)
+    assert data["total"] == len(data["proxies"])
+
+
+def test_restart_proxy():
+    response = client.delete("/restart?ip_address=192.168.1.1")
+    assert response.status_code == 200
+    data = response.json()
+    assert "metadata" in data
+    assert "message" in data
+    assert "proxy" in data
+    assert data["message"] == "Proxy scheduled for restart"
+    assert data["proxy"]["ip"] == "192.168.1.1"
 
 
 def test_providers_digitalocean():
     response = client.get("/providers/digitalocean")
     assert response.status_code == 200
-    assert response.json() == {
+    data = response.json()
+    assert "metadata" in data
+    assert "message" in data
+    assert "provider" in data
+    assert data["provider"] == {
         "enabled": False,
         "ips": [],
         "scaling": {
@@ -65,9 +106,16 @@ def test_providers_404():
 
 
 def test_configure():
-    response = client.patch("/providers/digitalocean?min_scaling=4&max_scaling=4")
+    response = client.patch("/providers/digitalocean", json={
+        "min_scaling": 4,
+        "max_scaling": 4
+    })
     assert response.status_code == 200
-    assert response.json() == {
+    data = response.json()
+    assert "metadata" in data
+    assert "message" in data
+    assert "provider" in data
+    assert data["provider"] == {
         "enabled": False,
         "ips": [],
         "scaling": {

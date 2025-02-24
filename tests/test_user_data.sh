@@ -1,13 +1,36 @@
 #!/bin/bash
 sudo apt-get -y update
 sudo apt-get install -y ca-certificates tinyproxy
-sudo sed -i 's/Port 8888/Port 8899/g' /etc/tinyproxy/tinyproxy.conf
-sudo sed -i 's/Allow 127.0.0.1/#Allow 127.0.0.1/g' /etc/tinyproxy/tinyproxy.conf
-sudo sed -i 's/Allow ::1/#Allow ::1/g' /etc/tinyproxy/tinyproxy.conf
-sudo sed -i 's/#BasicAuth user pass.*/BasicAuth testingusername testinguserpassword/g' /etc/tinyproxy/tinyproxy.conf
-sudo sed -i 's/#DisableViaHeader Yes/DisableViaHeader Yes/g' /etc/tinyproxy/tinyproxy.conf
-sudo systemctl restart tinyproxy
+
+# Configure tinyproxy
+sudo cat > /etc/tinyproxy/tinyproxy.conf << EOF
+User tinyproxy
+Group tinyproxy
+Port 8899
+Timeout 600
+DefaultErrorFile "/usr/share/tinyproxy/default.html"
+StatFile "/usr/share/tinyproxy/stats.html"
+LogFile "/var/log/tinyproxy/tinyproxy.log"
+LogLevel Info
+PidFile "/run/tinyproxy/tinyproxy.pid"
+MaxClients 100
+MinSpareServers 5
+MaxSpareServers 20
+StartServers 10
+MaxRequestsPerChild 0
+Allow 127.0.0.1
+ViaProxyName "tinyproxy"
+ConnectPort 443
+ConnectPort 563
+BasicAuth testingusername testinguserpassword
+EOF
+
+# Setup firewall
 sudo ufw default deny incoming
 sudo ufw allow 22/tcp
 sudo ufw allow 8899/tcp
 sudo ufw --force enable
+
+# Start service
+sudo systemctl enable tinyproxy
+sudo systemctl restart tinyproxy

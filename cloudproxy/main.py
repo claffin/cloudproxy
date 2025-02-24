@@ -4,7 +4,7 @@ import sys
 import re
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import List, Optional, Set, Dict
 
 import uvicorn
@@ -121,7 +121,7 @@ def main():
 # Pydantic Models for Request/Response
 class Metadata(BaseModel):
     request_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 class ProxyAddress(BaseModel):
     ip: IPvAnyAddress
@@ -301,28 +301,49 @@ class ProviderScaling(BaseModel):
     min_scaling: int = Field(ge=0)
     max_scaling: int = Field(ge=0)
 
-class Provider(BaseModel):
+class BaseProvider(BaseModel):
     enabled: bool
     ips: List[str] = []
     scaling: ProviderScaling
     size: str
     region: Optional[str] = None
+
+class DigitalOceanProvider(BaseProvider):
+    region: str
+
+class AWSProvider(BaseProvider):
+    region: str
+    ami: str
+    spot: bool = False
+
+class GCPProvider(BaseProvider):
+    zone: str
+    image_project: str
+    image_family: str
+
+class HetznerProvider(BaseProvider):
     location: Optional[str] = None
-    zone: Optional[str] = None
     datacenter: Optional[str] = None
-    ami: Optional[str] = None
-    spot: Optional[bool] = None
-    image_project: Optional[str] = None
-    image_family: Optional[str] = None
 
 class ProviderList(BaseModel):
     metadata: Metadata = Field(default_factory=Metadata)
-    providers: Dict[str, Provider]
+    providers: Dict[str, BaseProvider]
 
 class ProviderResponse(BaseModel):
     metadata: Metadata = Field(default_factory=Metadata)
     message: str
-    provider: Provider
+    provider: BaseProvider
+
+def get_provider_model(provider_name: str, config: dict) -> BaseProvider:
+    provider_models = {
+        "digitalocean": DigitalOceanProvider,
+        "aws": AWSProvider,
+        "gcp": GCPProvider,
+        "hetzner": HetznerProvider
+    }
+    
+    model_class = provider_models.get(provider_name, BaseProvider)
+    return model_class(**config)
 
 class AuthSettings(BaseModel):
     username: str
@@ -365,7 +386,7 @@ def providers():
     for name, config in settings.config["providers"].items():
         provider_config = config.copy()
         provider_config.pop("secrets", None)
-        providers_data[name] = provider_config
+        providers_data[name] = get_provider_model(name, provider_config)
     
     return ProviderList(
         providers=providers_data
@@ -396,7 +417,7 @@ def get_provider(provider: str):
     
     return ProviderResponse(
         message=f"Provider '{provider}' configuration retrieved successfully",
-        provider=provider_config
+        provider=get_provider_model(provider, provider_config)
     )
 
 @app.patch("/providers/{provider}", tags=["Provider Management"], response_model=ProviderResponse)
@@ -431,7 +452,7 @@ def configure(
     
     return ProviderResponse(
         message=f"Provider '{provider}' scaling configuration updated successfully",
-        provider=provider_config
+        provider=get_provider_model(provider, provider_config)
     )
 
 if __name__ == "__main__":

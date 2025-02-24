@@ -2,15 +2,15 @@ import os
 import random
 import sys
 import re
+import logging
 
 import uvicorn
-
 from loguru import logger
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from uvicorn_loguru_integration import run_uvicorn_loguru
+
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue
 
@@ -33,11 +33,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Configure logging
 logger.add("cloudproxy.log", rotation="20 MB")
 
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        # Get corresponding Loguru level if it exists
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where originated the logged message
+        frame, depth = logging.currentframe(), 2
+        while frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 def main():
-    run_uvicorn_loguru(uvicorn.Config(app, host="0.0.0.0", port=8000, log_level="info"))
+    # Intercept everything at the root logger
+    logging.root.handlers = [InterceptHandler()]
+    logging.root.setLevel(logging.INFO)
+    
+    # Remove every other logger's handlers and propagate to root logger
+    for name in logging.root.manager.loggerDict.keys():
+        logging.getLogger(name).handlers = []
+        logging.getLogger(name).propagate = True
+    
+    # Start uvicorn with modified logging config
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 
 
 def get_ip_list():

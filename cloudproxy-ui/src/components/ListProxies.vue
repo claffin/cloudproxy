@@ -2,20 +2,34 @@
   <div>
     <div class="provider-section" v-for="(item, key, index) in data" :key="index">
       <div class="provider-header">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h2>
-              <i :class="'bi bi-' + getProviderIcon(key)" class="mr-2"></i>
-              {{ formatProviderName(key) }}
-            </h2>
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            <div class="provider-icon-wrapper mr-2">
+              <i :class="'bi bi-' + getProviderIcon(key)" style="font-size: 1.5rem;"></i>
+            </div>
+            <h2 class="mb-0">{{ formatProviderName(key) }}</h2>
           </div>
-          <div>
-            <span
-              :class="['status-badge', item.enabled ? 'status-active' : '']"
-            >
-              {{ item.enabled ? "Active" : "Disabled" }}
-            </span>
-          </div>
+          <b-form class="scaling-control" @submit.prevent="updateProvider(key, item.scaling.min_scaling)">
+            <div class="d-flex align-items-center">
+              <span class="status-badge" :class="{'status-active': item.ips.length > 0}" v-b-tooltip.hover title="Number of active proxy instances">
+                <i class="bi bi-hdd-stack mr-1"></i>
+                {{ item.ips.length }} Active
+              </span>
+              <label for="sb-inline" class="mx-3">
+                <i class="bi bi-sliders mr-1"></i>
+                Scale to
+              </label>
+              <b-form-spinbutton
+                v-model="item.scaling.min_scaling"
+                min="0"
+                max="100"
+                inline
+                @change="updateProvider(key, $event)"
+                class="custom-spinbutton"
+                v-b-tooltip.hover title="Set the number of proxy instances"
+              ></b-form-spinbutton>
+            </div>
+          </b-form>
         </div>
       </div>
 

@@ -19,17 +19,10 @@ from cloudproxy.providers.settings import delete_queue, restart_queue, config
 def do_deployment(min_scaling):
     total_droplets = len(list_droplets())
     if min_scaling < total_droplets:
-        # Only destroy droplets that aren't ready/alive yet
-        droplets_to_destroy = []
-        for droplet in list_droplets():
-            if not check_alive(droplet.ip_address):
-                droplets_to_destroy.append(droplet)
-        
-        # Only destroy excess non-ready droplets
-        excess = total_droplets - min_scaling
-        for droplet in droplets_to_destroy[:excess]:
+        logger.info("Overprovisioned: DO destroying.....")
+        for droplet in itertools.islice(list_droplets(), 0, (total_droplets - min_scaling)):
             delete_proxy(droplet)
-            logger.info("Destroyed non-ready droplet: DO -> " + str(droplet.ip_address))
+            logger.info("Destroyed: DO -> " + str(droplet.ip_address))
             
     if min_scaling - total_droplets < 1:
         logger.info("Minimum DO Droplets met")

@@ -9,29 +9,21 @@
   },
   "dependencies": {
     "axios": "^1.6.7",
-    "bootstrap-vue": "^2.23.1",
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.11.3",
+    "bootstrap-vue-next": "^0.15.5",
     "core-js": "^3.36.0",
-    "vue": "^2.7.16"
+    "vue": "^3.4.21"
   },
   "devDependencies": {
-    "@babel/polyfill": "^7.12.1",
-    "@vue/cli-plugin-babel": "~4.5.19",
-    "@vue/cli-plugin-eslint": "~4.5.19",
-    "@vue/cli-service": "~4.5.19",
-    "@vue/eslint-config-prettier": "^6.0.0",
-    "babel-eslint": "^10.1.0",
-    "bootstrap": "^4.6.2",
-    "eslint": "^6.7.2",
-    "eslint-plugin-prettier": "^3.3.1",
-    "eslint-plugin-vue": "^6.2.2",
-    "mutationobserver-shim": "^0.3.7",
-    "popper.js": "^1.16.1",
-    "portal-vue": "^2.1.7",
-    "prettier": "^2.2.1",
-    "sass": "^1.26.11",
-    "sass-loader": "^10.0.2",
-    "vue-cli-plugin-bootstrap-vue": "~0.7.0",
-    "vue-template-compiler": "^2.7.16"
+    "@babel/core": "^7.24.0",
+    "@babel/eslint-parser": "^7.23.10",
+    "@vue/cli-plugin-babel": "~5.0.8",
+    "@vue/cli-plugin-eslint": "~5.0.8",
+    "@vue/cli-service": "~5.0.8",
+    "@vue/compiler-sfc": "^3.4.21",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.22.0"
   },
   "eslintConfig": {
     "root": true,
@@ -39,14 +31,16 @@
       "node": true
     },
     "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended",
-      "@vue/prettier"
+      "plugin:vue/vue3-recommended",
+      "eslint:recommended"
     ],
     "parserOptions": {
-      "parser": "babel-eslint"
+      "parser": "@babel/eslint-parser",
+      "requireConfigFile": false
     },
-    "rules": {}
+    "rules": {
+      "vue/multi-word-component-names": "off"
+    }
   },
   "browserslist": [
     "> 1%",

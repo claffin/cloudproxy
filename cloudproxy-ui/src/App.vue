@@ -1,35 +1,46 @@
 <template>
   <div id="app">
-    <b-navbar variant="dark" type="dark" class="mb-0">
-      <b-container>
-        <b-navbar-brand class="py-3">
+    <nav class="navbar navbar-dark mb-0">
+      <div class="container">
+        <span class="navbar-brand py-3 text-dark">
           CloudProxy
-        </b-navbar-brand>
-        <b-navbar-nav class="ml-auto">
-          <b-nav-item href="/docs" target="_blank" class="mr-3 text-white">
-            <b-icon icon="file-text" class="mr-1"></b-icon>
-            API Docs
-          </b-nav-item>
-          <b-button @click="reloadPage" variant="link" class="refresh-btn text-white">
-            <b-icon icon="arrow-clockwise"></b-icon> Refresh
-          </b-button>
-        </b-navbar-nav>
-      </b-container>
-    </b-navbar>
+        </span>
+        <div class="navbar-nav ms-auto d-flex flex-row">
+          <a
+            class="nav-link me-3 text-dark d-flex align-items-center"
+            href="/docs"
+            target="_blank"
+          >
+            <i class="bi bi-file-text me-1" />
+            <span>API Docs</span>
+          </a>
+          <button
+            class="btn btn-link nav-link text-dark d-flex align-items-center"
+            type="button"
+            @click="reloadPage"
+          >
+            <i class="bi bi-arrow-clockwise me-1" />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+    </nav>
 
     <div class="header-extension py-4 mb-4">
-      <b-container>
-        <h1 class="text-white mb-0">Proxy Management</h1>
-      </b-container>
+      <div class="container">
+        <h1 class="text-white mb-0">
+          Proxy Management
+        </h1>
+      </div>
     </div>
 
-    <b-container>
-      <b-card no-body class="main-card">
-        <b-card-body class="p-0">
+    <div class="container">
+      <div class="card main-card">
+        <div class="card-body p-0">
           <ListProxies />
-        </b-card-body>
-      </b-card>
-    </b-container>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -41,11 +52,15 @@ export default {
   components: {
     ListProxies,
   },
-  methods: {
-    reloadPage() {
+  setup() {
+    const reloadPage = () => {
       window.location.reload();
-    },
-  },
+    };
+
+    return {
+      reloadPage
+    };
+  }
 };
 </script>
 
@@ -61,6 +76,7 @@ export default {
   --text-dark: #1a202c;
   --text-gray: #4a5568;
   --border-color: #e2e8f0;
+  --navbar-gray: #2d3748;
   --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
@@ -75,14 +91,27 @@ export default {
 }
 
 .navbar {
-  background-color: var(--primary-purple);
+  background-color: var(--navbar-gray);
   box-shadow: none;
   padding: 0;
+  border-bottom: none;
+}
+
+.navbar .nav-link {
+  color: #e2e8f0 !important;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+}
+
+.navbar .nav-link:hover {
+  opacity: 1;
+  color: white !important;
 }
 
 .header-extension {
   background-color: var(--primary-purple);
-  margin-top: -1px;
+  margin-top: 0;
 }
 
 .navbar-brand {
@@ -90,6 +119,7 @@ export default {
   font-weight: 700;
   font-size: 1.5rem;
   letter-spacing: -0.5px;
+  color: white !important;
 }
 
 h1 {
@@ -99,16 +129,15 @@ h1 {
   letter-spacing: -0.5px;
 }
 
-.refresh-btn {
-  font-family: var(--font-family);
-  font-weight: 500;
+.btn-link {
+  text-decoration: none;
   padding: 0.5rem 1rem;
   transition: opacity 0.2s ease;
 }
 
-.refresh-btn:hover {
+.btn-link:hover {
   opacity: 0.9;
-  transform: none;
+  color: var(--text-dark) !important;
 }
 
 .main-card {

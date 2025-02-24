@@ -1,5 +1,7 @@
 #!/bin/bash
-sudo apt-get -y update
+
+# Update package list and install required packages
+sudo apt-get update
 sudo apt-get install -y ca-certificates tinyproxy
 
 # Configure tinyproxy
@@ -31,6 +33,9 @@ sudo ufw allow 22/tcp
 sudo ufw allow 8899/tcp
 sudo ufw --force enable
 
-# Start service
+# Enable and start service
 sudo systemctl enable tinyproxy
 sudo systemctl restart tinyproxy
+
+# Wait for service to start
+sleep 5

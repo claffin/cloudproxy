@@ -1,11 +1,37 @@
-[![CodeCov Coverage][codecov-shield]][codecov-url]
-[![Codacy Quality][codacy-shield]][codacy-url]
-[![Docker Cloud Build Status][docker-shield]][docker-url]
+[![Code Coverage][coverage-shield]][codecov-url]
+[![Code Quality][quality-shield]][codacy-url]
+[![Docker Build][build-shield]][docker-url]
+[![Docker Pulls][docker-pulls-shield]][docker-url]
+[![Python Version][python-shield]][python-url]
+[![License][license-shield]][license-url]
+[![Last Commit][commit-shield]][commit-url]
+[![Open Issues][issues-shield]][issues-url]
+[![Stars][stars-shield]][stars-url]
 [![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+[![Discord][discord-shield]][discord-url]
+
+[coverage-shield]: https://img.shields.io/codecov/c/github/claffin/cloudproxy?style=for-the-badge&logo=codecov&logoColor=white
+[quality-shield]: https://img.shields.io/codacy/grade/39a9788caa854baebe01beb720e9c5a8?style=for-the-badge&logo=codacy&logoColor=white
+[build-shield]: https://img.shields.io/github/actions/workflow/status/claffin/cloudproxy/main.yml?style=for-the-badge&logo=docker&logoColor=white
+[docker-pulls-shield]: https://img.shields.io/docker/pulls/laffin/cloudproxy?style=for-the-badge&logo=docker&logoColor=white
+[python-shield]: https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python&logoColor=white
+[license-shield]: https://img.shields.io/github/license/claffin/cloudproxy?style=for-the-badge&logo=opensourceinitiative&logoColor=white
+[commit-shield]: https://img.shields.io/github/last-commit/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
+[issues-shield]: https://img.shields.io/github/issues/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
+[stars-shield]: https://img.shields.io/github/stars/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
+[contributors-shield]: https://img.shields.io/github/contributors/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
+[discord-shield]: https://img.shields.io/discord/977524174796509184?style=for-the-badge&logo=discord&logoColor=white
+
+[python-url]: https://www.python.org/downloads/release/python-3110/
+[codecov-url]: https://app.codecov.io/gh/claffin/cloudproxy
+[codacy-url]: https://www.codacy.com/gh/claffin/cloudproxy/dashboard
+[docker-url]: https://hub.docker.com/r/laffin/cloudproxy
+[license-url]: https://github.com/claffin/cloudproxy/blob/master/LICENSE.txt
+[commit-url]: https://github.com/claffin/cloudproxy/commits/main
+[issues-url]: https://github.com/claffin/cloudproxy/issues
+[stars-url]: https://github.com/claffin/cloudproxy/stargazers
+[contributors-url]: https://github.com/claffin/cloudproxy/graphs/contributors
+[discord-url]: https://discord.gg/KkMKCchJb8
 # CloudProxy
 
 ![cloudproxy](docs/images/cloudproxy.gif)

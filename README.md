@@ -20,7 +20,6 @@
 [issues-shield]: https://img.shields.io/github/issues/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
 [stars-shield]: https://img.shields.io/github/stars/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
 [contributors-shield]: https://img.shields.io/github/contributors/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
-[discord-shield]: https://img.shields.io/discord/977524174796509184?style=for-the-badge&logo=discord&logoColor=white
 
 [python-url]: https://www.python.org/downloads/release/python-3110/
 [codecov-url]: https://app.codecov.io/gh/claffin/cloudproxy
@@ -31,7 +30,6 @@
 [issues-url]: https://github.com/claffin/cloudproxy/issues
 [stars-url]: https://github.com/claffin/cloudproxy/stargazers
 [contributors-url]: https://github.com/claffin/cloudproxy/graphs/contributors
-[discord-url]: https://discord.gg/KkMKCchJb8
 # CloudProxy
 
 ![cloudproxy](docs/images/cloudproxy.gif)

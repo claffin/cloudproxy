@@ -71,9 +71,19 @@ async def custom_swagger_ui_html():
 async def get_openapi_endpoint():
     return custom_openapi()
 
-app.mount("/ui", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist")), html=True), name="static")
-app.mount("/css", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist/css")), html=True), name="cssstatic")
-app.mount("/js", StaticFiles(directory=(os.path.join(__location__, "../cloudproxy-ui/dist/js"))), name="jsstatic")
+# Check if UI directories exist before mounting
+ui_dir = os.path.join(__location__, "../cloudproxy-ui/dist")
+css_dir = os.path.join(__location__, "../cloudproxy-ui/dist/css")
+js_dir = os.path.join(__location__, "../cloudproxy-ui/dist/js")
+
+if os.path.exists(ui_dir):
+    app.mount("/ui", StaticFiles(directory=ui_dir, html=True), name="static")
+    if os.path.exists(css_dir):
+        app.mount("/css", StaticFiles(directory=css_dir, html=True), name="cssstatic")
+    if os.path.exists(js_dir):
+        app.mount("/js", StaticFiles(directory=js_dir), name="jsstatic")
+else:
+    logger.warning(f"UI directory {ui_dir} does not exist. UI will not be available.")
 
 origins = ["*"]
 

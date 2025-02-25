@@ -152,3 +152,4 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+.cursor-project-context

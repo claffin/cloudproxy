@@ -1,4 +1,4 @@
-requests==2.31.0
+requests==2.32.2
 apscheduler==3.10.4
 dateparser==1.2.0
 fastapi==0.110.0

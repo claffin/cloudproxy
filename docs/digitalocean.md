@@ -1,6 +1,6 @@
 # DigitalOcean Configuration
 
-To use DigitalOcean as a provider, you’ll first generate a personal access token.
+To use DigitalOcean as a provider, you'll first generate a personal access token.
 
 ## Steps
 
@@ -16,9 +16,11 @@ Now you have your token, you can now use DigitalOcean as a proxy provider, on th
 ## Configuration options
 ### Environment variables: 
 #### Required:
-`` DIGITALOCEAN_ENABLED`` - to enable DigitalOcean as a provider, set as True. Default value: False
+``DIGITALOCEAN_ENABLED`` - to enable DigitalOcean as a provider, set as True. Default value: False
 
-`` DIGITALOCEAN_ACCESS_TOKEN`` - the token to allow CloudProxy access to your account. 
+``DIGITALOCEAN_ACCESS_TOKEN`` - the token to allow CloudProxy access to your account. 
+
+``DIGITALOCEAN_REGION`` - this sets the region where the droplet is deployed. Some websites may redirect to the language of the country your IP is from. Default value: lon1
 
 #### Optional:
 ``DIGITALOCEAN_MIN_SCALING`` - this is the minimal proxies you required to be provisioned. 
@@ -28,4 +30,52 @@ Default value: 2
 
 ``DIGITALOCEAN_SIZE``  - this sets the droplet size, we recommend the smallest droplet as the volume even a small droplet can handle is high. Default value: s-1vcpu-1gb
 
-``DIGITALOCEAN_REGION`` - this sets the region where the droplet is deployed. Some websites may redirect to the language of the country your IP is from. Default value: lon1
+## Multi-Account Support
+
+CloudProxy supports running multiple DigitalOcean accounts simultaneously. Each account is configured as a separate "instance" with its own settings.
+
+### Default Instance Configuration
+
+The configuration variables mentioned above configure the "default" instance. For example:
+
+```
+DIGITALOCEAN_ENABLED=True
+DIGITALOCEAN_ACCESS_TOKEN=your_default_token
+DIGITALOCEAN_REGION=lon1
+DIGITALOCEAN_MIN_SCALING=2
+```
+
+### Additional Instances Configuration
+
+To configure additional DigitalOcean accounts, use the following format:
+```
+DIGITALOCEAN_INSTANCENAME_VARIABLE=VALUE
+```
+
+For example, to add a second DigitalOcean account with different region settings:
+
+```
+DIGITALOCEAN_USEAST_ENABLED=True
+DIGITALOCEAN_USEAST_ACCESS_TOKEN=your_second_token
+DIGITALOCEAN_USEAST_REGION=nyc1
+DIGITALOCEAN_USEAST_MIN_SCALING=3
+DIGITALOCEAN_USEAST_SIZE=s-1vcpu-1gb
+DIGITALOCEAN_USEAST_DISPLAY_NAME=US East Account
+```
+
+### Available instance-specific configurations
+
+For each instance, you can configure:
+
+#### Required for each instance:
+- `DIGITALOCEAN_INSTANCENAME_ENABLED` - to enable this specific instance
+- `DIGITALOCEAN_INSTANCENAME_ACCESS_TOKEN` - the token for this instance
+- `DIGITALOCEAN_INSTANCENAME_REGION` - region for this instance
+
+#### Optional for each instance:
+- `DIGITALOCEAN_INSTANCENAME_MIN_SCALING` - minimum number of proxies for this instance
+- `DIGITALOCEAN_INSTANCENAME_MAX_SCALING` - maximum number of proxies for this instance
+- `DIGITALOCEAN_INSTANCENAME_SIZE` - droplet size for this instance
+- `DIGITALOCEAN_INSTANCENAME_DISPLAY_NAME` - a friendly name for the instance that will appear in the UI
+
+Each instance operates independently, maintaining its own pool of proxies according to its configuration.

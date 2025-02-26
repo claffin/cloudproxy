@@ -60,6 +60,7 @@ CloudProxy exposes an API and modern UI for managing your proxy infrastructure. 
 * Modern UI with real-time updates
 * Interactive API documentation
 * Multi-provider support
+* Multiple accounts per provider
 * Automatic proxy rotation
 * Health monitoring
 * Easy scaling controls
@@ -157,6 +158,43 @@ my_request = requests.get("https://api.ipify.org", proxies=proxies)
 ```
 
 For detailed API documentation, see [API Documentation](docs/api.md).
+
+## Multi-Account Provider Support
+
+CloudProxy now supports multiple accounts per provider, allowing you to:
+
+- Use multiple API keys or access tokens for the same provider
+- Configure different regions, sizes, and scaling parameters per account
+- Organize proxies by account/instance for better management
+- Scale each account independently
+
+Each provider can have multiple "instances", which represent different accounts or configurations. Each instance has its own:
+
+- Scaling parameters (min/max)
+- Region settings
+- Size configuration
+- API credentials
+- IP addresses
+
+To configure multiple instances, use environment variables with the instance name in the format:
+```
+PROVIDERNAME_INSTANCENAME_VARIABLE
+```
+
+For example, to configure two DigitalOcean accounts:
+```shell
+# Default DigitalOcean account
+DIGITALOCEAN_ENABLED=True
+DIGITALOCEAN_ACCESS_TOKEN=your_first_token
+DIGITALOCEAN_DEFAULT_REGION=lon1
+DIGITALOCEAN_DEFAULT_MIN_SCALING=2
+
+# Second DigitalOcean account
+DIGITALOCEAN_SECONDACCOUNT_ENABLED=True
+DIGITALOCEAN_SECONDACCOUNT_ACCESS_TOKEN=your_second_token
+DIGITALOCEAN_SECONDACCOUNT_REGION=nyc1
+DIGITALOCEAN_SECONDACCOUNT_MIN_SCALING=3
+```
 
 ## CloudProxy API Examples
 
@@ -287,7 +325,31 @@ For detailed API documentation, see [API Documentation](docs/api.md).
         "max_scaling": 2
       },
       "size": "s-1vcpu-1gb",
-      "region": "lon1"
+      "region": "lon1",
+      "instances": {
+        "default": {
+          "enabled": true,
+          "ips": ["192.168.1.1"],
+          "scaling": {
+            "min_scaling": 2,
+            "max_scaling": 2
+          },
+          "size": "s-1vcpu-1gb",
+          "region": "lon1",
+          "display_name": "Default Account"
+        },
+        "secondary": {
+          "enabled": true,
+          "ips": ["192.168.1.2"],
+          "scaling": {
+            "min_scaling": 1,
+            "max_scaling": 3
+          },
+          "size": "s-1vcpu-1gb",
+          "region": "nyc1",
+          "display_name": "US Account"
+        }
+      }
     },
     "aws": {
       "enabled": false,
@@ -335,6 +397,72 @@ For detailed API documentation, see [API Documentation](docs/api.md).
   }
 }
 ```
+
+### Get provider instance
+#### Request
+
+`GET /providers/digitalocean/secondary`
+
+    curl -X 'GET' 'http://localhost:8000/providers/digitalocean/secondary' -H 'accept: application/json'
+
+#### Response
+```json
+{
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
+  },
+  "message": "Provider 'digitalocean' instance 'secondary' configuration retrieved successfully",
+  "provider": "digitalocean",
+  "instance": "secondary",
+  "config": {
+    "enabled": true,
+    "ips": ["192.168.1.2"],
+    "scaling": {
+      "min_scaling": 1,
+      "max_scaling": 3
+    },
+    "size": "s-1vcpu-1gb",
+    "region": "nyc1",
+    "display_name": "US Account"
+  }
+}
+```
+
+### Update provider instance scaling
+#### Request
+
+`PATCH /providers/digitalocean/secondary`
+
+    curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean/secondary' \
+      -H 'accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d '{"min_scaling": 2, "max_scaling": 5}'
+
+#### Response
+```json
+{
+  "metadata": {
+    "request_id": "123e4567-e89b-12d3-a456-426614174000",
+    "timestamp": "2024-02-24T08:00:00Z"
+  },
+  "message": "Provider 'digitalocean' instance 'secondary' scaling configuration updated successfully",
+  "provider": "digitalocean",
+  "instance": "secondary",
+  "config": {
+    "enabled": true,
+    "ips": ["192.168.1.2"],
+    "scaling": {
+      "min_scaling": 2,
+      "max_scaling": 5
+    },
+    "size": "s-1vcpu-1gb",
+    "region": "nyc1",
+    "display_name": "US Account"
+  }
+}
+```
+
 CloudProxy runs on a schedule of every 30 seconds, it will check if the minimum scaling has been met, if not then it will deploy the required number of proxies. The new proxy info will appear in IPs once they are deployed and ready to be used.
 
 <!-- ROADMAP -->

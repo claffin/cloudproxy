@@ -1,8 +1,8 @@
 <template>
   <div>
     <div
-      v-for="provider in sortedProviders"
-      :key="provider.key"
+      v-for="provider in sortedProviderInstances"
+      :key="`${provider.providerKey}-${provider.instanceKey}`"
       class="provider-section"
     >
       <div class="provider-header">
@@ -10,18 +10,18 @@
           <div class="d-flex align-items-center">
             <div class="provider-icon-wrapper me-2">
               <i
-                :class="'bi bi-' + getProviderIcon(provider.key)"
+                :class="'bi bi-' + getProviderIcon(provider.providerKey)"
                 class="provider-icon"
                 style="font-size: 1.5rem;"
               />
             </div>
             <h2 class="mb-0">
-              {{ formatProviderName(provider.key) }}
+              {{ provider.data.display_name || formatProviderName(provider.providerKey, provider.instanceKey) }}
             </h2>
           </div>
           <form
             class="scaling-control"
-            @submit.prevent="updateProvider(provider.key, provider.data.scaling.min_scaling)"
+            @submit.prevent="updateProvider(provider.providerKey, provider.instanceKey, provider.data.scaling.min_scaling)"
           >
             <div class="d-flex align-items-center">
               <span
@@ -46,7 +46,7 @@
                 min="0"
                 max="100"
                 class="form-control custom-spinbutton"
-                @change="updateProvider(provider.key, $event.target.value)"
+                @change="updateProvider(provider.providerKey, provider.instanceKey, $event.target.value)"
               >
             </div>
           </form>
@@ -198,29 +198,65 @@ export default {
       auth_enabled: true
     });
 
-    const sortedProviders = computed(() => {
-      // Convert data object to array of {key, data} pairs
-      const providers = Object.entries(data.value).map(([key, providerData]) => ({
-        key,
-        data: providerData
-      }));
+    const sortedProviderInstances = computed(() => {
+      // Create array of provider instances
+      const providers = [];
+      
+      // Loop through each provider
+      Object.entries(data.value).forEach(([providerKey, providerData]) => {
+        // Handle both old format (without instances) and new format (with instances)
+        if (providerData.instances) {
+          // New format with instances
+          Object.entries(providerData.instances).forEach(([instanceKey, instanceData]) => {
+            providers.push({
+              providerKey,
+              instanceKey,
+              data: instanceData
+            });
+          });
+        } else {
+          // Old format for backward compatibility
+          providers.push({
+            providerKey,
+            instanceKey: 'default',
+            data: providerData
+          });
+        }
+      });
       
       // Sort enabled providers first, then by name
       return providers.sort((a, b) => {
         if (a.data.enabled && !b.data.enabled) return -1;
         if (!a.data.enabled && b.data.enabled) return 1;
-        return a.key.localeCompare(b.key);
+        
+        // If same provider type, sort by instance name
+        if (a.providerKey === b.providerKey) {
+          // Keep 'default' instance first
+          if (a.instanceKey === 'default') return -1;
+          if (b.instanceKey === 'default') return 1;
+          return a.instanceKey.localeCompare(b.instanceKey);
+        }
+        
+        return a.providerKey.localeCompare(b.providerKey);
       });
     });
 
-    const formatProviderName = (name) => {
+    const formatProviderName = (name, instance = 'default') => {
       const specialCases = {
         'digitalocean': 'DigitalOcean',
         'aws': 'AWS',
         'gcp': 'GCP',
-        'hetzner': 'Hetzner'
+        'hetzner': 'Hetzner',
+        'azure': 'Azure'
       };
-      return specialCases[name] || name.charAt(0).toUpperCase() + name.slice(1);
+      
+      const providerName = specialCases[name] || name.charAt(0).toUpperCase() + name.slice(1);
+      
+      if (instance === 'default') {
+        return providerName;
+      } else {
+        return `${providerName} (${instance})`;
+      }
     };
 
     const getProviderIcon = (provider) => {
@@ -228,7 +264,8 @@ export default {
         digitalocean: 'water',
         aws: 'cloud-fill',
         gcp: 'google',
-        hetzner: 'hdd-rack'
+        hetzner: 'hdd-rack',
+        azure: 'microsoft'
       };
       return icons[provider] || 'cloud-fill';
     };
@@ -289,10 +326,15 @@ export default {
       }
     };
 
-    const updateProvider = async (provider, min_scaling) => {
+    const updateProvider = async (provider, instance, min_scaling) => {
       try {
+        let update_url = `/providers/${provider}`;
+        if (instance !== 'default') {
+          update_url += `/${instance}`;
+        }
+        
         const update_res = await fetch(
-          "/providers/" + provider,
+          update_url,
           { 
             method: "PATCH",
             headers: {
@@ -373,7 +415,7 @@ export default {
       data,
       listremove_data,
       auth,
-      sortedProviders,
+      sortedProviderInstances,
       formatProviderName,
       getProviderIcon,
       removeProxy,

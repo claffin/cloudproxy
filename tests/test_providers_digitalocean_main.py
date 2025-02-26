@@ -8,9 +8,18 @@ from tests.test_providers_digitalocean_functions import test_create_proxy, test_
 def droplets(mocker):
     """Fixture for droplets data."""
     data = load_from_file('test_providers_digitalocean_functions_droplets_all.json')
+    # Convert the dictionary droplets to Droplet objects
+    from tests.test_providers_digitalocean_functions import Droplet
+    droplet_objects = []
+    for droplet_dict in data['droplets']:
+        droplet = Droplet(droplet_dict['id'])
+        # Add tags attribute to the droplet
+        droplet.tags = ["cloudproxy"]
+        droplet_objects.append(droplet)
+    
     mocker.patch('cloudproxy.providers.digitalocean.functions.digitalocean.Manager.get_all_droplets',
-                 return_value=data['droplets'])
-    return data['droplets']
+                 return_value=droplet_objects)
+    return droplet_objects
 
 
 @pytest.fixture
@@ -60,7 +69,7 @@ def test_list_droplets(droplets):
     result = list_droplets()
     assert isinstance(result, list)
     assert len(result) > 0
-    assert result[0]['id'] == 3164444  # Verify specific droplet data
+    assert result[0].id == 3164444  # Verify specific droplet data
     # Store the result in a module-level variable if needed by other tests
     global test_droplets
     test_droplets = result

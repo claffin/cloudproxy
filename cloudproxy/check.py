@@ -51,7 +51,7 @@ def fetch_ip(ip_address):
 
 def check_alive(ip_address):
     try:
-        result = requests.get("http://ipecho.net/plain", proxies={'http': "http://" + ip_address + ":8899"}, timeout=3)
+        result = requests.get("http://ipecho.net/plain", proxies={'http': "http://" + ip_address + ":8899"}, timeout=10)
         if result.status_code in (200, 407):
             return True
         else:

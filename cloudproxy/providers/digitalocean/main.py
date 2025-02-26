@@ -101,14 +101,48 @@ def do_check_delete(instance_config=None):
     # Get instance display name for logging
     display_name = instance_config.get("display_name", "default")
     
-    for droplet in list_droplets(instance_config):
-        if droplet.ip_address in delete_queue or droplet.ip_address in restart_queue:
-            delete_proxy(droplet, instance_config)
-            logger.info(f"Destroyed: not wanted DO {display_name} -> {str(droplet.ip_address)}")
-            if droplet.ip_address in delete_queue:
-                delete_queue.remove(droplet.ip_address)
-            if droplet.ip_address in restart_queue:
-                restart_queue.remove(droplet.ip_address)
+    # Log current delete queue state
+    if delete_queue:
+        logger.info(f"Current delete queue contains {len(delete_queue)} IP addresses: {', '.join(delete_queue)}")
+    
+    droplets = list_droplets(instance_config)
+    if not droplets:
+        logger.info(f"No DigitalOcean {display_name} droplets found to process for deletion")
+        return
+        
+    logger.info(f"Checking {len(droplets)} DigitalOcean {display_name} droplets for deletion")
+    
+    for droplet in droplets:
+        try:
+            droplet_ip = str(droplet.ip_address)
+            
+            # Check if this droplet's IP is in the delete or restart queue
+            if droplet_ip in delete_queue or droplet_ip in restart_queue:
+                logger.info(f"Found droplet {droplet.id} with IP {droplet_ip} in deletion queue - deleting now")
+                
+                # Attempt to delete the droplet
+                delete_result = delete_proxy(droplet, instance_config)
+                
+                if delete_result:
+                    logger.info(f"Successfully destroyed DigitalOcean {display_name} droplet -> {droplet_ip}")
+                    
+                    # Remove from queues upon successful deletion
+                    if droplet_ip in delete_queue:
+                        delete_queue.remove(droplet_ip)
+                        logger.info(f"Removed {droplet_ip} from delete queue")
+                    if droplet_ip in restart_queue:
+                        restart_queue.remove(droplet_ip)
+                        logger.info(f"Removed {droplet_ip} from restart queue")
+                else:
+                    logger.warning(f"Failed to destroy DigitalOcean {display_name} droplet -> {droplet_ip}")
+        except Exception as e:
+            logger.error(f"Error processing droplet for deletion: {e}")
+            continue
+    
+    # Report on any IPs that remain in the queues but weren't found
+    remaining_delete = [ip for ip in delete_queue if any(ip == str(d.ip_address) for d in droplets)]
+    if remaining_delete:
+        logger.warning(f"IPs remaining in delete queue that weren't found as droplets: {', '.join(remaining_delete)}")
 
 def do_fw(instance_config=None):
     """

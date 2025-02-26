@@ -2,6 +2,7 @@ import os
 
 import digitalocean
 import uuid as uuid
+from loguru import logger
 
 from cloudproxy.check import check_alive
 from cloudproxy.providers import settings
@@ -83,9 +84,52 @@ def delete_proxy(droplet_id, instance_config=None):
         instance_config = settings.config["providers"]["digitalocean"]["instances"]["default"]
     
     # Use instance-specific token
-    droplet = digitalocean.Droplet(id=droplet_id, token=instance_config["secrets"]["access_token"])
-    deleted = droplet.destroy()
-    return deleted
+    try:
+        # Handle both ID and Droplet object
+        if hasattr(droplet_id, 'id'):
+            # Get a fresh reference to the droplet to ensure we have the latest state
+            do_manager = get_manager(instance_config)
+            try:
+                droplet = do_manager.get_droplet(droplet_id.id)
+                logger.info(f"Found droplet with ID: {droplet_id.id} - executing deletion")
+            except Exception as e:
+                # If we can't get the droplet, it might already be deleted
+                if "not found" in str(e).lower() or "404" in str(e).lower():
+                    logger.info(f"Droplet with ID {droplet_id.id} not found, considering it already deleted")
+                    return True
+                raise  # Re-raise other errors
+                
+            # Now delete the droplet
+            deleted = droplet.destroy()
+            logger.info(f"DigitalOcean deletion API call completed with result: {deleted}")
+            return deleted
+        else:
+            # It's just an ID, not an object
+            do_manager = get_manager(instance_config)
+            try:
+                droplet = do_manager.get_droplet(droplet_id)
+                logger.info(f"Found droplet with ID: {droplet_id} - executing deletion")
+            except Exception as e:
+                # If we can't get the droplet, it might already be deleted
+                if "not found" in str(e).lower() or "404" in str(e).lower():
+                    logger.info(f"Droplet with ID {droplet_id} not found, considering it already deleted")
+                    return True
+                raise  # Re-raise other errors
+                
+            # Now delete the droplet
+            deleted = droplet.destroy()
+            logger.info(f"DigitalOcean deletion API call completed with result: {deleted}")
+            return deleted
+    except Exception as e:
+        # Log the error but don't fail if the droplet is already gone
+        if "not found" in str(e).lower() or "404" in str(e).lower():
+            # Droplet is already gone, consider it successfully deleted
+            logger.info(f"Droplet deletion exception indicates it's already gone: {str(e)}")
+            return True
+        else:
+            # Re-raise other errors
+            logger.error(f"Error during droplet deletion: {str(e)}")
+            raise
 
 
 def list_droplets(instance_config=None):

@@ -93,6 +93,7 @@ def test_providers_digitalocean():
     response = client.get("/providers/digitalocean")
     assert response.status_code == 200
     data = response.json()
+    print("DEBUG PROVIDER RESPONSE:", data["provider"])
     assert "metadata" in data
     assert "message" in data
     assert "provider" in data

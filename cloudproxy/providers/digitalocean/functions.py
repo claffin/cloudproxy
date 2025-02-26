@@ -7,53 +7,164 @@ from cloudproxy.check import check_alive
 from cloudproxy.providers import settings
 from cloudproxy.providers.config import set_auth
 
+# Initialize manager with default instance configuration
 manager = digitalocean.Manager(
-    token=settings.config["providers"]["digitalocean"]["secrets"]["access_token"]
+    token=settings.config["providers"]["digitalocean"]["instances"]["default"]["secrets"]["access_token"]
 )
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
-token = settings.config["providers"]["digitalocean"]["secrets"]["access_token"]
+# Get default token
+token = settings.config["providers"]["digitalocean"]["instances"]["default"]["secrets"]["access_token"]
 
 class DOFirewallExistsException(Exception):
     pass
 
-def create_proxy():
+def get_manager(instance_config=None):
+    """
+    Get a DigitalOcean manager for the specific instance configuration.
+    
+    Args:
+        instance_config: The specific instance configuration
+        
+    Returns:
+        digitalocean.Manager: Manager instance for the configuration
+    """
+    if instance_config is None:
+        instance_config = settings.config["providers"]["digitalocean"]["instances"]["default"]
+    
+    return digitalocean.Manager(token=instance_config["secrets"]["access_token"])
+
+def create_proxy(instance_config=None):
+    """
+    Create a DigitalOcean proxy droplet.
+    
+    Args:
+        instance_config: The specific instance configuration
+    """
+    if instance_config is None:
+        instance_config = settings.config["providers"]["digitalocean"]["instances"]["default"]
+    
+    # Get instance name for tagging
+    instance_id = next(
+        (name for name, inst in settings.config["providers"]["digitalocean"]["instances"].items() 
+         if inst == instance_config), 
+        "default"
+    )
+    
     user_data = set_auth(
         settings.config["auth"]["username"], settings.config["auth"]["password"]
     )
-    digitalocean.Droplet(
-        name=str(uuid.uuid1()),
-        region=settings.config["providers"]["digitalocean"]["region"],
+    
+    # Create droplet with instance-specific settings
+    do_manager = get_manager(instance_config)
+    droplet = digitalocean.Droplet(
+        token=instance_config["secrets"]["access_token"],
+        name=f"cloudproxy-{instance_id}-{str(uuid.uuid1())}",
+        region=instance_config["region"],
         image="ubuntu-20-04-x64",
-        size_slug=settings.config["providers"]["digitalocean"]["size"],
+        size_slug=instance_config["size"],
         backups=False,
         user_data=user_data,
-        tags="cloudproxy",
-    ).create()
+        tags=["cloudproxy", f"cloudproxy-{instance_id}"],
+    )
+    droplet.create()
     return True
 
 
-def delete_proxy(droplet_id):
-    deleted = digitalocean.Droplet.destroy(droplet_id)
+def delete_proxy(droplet_id, instance_config=None):
+    """
+    Delete a DigitalOcean proxy droplet.
+    
+    Args:
+        droplet_id: ID of the droplet to delete
+        instance_config: The specific instance configuration
+    """
+    if instance_config is None:
+        instance_config = settings.config["providers"]["digitalocean"]["instances"]["default"]
+    
+    # Use instance-specific token
+    droplet = digitalocean.Droplet(id=droplet_id, token=instance_config["secrets"]["access_token"])
+    deleted = droplet.destroy()
     return deleted
 
 
-def list_droplets():
-    my_droplets = manager.get_all_droplets(tag_name="cloudproxy")
+def list_droplets(instance_config=None):
+    """
+    List DigitalOcean proxy droplets.
+    
+    Args:
+        instance_config: The specific instance configuration
+        
+    Returns:
+        list: List of droplets
+    """
+    if instance_config is None:
+        instance_config = settings.config["providers"]["digitalocean"]["instances"]["default"]
+    
+    # Get instance name for tagging
+    instance_id = next(
+        (name for name, inst in settings.config["providers"]["digitalocean"]["instances"].items() 
+         if inst == instance_config), 
+        "default"
+    )
+    
+    # Get instance-specific droplets by tag
+    do_manager = get_manager(instance_config)
+    
+    # First try with instance-specific tag
+    my_droplets = do_manager.get_all_droplets(tag_name=f"cloudproxy-{instance_id}")
+    
+    # If this is the default instance, also get droplets created before multi-instance support
+    if instance_id == "default":
+        # Get old droplets with just the cloudproxy tag (created before multi-instance support)
+        old_droplets = do_manager.get_all_droplets(tag_name="cloudproxy")
+        
+        # Only add droplets that don't have the new instance-specific tag
+        if old_droplets:
+            existing_ids = {d.id for d in my_droplets}
+            for droplet in old_droplets:
+                # Check if this droplet has any instance-specific tags
+                has_instance_tag = False
+                for tag in droplet.tags:
+                    if tag.startswith("cloudproxy-") and tag != "cloudproxy":
+                        has_instance_tag = True
+                        break
+                
+                # If no instance tag and not already in our list, add it
+                if not has_instance_tag and droplet.id not in existing_ids:
+                    my_droplets.append(droplet)
+    
     return my_droplets
 
-def create_firewall():
+def create_firewall(instance_config=None):
+    """
+    Create a DigitalOcean firewall for proxy droplets.
+    
+    Args:
+        instance_config: The specific instance configuration
+    """
+    if instance_config is None:
+        instance_config = settings.config["providers"]["digitalocean"]["instances"]["default"]
+    
+    # Get instance name for firewall naming
+    instance_id = next(
+        (name for name, inst in settings.config["providers"]["digitalocean"]["instances"].items() 
+         if inst == instance_config), 
+        "default"
+    )
+    
     fw = digitalocean.Firewall(
-            name="cloudproxy",
+            token=instance_config["secrets"]["access_token"],
+            name=f"cloudproxy-{instance_id}",
             inbound_rules=__create_inbound_fw_rules(),
             outbound_rules=__create_outbound_fw_rules(),
-            tags=["cloudproxy"]
+            tags=[f"cloudproxy-{instance_id}"]
          )
     try:
         fw.create()
     except digitalocean.DataReadError as dre:
         if dre.args[0] == 'duplicate name':
-            raise DOFirewallExistsException("Firewall already exists for 'cloudproxy'")
+            raise DOFirewallExistsException(f"Firewall already exists for 'cloudproxy-{instance_id}'")
         else:
             raise
 

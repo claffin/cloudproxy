@@ -122,7 +122,7 @@ def test_check_alive_success(mock_get):
     mock_get.assert_called_once_with(
         "http://ipecho.net/plain", 
         proxies={'http': "http://10.0.0.1:8899"}, 
-        timeout=3
+        timeout=10
     )
 
 @patch('cloudproxy.check.requests.get')

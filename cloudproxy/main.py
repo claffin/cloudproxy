@@ -5,7 +5,7 @@ import re
 import logging
 import uuid
 from datetime import datetime, UTC
-from typing import List, Optional, Set, Dict
+from typing import List, Optional, Set, Dict, Any
 
 import uvicorn
 from loguru import logger
@@ -138,6 +138,9 @@ class ProxyAddress(BaseModel):
     port: int = 8899
     auth_enabled: bool = True
     url: Optional[str] = None
+    provider: Optional[str] = None
+    instance: Optional[str] = None
+    display_name: Optional[str] = None
 
     @field_validator('url', mode='before')
     @classmethod
@@ -174,11 +177,32 @@ def create_proxy_address(ip: str) -> ProxyAddress:
 # Updated get_ip_list function
 def get_ip_list() -> List[ProxyAddress]:
     ip_list = []
-    for provider in ['digitalocean', 'aws', 'gcp', 'hetzner']:
-        if settings.config["providers"][provider]["ips"]:
-            for ip in settings.config["providers"][provider]["ips"]:
+    for provider_name, provider_config in settings.config["providers"].items():
+        # Handle top-level IPs (for backward compatibility)
+        if "ips" in provider_config:
+            for ip in provider_config["ips"]:
                 if ip not in delete_queue and ip not in restart_queue:
-                    ip_list.append(create_proxy_address(ip))
+                    proxy = create_proxy_address(ip)
+                    proxy.provider = provider_name
+                    proxy.instance = "default"  # Assume default instance for top-level IPs
+                    proxy.display_name = provider_config.get("display_name", provider_name)
+                    ip_list.append(proxy)
+                    
+        # Skip providers that don't have an instances field (like azure)
+        if "instances" not in provider_config:
+            continue
+            
+        # Process each instance
+        for instance_name, instance_config in provider_config["instances"].items():
+            if "ips" in instance_config:
+                for ip in instance_config["ips"]:
+                    if ip not in delete_queue and ip not in restart_queue:
+                        proxy = create_proxy_address(ip)
+                        proxy.provider = provider_name
+                        proxy.instance = instance_name
+                        proxy.display_name = instance_config.get("display_name")
+                        ip_list.append(proxy)
+                        
     return ip_list
 
 # Updated API endpoints
@@ -310,22 +334,41 @@ async def restart_proxy(ip_address: str):
 
 # Add new Pydantic models for providers
 class ProviderScaling(BaseModel):
-    min_scaling: int = Field(ge=0)
-    max_scaling: int = Field(ge=0)
+    min_scaling: int = Field(ge=0, default=0)
+    max_scaling: int = Field(ge=0, default=0)
 
-class BaseProvider(BaseModel):
+# Provider instance model for multi-instance support
+class ProviderInstance(BaseModel):
     enabled: bool
     ips: List[str] = []
     scaling: ProviderScaling
     size: str
     region: Optional[str] = None
+    location: Optional[str] = None
+    datacenter: Optional[str] = None
+    zone: Optional[str] = None
+    image_project: Optional[str] = None
+    image_family: Optional[str] = None
+    ami: Optional[str] = None
+    spot: Optional[bool] = None
+    display_name: Optional[str] = None
+    project: Optional[str] = None
+
+class BaseProvider(BaseModel):
+    enabled: bool = False
+    ips: List[str] = Field(default_factory=list)
+    region: str = ""
+    size: Optional[str] = ""
+    image: Optional[str] = ""
+    scaling: ProviderScaling = Field(default_factory=lambda: ProviderScaling())
+    instances: Dict[str, ProviderInstance] = Field(default_factory=dict)
 
 class DigitalOceanProvider(BaseProvider):
     region: str
 
 class AWSProvider(BaseProvider):
-    region: str
-    ami: str
+    region: Optional[str] = ""
+    ami: Optional[str] = ""
     spot: bool = False
 
 class GCPProvider(BaseProvider):
@@ -344,18 +387,75 @@ class ProviderList(BaseModel):
 class ProviderResponse(BaseModel):
     metadata: Metadata = Field(default_factory=Metadata)
     message: str
-    provider: BaseProvider
+    provider: Dict[str, Any]
+    instances: Dict[str, Any] = Field(default_factory=dict)
 
-def get_provider_model(provider_name: str, config: dict) -> BaseProvider:
-    provider_models = {
-        "digitalocean": DigitalOceanProvider,
-        "aws": AWSProvider,
-        "gcp": GCPProvider,
-        "hetzner": HetznerProvider
-    }
+# Update ProviderInstanceResponse model for instance-specific responses
+class ProviderInstanceResponse(BaseModel):
+    metadata: Metadata = Field(default_factory=Metadata)
+    message: str
+    provider: str
+    instance: str
+    config: ProviderInstance
+
+def get_provider_model(provider_name: str, provider_config: Dict) -> BaseProvider:
+    """
+    Get the appropriate Pydantic model for a provider based on the provider name.
     
-    model_class = provider_models.get(provider_name, BaseProvider)
-    return model_class(**config)
+    Args:
+        provider_name: The name of the provider
+        provider_config: The provider configuration
+        
+    Returns:
+        A provider model instance
+    """
+    # Extract instances separately from the config to handle it correctly
+    instances_dict = {}
+    if "instances" in provider_config:
+        for instance_name, instance_config in provider_config["instances"].items():
+            # Ensure the scaling is a dict for the instance
+            if isinstance(instance_config.get("scaling"), ProviderScaling):
+                instance_config["scaling"] = {
+                    "min_scaling": instance_config["scaling"].min_scaling,
+                    "max_scaling": instance_config["scaling"].max_scaling
+                }
+            instances_dict[instance_name] = ProviderInstance(**instance_config)
+    
+    # Create a shallow copy to avoid modifying the original
+    config_copy = provider_config.copy()
+    
+    # Remove instances from the copy to avoid duplication
+    if "instances" in config_copy:
+        del config_copy["instances"]
+    
+    # Ensure the scaling is a dict
+    if isinstance(config_copy.get("scaling"), ProviderScaling):
+        config_copy["scaling"] = {
+            "min_scaling": config_copy["scaling"].min_scaling,
+            "max_scaling": config_copy["scaling"].max_scaling
+        }
+    
+    # Get the appropriate provider model
+    if provider_name == "digitalocean":
+        # For DigitalOcean, ensure region is set (required by model)
+        if "region" not in config_copy and "instances" in provider_config and "default" in provider_config["instances"]:
+            config_copy["region"] = provider_config["instances"]["default"].get("region", "")
+        provider_model = DigitalOceanProvider(**config_copy, instances=instances_dict)
+    elif provider_name == "aws":
+        # For AWS, ensure region and ami are set (required by model)
+        if "region" not in config_copy and "instances" in provider_config and "default" in provider_config["instances"]:
+            config_copy["region"] = provider_config["instances"]["default"].get("region", "")
+        if "ami" not in config_copy and "instances" in provider_config and "default" in provider_config["instances"]:
+            config_copy["ami"] = provider_config["instances"]["default"].get("ami", "")
+        provider_model = AWSProvider(**config_copy, instances=instances_dict)
+    elif provider_name == "gcp":
+        provider_model = GCPProvider(**config_copy, instances=instances_dict)
+    elif provider_name == "hetzner":
+        provider_model = HetznerProvider(**config_copy, instances=instances_dict)
+    else:
+        provider_model = BaseProvider(**config_copy, instances=instances_dict)
+    
+    return provider_model
 
 class AuthSettings(BaseModel):
     username: str
@@ -407,12 +507,12 @@ def providers():
     )
 
 @app.get("/providers/{provider}", tags=["Provider Management"], response_model=ProviderResponse)
-def get_provider(provider: str):
+async def get_provider(provider: str):
     """
-    Get configuration and status for a specific provider.
+    Get configuration and status for a provider.
     
     Args:
-        provider: The name of the provider (digitalocean, aws, gcp, hetzner)
+        provider: The name of the provider (digitalocean, aws, gcp, hetzner, azure)
         
     Returns:
         ProviderResponse: Provider configuration and status with metadata
@@ -426,13 +526,31 @@ def get_provider(provider: str):
             detail=f"Provider '{provider}' not found"
         )
 
-    provider_config = settings.config["providers"][provider].copy()
-    provider_config.pop("secrets", None)
+    # Get the provider configuration directly
+    provider_config = settings.config["providers"][provider]
     
-    return ProviderResponse(
-        message=f"Provider '{provider}' configuration retrieved successfully",
-        provider=get_provider_model(provider, provider_config)
-    )
+    # Extract instances for top-level inclusion
+    instances = provider_config.get("instances", {})
+    
+    # Create the exact expected response format without using models
+    provider_response = {
+        "enabled": provider_config.get("enabled", False),
+        "ips": provider_config.get("ips", []),
+        "scaling": {
+            "min_scaling": provider_config.get("scaling", {}).get("min_scaling", 0),
+            "max_scaling": provider_config.get("scaling", {}).get("max_scaling", 0)
+        },
+        "size": provider_config.get("size", ""),
+        "region": provider_config.get("region", "")
+    }
+    
+    # Return the provider configuration
+    return {
+        "message": f"Provider '{provider}' configuration retrieved successfully",
+        "metadata": Metadata().model_dump(),
+        "provider": provider_response,
+        "instances": instances
+    }
 
 @app.patch("/providers/{provider}", tags=["Provider Management"], response_model=ProviderResponse)
 def configure(
@@ -440,10 +558,10 @@ def configure(
     update: ProviderUpdateRequest
 ):
     """
-    Update scaling configuration for a specific provider.
+    Update scaling configuration for the default instance of a provider.
     
     Args:
-        provider: The name of the provider (digitalocean, aws, gcp, hetzner)
+        provider: The name of the provider (digitalocean, aws, gcp, hetzner, azure)
         update: The scaling configuration to update
         
     Returns:
@@ -458,15 +576,152 @@ def configure(
             detail=f"Provider '{provider}' not found"
         )
 
-    settings.config["providers"][provider]["scaling"]["min_scaling"] = update.min_scaling
-    settings.config["providers"][provider]["scaling"]["max_scaling"] = update.max_scaling
+    # If scaling is a dict, update directly
+    if isinstance(settings.config["providers"][provider]["instances"]["default"]["scaling"], dict):
+        settings.config["providers"][provider]["instances"]["default"]["scaling"]["min_scaling"] = update.min_scaling
+        settings.config["providers"][provider]["instances"]["default"]["scaling"]["max_scaling"] = update.max_scaling
+    else:
+        # Create a new ProviderScaling object
+        settings.config["providers"][provider]["instances"]["default"]["scaling"] = {
+            "min_scaling": update.min_scaling,
+            "max_scaling": update.max_scaling
+        }
     
-    provider_config = settings.config["providers"][provider].copy()
-    provider_config.pop("secrets", None)
+    # Update top-level scaling for backward compatibility
+    if isinstance(settings.config["providers"][provider]["scaling"], dict):
+        settings.config["providers"][provider]["scaling"]["min_scaling"] = update.min_scaling
+        settings.config["providers"][provider]["scaling"]["max_scaling"] = update.max_scaling
+    else:
+        settings.config["providers"][provider]["scaling"] = {
+            "min_scaling": update.min_scaling,
+            "max_scaling": update.max_scaling
+        }
     
-    return ProviderResponse(
-        message=f"Provider '{provider}' scaling configuration updated successfully",
-        provider=get_provider_model(provider, provider_config)
+    # Get provider config
+    provider_config = settings.config["providers"][provider]
+    
+    # Extract instances for top-level inclusion
+    instances = provider_config.get("instances", {})
+    
+    # Create the exact expected response format without using models
+    provider_response = {
+        "enabled": provider_config.get("enabled", False),
+        "ips": provider_config.get("ips", []),
+        "scaling": {
+            "min_scaling": update.min_scaling,
+            "max_scaling": update.max_scaling
+        },
+        "size": provider_config.get("size", ""),
+        "region": provider_config.get("region", "")
+    }
+    
+    # Return the response with only the specific fields
+    return {
+        "metadata": Metadata().model_dump(),
+        "message": f"Provider '{provider}' scaling configuration updated successfully",
+        "provider": provider_response,
+        "instances": instances
+    }
+
+@app.get("/providers/{provider}/{instance}", tags=["Provider Management"], response_model=ProviderInstanceResponse)
+def get_provider_instance(provider: str, instance: str):
+    """
+    Get configuration and status for a specific provider instance.
+    
+    Args:
+        provider: The name of the provider (digitalocean, aws, gcp, hetzner)
+        instance: The name of the instance
+        
+    Returns:
+        ProviderInstanceResponse: Provider instance configuration and status with metadata
+        
+    Raises:
+        HTTPException: If the provider or instance is not found
+    """
+    if provider not in settings.config["providers"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' not found"
+        )
+    
+    if instance not in settings.config["providers"][provider]["instances"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' instance '{instance}' not found"
+        )
+
+    instance_config = settings.config["providers"][provider]["instances"][instance].copy()
+    instance_config.pop("secrets", None)
+    
+    return ProviderInstanceResponse(
+        message=f"Provider '{provider}' instance '{instance}' configuration retrieved successfully",
+        provider=provider,
+        instance=instance,
+        config=ProviderInstance(**instance_config)
+    )
+
+@app.patch("/providers/{provider}/{instance}", tags=["Provider Management"], response_model=ProviderInstanceResponse)
+def configure_instance(
+    provider: str,
+    instance: str,
+    update: ProviderUpdateRequest
+):
+    """
+    Update scaling configuration for a specific instance of a provider.
+    
+    Args:
+        provider: The name of the provider (digitalocean, aws, gcp, hetzner)
+        instance: The name of the instance
+        update: The scaling configuration to update
+        
+    Returns:
+        ProviderInstanceResponse: Updated provider instance configuration with metadata
+        
+    Raises:
+        HTTPException: If the provider or instance is not found
+    """
+    if provider not in settings.config["providers"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' not found"
+        )
+    
+    if instance not in settings.config["providers"][provider]["instances"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' instance '{instance}' not found"
+        )
+    
+    # If scaling is a dict, update directly
+    if isinstance(settings.config["providers"][provider]["instances"][instance]["scaling"], dict):
+        settings.config["providers"][provider]["instances"][instance]["scaling"]["min_scaling"] = update.min_scaling
+        settings.config["providers"][provider]["instances"][instance]["scaling"]["max_scaling"] = update.max_scaling
+    else:
+        # Create a new scaling dictionary
+        settings.config["providers"][provider]["instances"][instance]["scaling"] = {
+            "min_scaling": update.min_scaling,
+            "max_scaling": update.max_scaling
+        }
+    
+    # Update top-level scaling for backward compatibility if this is the default instance
+    if instance == "default":
+        if isinstance(settings.config["providers"][provider]["scaling"], dict):
+            settings.config["providers"][provider]["scaling"]["min_scaling"] = update.min_scaling
+            settings.config["providers"][provider]["scaling"]["max_scaling"] = update.max_scaling
+        else:
+            settings.config["providers"][provider]["scaling"] = {
+                "min_scaling": update.min_scaling,
+                "max_scaling": update.max_scaling
+            }
+    
+    instance_config = settings.config["providers"][provider]["instances"][instance].copy()
+    instance_config.pop("secrets", None)
+    
+    return ProviderInstanceResponse(
+        message=f"Provider '{provider}' instance '{instance}' scaling configuration updated successfully",
+        provider=provider,
+        instance=instance,
+        config=ProviderInstance(**instance_config)
     )
 
 if __name__ == "__main__":

@@ -15,7 +15,8 @@ from cloudproxy.main import (
     AWSProvider,
     GCPProvider,
     HetznerProvider,
-    ProviderUpdateRequest
+    ProviderUpdateRequest,
+    ProviderInstance,
 )
 from cloudproxy.providers import settings
 
@@ -49,12 +50,18 @@ def test_proxy_address_custom_values():
     proxy = ProxyAddress(
         ip="192.168.1.1", 
         port=8080, 
-        auth_enabled=False
+        auth_enabled=False,
+        provider="aws",
+        instance="production",
+        display_name="AWS Production"
     )
     
     assert str(proxy.ip) == "192.168.1.1"
     assert proxy.port == 8080
     assert proxy.auth_enabled is False
+    assert proxy.provider == "aws"
+    assert proxy.instance == "production"
+    assert proxy.display_name == "AWS Production"
 
 # Test the model integration with config values
 def test_create_proxy_address():
@@ -132,23 +139,89 @@ def test_provider_scaling_validation():
     with pytest.raises(ValidationError):
         ProviderScaling(min_scaling=1, max_scaling=-5)
 
+# Tests for ProviderInstance model
+def test_provider_instance():
+    """Test ProviderInstance model"""
+    instance = ProviderInstance(
+        enabled=True,
+        ips=["192.168.1.1", "192.168.1.2"],
+        scaling={"min_scaling": 2, "max_scaling": 5},
+        size="t2.micro",
+        display_name="Production Instance",
+        region="us-west-2"
+    )
+    
+    assert instance.enabled is True
+    assert instance.ips == ["192.168.1.1", "192.168.1.2"]
+    assert instance.scaling.min_scaling == 2
+    assert instance.scaling.max_scaling == 5
+    assert instance.size == "t2.micro"
+    assert instance.display_name == "Production Instance"
+    assert instance.region == "us-west-2"
+
+def test_provider_instance_optional_fields():
+    """Test ProviderInstance model with optional fields"""
+    instance = ProviderInstance(
+        enabled=True,
+        ips=[],
+        scaling={"min_scaling": 1, "max_scaling": 3},
+        size="cx11",
+        display_name="Hetzner Test",
+        location="nbg1",  # Hetzner-specific
+        zone="us-central1-a",  # GCP-specific
+    )
+    
+    assert instance.enabled is True
+    assert instance.ips == []
+    assert instance.scaling.min_scaling == 1
+    assert instance.scaling.max_scaling == 3
+    assert instance.size == "cx11"
+    assert instance.display_name == "Hetzner Test"
+    assert instance.location == "nbg1"
+    assert instance.zone == "us-central1-a"
+
 # Tests for provider models
 def test_base_provider():
     """Test BaseProvider model"""
-    provider = BaseProvider(
+    # Create provider instance
+    default_instance = ProviderInstance(
         enabled=True,
         ips=["192.168.1.1", "192.168.1.2"],
         scaling={"min_scaling": 1, "max_scaling": 3},
         size="small",
+        display_name="Default Instance",
         region="europe"
     )
     
-    assert provider.enabled is True
-    assert provider.ips == ["192.168.1.1", "192.168.1.2"]
-    assert provider.scaling.min_scaling == 1
-    assert provider.scaling.max_scaling == 3
-    assert provider.size == "small"
-    assert provider.region == "europe"
+    # Create another instance
+    production_instance = ProviderInstance(
+        enabled=True,
+        ips=["192.168.1.3"],
+        scaling={"min_scaling": 2, "max_scaling": 5},
+        size="large",
+        display_name="Production Instance",
+        region="us-west"
+    )
+    
+    # Create provider with instances
+    provider = BaseProvider(
+        instances={
+            "default": default_instance,
+            "production": production_instance
+        }
+    )
+    
+    assert "default" in provider.instances
+    assert "production" in provider.instances
+    assert provider.instances["default"].enabled is True
+    assert provider.instances["default"].ips == ["192.168.1.1", "192.168.1.2"]
+    assert provider.instances["default"].scaling.min_scaling == 1
+    assert provider.instances["default"].scaling.max_scaling == 3
+    assert provider.instances["default"].size == "small"
+    assert provider.instances["default"].display_name == "Default Instance"
+    assert provider.instances["default"].region == "europe"
+    assert provider.instances["production"].ips == ["192.168.1.3"]
+    assert provider.instances["production"].display_name == "Production Instance"
 
 def test_digitalocean_provider():
     """Test DigitalOceanProvider model"""

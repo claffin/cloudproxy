@@ -1,59 +1,94 @@
-# Google Cloud Configuration
+# Google Cloud Platform Configuration
 
-To use Google Cloud as a provider, you’ll first need to create a Service Account.
+To use Google Cloud Platform (GCP) as a provider, you'll need to set up credentials for authentication.
 
 ## Steps
 
-1. Login to your GCP console. Create a new Project if needed.
-2. Go to Identity and Access Management (IAM & Admin).
-3. On the left-hand panel, click 'Service Accounts'.
-3. Click 'Create Service Account'.
-4. Choose a service account name e.g. 'cloudproxy' and select Create and Continue.
-5. Choose Compute Engine / Compute Admin Role, then click Continue.
-6. Click Done.
-7. The service account will appear in the list as service-account-name@project-id.iam.gserviceaccount.com.
+1. Login to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new Project or select an existing project.
+3. Ensure the Compute Engine API is enabled for your project.
+4. Navigate to IAM & Admin > Service Accounts.
+5. Create a new service account with the following roles:
+   - Compute Admin
+   - Service Account User
+6. Create a new JSON key for this service account and download the key file.
+7. Store this key file securely.
 
-Now you have your Service Account created, but you still need to create a key for this Service Account.
-
-1. Click the newly created service account.
-2. Click 'Keys'.
-3. Choose Add Key / Create New Key.
-4. Choose JSON as Key type.
-5. Click Create.
-6. Save the key to your local storage.
-
-Last, you need to create a firewall rule for the default network.
-
-1. On the left-hand panel, select VPC network / Firewall.
-2. Click 'Create Firewall Rule'.
-3. Name --> cloudproxy
-4. Target tags --> cloudproxy
-5. Source IP ranges --> 0.0.0.0/0
-6. Specified protocols and ports --> tcp --> 8899
-7. Leave all other options intact and click 'Create'.
-
-You can now use GCP as a proxy provider, below details of the environment variables.
+Now you have your credentials, you can use GCP as a proxy provider. Set up the environment variables as shown below:
 
 ## Configuration options
-### Environment variables: 
+### Environment variables:
 #### Required:
 ``GCP_ENABLED`` - to enable GCP as a provider, set as True. Default value: False
 
-``GCP_PROJECT`` - GCP project ID where to create proxy instances. 
+``GCP_SA_JSON`` - the path to the service account JSON key file. For Docker, mount the file to the container and provide the path.
 
-``GCP_SERVICE_ACCOUNT_KEY`` - the service account key to allow CloudProxy access to your account. Please note this is not the path to the key, but the key itself. 
+``GCP_ZONE`` - the GCP zone where the instances will be created. Default value: us-central1-a
 
-The easiest method to set the ``GCP_SERVICE_ACCOUNT_KEY`` is to use a shell variable. For example, ``GCP_KEY=$(cat /path/to/service_account.json)`` and then use the new variable ``$GCP_KEY``.
+``GCP_IMAGE_PROJECT`` - the project containing the image you want to use. Default value: ubuntu-os-cloud
+
+``GCP_IMAGE_FAMILY`` - the image family to use for the instances. Default value: ubuntu-2204-lts
 
 #### Optional:
-``GCP_MIN_SCALING`` - this is the minimal proxies you require to be provisioned. Default value: 2
+``GCP_PROJECT`` - your GCP project ID. This can be found in the JSON key file.
 
-``GCP_MAX_SCALING`` - this is currently unused, however will be when autoscaling is implemented. We recommend you set this as the same as the minimum scaling to avoid future issues for now. Default value: 2
+``GCP_MIN_SCALING`` - the minimum number of proxies to provision. Default value: 2
 
-``GCP_SIZE``  - this sets the instance size, we recommend the smallest instance as the volume even a small instance can handle is high. Default value: f1-micro
+``GCP_MAX_SCALING`` - currently unused, but will be when autoscaling is implemented. We recommend you set this to the same value as the minimum scaling to avoid future issues. Default value: 2
 
-``GCP_REGION`` - this sets the region & zone where the instance is deployed. Some websites may redirect to the language of the country your IP is from. Default value: us-central1-a
+``GCP_SIZE`` - the machine type to use for the instances. Default value: e2-micro
 
-``GCP_IMAGE_PROJECT`` - this sets the project of the image family the instance is deployed with. The default image family project is ubuntu-os-cloud. Default value: ubuntu-os-cloud
+## Multi-Account Support
 
-``GCP_IMAGE_FAMILY`` - this sets the image family the instance is deployed with. The default image family is Ubuntu 20.04 LTS Minimal. Default value: ubuntu-minimal-2004-lts
+CloudProxy supports running multiple GCP accounts simultaneously. Each account is configured as a separate "instance" with its own settings.
+
+### Default Instance Configuration
+
+The configuration variables mentioned above configure the "default" instance. For example:
+
+```
+GCP_ENABLED=True
+GCP_SA_JSON=/path/to/service-account-key.json
+GCP_PROJECT=your-project-id
+GCP_ZONE=us-central1-a
+GCP_MIN_SCALING=2
+```
+
+### Additional Instances Configuration
+
+To configure additional GCP accounts, use the following format:
+```
+GCP_INSTANCENAME_VARIABLE=VALUE
+```
+
+For example, to add a second GCP account in a different zone:
+
+```
+GCP_EUROPE_ENABLED=True
+GCP_EUROPE_SA_JSON=/path/to/europe-service-account-key.json
+GCP_EUROPE_PROJECT=europe-project-id
+GCP_EUROPE_ZONE=europe-west1-b
+GCP_EUROPE_MIN_SCALING=1
+GCP_EUROPE_SIZE=e2-micro
+GCP_EUROPE_DISPLAY_NAME=Europe GCP Account
+```
+
+### Available instance-specific configurations
+
+For each instance, you can configure:
+
+#### Required for each instance:
+- `GCP_INSTANCENAME_ENABLED` - to enable this specific instance
+- `GCP_INSTANCENAME_SA_JSON` - path to the service account JSON key file for this instance
+- `GCP_INSTANCENAME_ZONE` - GCP zone for this instance
+- `GCP_INSTANCENAME_IMAGE_PROJECT` - image project for this instance
+- `GCP_INSTANCENAME_IMAGE_FAMILY` - image family for this instance
+
+#### Optional for each instance:
+- `GCP_INSTANCENAME_PROJECT` - GCP project ID for this instance
+- `GCP_INSTANCENAME_SIZE` - machine type for this instance
+- `GCP_INSTANCENAME_MIN_SCALING` - minimum number of proxies for this instance
+- `GCP_INSTANCENAME_MAX_SCALING` - maximum number of proxies for this instance
+- `GCP_INSTANCENAME_DISPLAY_NAME` - a friendly name for the instance that will appear in the UI
+
+Each instance operates independently, maintaining its own pool of proxies according to its configuration.

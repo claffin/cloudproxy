@@ -31,7 +31,10 @@ All API responses follow a standardized format that includes:
   "ip": "192.168.1.1",
   "port": 8899,
   "auth_enabled": true,
-  "url": "http://username:password@192.168.1.1:8899"
+  "url": "http://username:password@192.168.1.1:8899",
+  "provider": "digitalocean",
+  "instance": "default",
+  "display_name": "My DigitalOcean Instance"
 }
 ```
 
@@ -45,7 +48,44 @@ All API responses follow a standardized format that includes:
     "max_scaling": 5
   },
   "size": "s-1vcpu-1gb",
-  "region": "lon1"
+  "region": "lon1",
+  "instances": {
+    "default": {
+      "enabled": true,
+      "ips": ["192.168.1.1", "192.168.1.2"],
+      "scaling": {
+        "min_scaling": 2,
+        "max_scaling": 5
+      },
+      "size": "s-1vcpu-1gb",
+      "region": "lon1"
+    },
+    "second-account": {
+      "enabled": true,
+      "ips": ["192.168.1.3", "192.168.1.4"],
+      "scaling": {
+        "min_scaling": 1,
+        "max_scaling": 3
+      },
+      "size": "s-1vcpu-1gb",
+      "region": "nyc1"
+    }
+  }
+}
+```
+
+### Provider Instance Object
+```json
+{
+  "enabled": true,
+  "ips": ["192.168.1.1", "192.168.1.2"],
+  "scaling": {
+    "min_scaling": 2,
+    "max_scaling": 5
+  },
+  "size": "s-1vcpu-1gb",
+  "region": "lon1",
+  "display_name": "My DigitalOcean Instance"
 }
 ```
 
@@ -66,7 +106,10 @@ All API responses follow a standardized format that includes:
       "ip": "192.168.1.1",
       "port": 8899,
       "auth_enabled": true,
-      "url": "http://username:password@192.168.1.1:8899"
+      "url": "http://username:password@192.168.1.1:8899",
+      "provider": "digitalocean",
+      "instance": "default",
+      "display_name": "My DigitalOcean Instance"
     }
   ]
 }
@@ -84,7 +127,10 @@ All API responses follow a standardized format that includes:
     "ip": "192.168.1.1",
     "port": 8899,
     "auth_enabled": true,
-    "url": "http://username:password@192.168.1.1:8899"
+    "url": "http://username:password@192.168.1.1:8899",
+    "provider": "digitalocean",
+    "instance": "default",
+    "display_name": "My DigitalOcean Instance"
   }
 }
 ```
@@ -125,7 +171,7 @@ All API responses follow a standardized format that includes:
 
 #### List All Providers
 - `GET /providers`
-- Returns configuration and status for all providers
+- Returns configuration and status for all providers, including all instances
 - Response format:
 ```json
 {
@@ -139,7 +185,29 @@ All API responses follow a standardized format that includes:
         "max_scaling": 5
       },
       "size": "s-1vcpu-1gb",
-      "region": "lon1"
+      "region": "lon1",
+      "instances": {
+        "default": {
+          "enabled": true,
+          "ips": ["192.168.1.1", "192.168.1.2"],
+          "scaling": {
+            "min_scaling": 2,
+            "max_scaling": 5
+          },
+          "size": "s-1vcpu-1gb",
+          "region": "lon1"
+        },
+        "second-account": {
+          "enabled": true,
+          "ips": ["192.168.1.3", "192.168.1.4"],
+          "scaling": {
+            "min_scaling": 1,
+            "max_scaling": 3
+          },
+          "size": "s-1vcpu-1gb",
+          "region": "nyc1"
+        }
+      }
     },
     "aws": { ... }
   }
@@ -148,7 +216,7 @@ All API responses follow a standardized format that includes:
 
 #### Get Provider Details
 - `GET /providers/{provider}`
-- Returns detailed information for a specific provider
+- Returns detailed information for a specific provider, including all instances
 - Response format:
 ```json
 {
@@ -163,13 +231,35 @@ All API responses follow a standardized format that includes:
     },
     "size": "s-1vcpu-1gb",
     "region": "lon1"
+  },
+  "instances": {
+    "default": {
+      "enabled": true,
+      "ips": ["192.168.1.1", "192.168.1.2"],
+      "scaling": {
+        "min_scaling": 2,
+        "max_scaling": 5
+      },
+      "size": "s-1vcpu-1gb",
+      "region": "lon1"
+    },
+    "second-account": {
+      "enabled": true,
+      "ips": ["192.168.1.3", "192.168.1.4"],
+      "scaling": {
+        "min_scaling": 1,
+        "max_scaling": 3
+      },
+      "size": "s-1vcpu-1gb",
+      "region": "nyc1"
+    }
   }
 }
 ```
 
 #### Update Provider Scaling
 - `PATCH /providers/{provider}`
-- Updates the scaling configuration for a provider
+- Updates the scaling configuration for the default instance of a provider
 - Request body:
 ```json
 {
@@ -178,6 +268,43 @@ All API responses follow a standardized format that includes:
 }
 ```
 - Response format matches Get Provider Details
+- Validation ensures max_scaling >= min_scaling
+
+#### Get Provider Instance Details
+- `GET /providers/{provider}/{instance}`
+- Returns detailed information for a specific instance of a provider
+- Response format:
+```json
+{
+  "metadata": { ... },
+  "message": "Provider 'digitalocean' instance 'default' configuration retrieved successfully",
+  "provider": "digitalocean",
+  "instance": "default",
+  "config": {
+    "enabled": true,
+    "ips": ["192.168.1.1", "192.168.1.2"],
+    "scaling": {
+      "min_scaling": 2,
+      "max_scaling": 5
+    },
+    "size": "s-1vcpu-1gb",
+    "region": "lon1",
+    "display_name": "My DigitalOcean Instance"
+  }
+}
+```
+
+#### Update Provider Instance Scaling
+- `PATCH /providers/{provider}/{instance}`
+- Updates the scaling configuration for a specific instance of a provider
+- Request body:
+```json
+{
+  "min_scaling": 2,
+  "max_scaling": 5
+}
+```
+- Response format matches Get Provider Instance Details
 - Validation ensures max_scaling >= min_scaling
 
 ## Error Responses

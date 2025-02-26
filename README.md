@@ -157,7 +157,35 @@ proxies = {
 my_request = requests.get("https://api.ipify.org", proxies=proxies)
 ```
 
-For detailed API documentation, see [API Documentation](docs/api.md).
+## Development Workflow
+
+If you want to contribute to CloudProxy, please follow our branch workflow:
+
+1. **Branch Structure**:
+   - `main` - Production code that has been released
+   - `dev` - Development branch where features are integrated before release
+   - Feature branches - Individual branches for new features or bug fixes
+
+2. **Contribution Process**:
+   - Create a feature branch from `dev`
+   - Develop your feature or fix
+   - Submit a pull request to the `dev` branch
+   - After review and approval, your code will be merged into `dev`
+   - When ready for release, `dev` is merged into `main`
+
+3. **Branch Protection**:
+   - The repository has branch protection rules in place
+   - Direct pushes to `main` and `dev` are not allowed
+   - Pull requests require passing tests and approvals
+   - Only `dev` branch can be merged into `main`
+
+4. **CI/CD**:
+   - All pull requests and pushes trigger automated tests
+   - Merges to `main` automatically create a new release and Docker image
+
+For detailed instructions on setting up branch protection rules, see [BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
+
+If you'd like to contribute to CloudProxy, please read our [contribution guidelines](.github/CONTRIBUTING.md).
 
 ## Multi-Account Provider Support
 

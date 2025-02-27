@@ -112,11 +112,24 @@ def test_delete_proxy(mocker, droplets):
     """Test deleting a proxy."""
     assert len(droplets) > 0
     droplet_id = droplets[0].id
-    mocker.patch(
-        'cloudproxy.providers.digitalocean.functions.digitalocean.Droplet.destroy',
-        return_value=True
-    )
+    
+    # Mock the Manager and get_droplet method to avoid real API calls
+    mock_manager = mocker.patch('cloudproxy.providers.digitalocean.functions.get_manager')
+    mock_manager_instance = mocker.MagicMock()
+    mock_manager.return_value = mock_manager_instance
+    
+    # Mock the droplet that will be returned by get_droplet
+    mock_droplet = mocker.MagicMock()
+    mock_droplet.destroy.return_value = True
+    mock_manager_instance.get_droplet.return_value = mock_droplet
+    
+    # Test the delete_proxy function
     assert delete_proxy(droplet_id) == True
+    
+    # Verify our mock was called correctly
+    mock_manager.assert_called_once()
+    mock_manager_instance.get_droplet.assert_called_once_with(droplet_id)
+    mock_droplet.destroy.assert_called_once()
 
 
 @patch('cloudproxy.providers.digitalocean.functions.digitalocean.Manager')
@@ -190,20 +203,25 @@ def test_create_proxy_with_instance_config(mock_droplet, test_instance_config):
         settings.config["providers"]["digitalocean"]["instances"] = original_config
 
 
-@patch('cloudproxy.providers.digitalocean.functions.digitalocean.Droplet')
-def test_delete_proxy_with_instance_config(mock_droplet, test_instance_config):
+@patch('cloudproxy.providers.digitalocean.functions.get_manager')
+def test_delete_proxy_with_instance_config(mock_get_manager, mocker, test_instance_config):
     """Test deleting a proxy with a specific instance configuration."""
     # Setup mock
-    mock_droplet_instance = MagicMock()
-    mock_droplet_instance.destroy.return_value = True
-    mock_droplet.return_value = mock_droplet_instance
+    mock_manager = mocker.MagicMock()
+    mock_get_manager.return_value = mock_manager
+    
+    # Mock the droplet that will be returned by get_droplet
+    mock_droplet = mocker.MagicMock()
+    mock_droplet.destroy.return_value = True
+    mock_manager.get_droplet.return_value = mock_droplet
     
     # Call function under test
     result = delete_proxy(1234, test_instance_config)
     
     # Verify
-    mock_droplet.assert_called_once_with(id=1234, token="test-token-useast")
-    mock_droplet_instance.destroy.assert_called_once()
+    mock_get_manager.assert_called_once_with(test_instance_config)
+    mock_manager.get_droplet.assert_called_once_with(1234)
+    mock_droplet.destroy.assert_called_once()
     assert result == True
 
 

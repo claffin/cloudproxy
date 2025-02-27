@@ -1,7 +1,7 @@
 import pytest
 from cloudproxy.providers.digitalocean.main import do_deployment, do_start
-from cloudproxy.providers.digitalocean.functions import list_droplets
-from tests.test_providers_digitalocean_functions import test_create_proxy, test_delete_proxy, load_from_file
+from cloudproxy.providers.digitalocean.functions import list_droplets, delete_proxy
+from tests.test_providers_digitalocean_functions import load_from_file
 
 
 @pytest.fixture
@@ -73,3 +73,27 @@ def test_list_droplets(droplets):
     # Store the result in a module-level variable if needed by other tests
     global test_droplets
     test_droplets = result
+
+
+def test_delete_proxy(mocker, droplets):
+    """Test deleting a proxy."""
+    assert len(droplets) > 0
+    droplet_id = droplets[0].id
+    
+    # Mock the Manager and get_droplet method to avoid real API calls
+    mock_manager = mocker.patch('cloudproxy.providers.digitalocean.functions.get_manager')
+    mock_manager_instance = mocker.MagicMock()
+    mock_manager.return_value = mock_manager_instance
+    
+    # Mock the droplet that will be returned by get_droplet
+    mock_droplet = mocker.MagicMock()
+    mock_droplet.destroy.return_value = True
+    mock_manager_instance.get_droplet.return_value = mock_droplet
+    
+    # Test the delete_proxy function
+    assert delete_proxy(droplet_id) == True
+    
+    # Verify our mock was called correctly
+    mock_manager.assert_called_once()
+    mock_manager_instance.get_droplet.assert_called_once_with(droplet_id)
+    mock_droplet.destroy.assert_called_once()

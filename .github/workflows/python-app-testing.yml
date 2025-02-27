@@ -37,6 +37,15 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
+        # Set dummy environment variables for testing
+        export PROXY_USERNAME=test_username
+        export PROXY_PASSWORD=test_password
+        export DIGITALOCEAN_ACCESS_TOKEN=test_do_token
+        export AWS_ACCESS_KEY=test_aws_key
+        export AWS_SECRET_KEY=test_aws_secret
+        export HETZNER_API_TOKEN=test_hetzner_token
+        export GCP_SERVICE_ACCOUNT={}
+        # Run the tests
         pytest
     - name: Generate coverage report
       run: |

@@ -429,7 +429,7 @@ ensure_cloud_provider_cleanup() {
     # Check providers to ensure no instances are running
     print_info "Verifying no instances are running with providers..."
     
-    local providers=("digitalocean" "aws" "hetzner")
+    local providers=("digitalocean" "aws" "hetzner" "azure")
     for provider in "${providers[@]}"; do
         local provider_info=$(curl -s -X GET "http://localhost:8000/providers/$provider" -H "accept: application/json")
         local enabled=$(echo "$provider_info" | jq -r '.provider.enabled')
@@ -517,17 +517,22 @@ call_api "PATCH" "/providers/aws" '{"min_scaling": 3, "max_scaling": 4}' "Updati
 # Test 7: Update Hetzner scaling
 call_api "PATCH" "/providers/hetzner" '{"min_scaling": 3, "max_scaling": 3}' "Updating Hetzner scaling"
 
+# Test 7.1: Update Azure scaling
+call_api "PATCH" "/providers/azure" '{"min_scaling": 2, "max_scaling": 2}' "Updating Azure scaling"
+
 # Wait for proxies to be created (dynamic wait with timeout)
 # Calculate expected total proxies from scaling settings
 expected_proxy_count=0
 do_min_scaling=$(curl -s -X GET "http://localhost:8000/providers/digitalocean" -H "accept: application/json" | jq -r '.provider.scaling.min_scaling')
 aws_min_scaling=$(curl -s -X GET "http://localhost:8000/providers/aws" -H "accept: application/json" | jq -r '.provider.scaling.min_scaling')
 hetzner_min_scaling=$(curl -s -X GET "http://localhost:8000/providers/hetzner" -H "accept: application/json" | jq -r '.provider.scaling.min_scaling')
+azure_min_scaling=$(curl -s -X GET "http://localhost:8000/providers/azure" -H "accept: application/json" | jq -r '.provider.scaling.min_scaling')
 
 # Only count enabled providers
 do_enabled=$(curl -s -X GET "http://localhost:8000/providers/digitalocean" -H "accept: application/json" | jq -r '.provider.enabled')
 aws_enabled=$(curl -s -X GET "http://localhost:8000/providers/aws" -H "accept: application/json" | jq -r '.provider.enabled')
 hetzner_enabled=$(curl -s -X GET "http://localhost:8000/providers/hetzner" -H "accept: application/json" | jq -r '.provider.enabled')
+azure_enabled=$(curl -s -X GET "http://localhost:8000/providers/azure" -H "accept: application/json" | jq -r '.provider.enabled')
 
 if [ "$do_enabled" = "true" ]; then
     expected_proxy_count=$((expected_proxy_count + do_min_scaling))
@@ -537,6 +542,9 @@ if [ "$aws_enabled" = "true" ]; then
 fi
 if [ "$hetzner_enabled" = "true" ]; then
     expected_proxy_count=$((expected_proxy_count + hetzner_min_scaling))
+fi
+if [ "$azure_enabled" = "true" ]; then
+    expected_proxy_count=$((expected_proxy_count + azure_min_scaling))
 fi
 
 # Wait for the expected number of proxies
@@ -668,6 +676,7 @@ if [ "${AUTO_CLEANUP:-true}" = "true" ]; then
     call_api "PATCH" "/providers/digitalocean" '{"min_scaling": 0, "max_scaling": 0}' "Scaling down DigitalOcean"
     call_api "PATCH" "/providers/aws" '{"min_scaling": 0, "max_scaling": 0}' "Scaling down AWS"
     call_api "PATCH" "/providers/hetzner" '{"min_scaling": 0, "max_scaling": 0}' "Scaling down Hetzner"
+    call_api "PATCH" "/providers/azure" '{"min_scaling": 0, "max_scaling": 0}' "Scaling down Azure"
     
     # Wait for all proxies to be destroyed
     wait_for_proxies_destroyed

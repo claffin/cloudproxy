@@ -5,7 +5,7 @@ import re
 import logging
 import uuid
 from datetime import datetime, UTC
-from typing import List, Optional, Set, Dict, Any
+from typing import List, Optional, Set, Dict, Any, Union
 
 import uvicorn
 from loguru import logger
@@ -141,6 +141,8 @@ class ProxyAddress(BaseModel):
     provider: Optional[str] = None
     instance: Optional[str] = None
     display_name: Optional[str] = None
+    ready: bool = True
+    id: Optional[str] = None
 
     @field_validator('url', mode='before')
     @classmethod
@@ -181,12 +183,29 @@ def get_ip_list() -> List[ProxyAddress]:
         # Handle top-level IPs (for backward compatibility)
         if "ips" in provider_config:
             for ip in provider_config["ips"]:
-                if ip not in delete_queue and ip not in restart_queue:
-                    proxy = create_proxy_address(ip)
-                    proxy.provider = provider_name
-                    proxy.instance = "default"  # Assume default instance for top-level IPs
-                    proxy.display_name = provider_config.get("display_name", provider_name)
-                    ip_list.append(proxy)
+                # Handle both string IPs and dictionary IPs (from Azure provider)
+                if isinstance(ip, dict):
+                    # For dictionary format, use the "ip" key as the actual IP address
+                    ip_address = ip.get("ip")
+                    if ip_address and ip_address not in delete_queue and ip_address not in restart_queue:
+                        proxy = create_proxy_address(ip_address)
+                        proxy.provider = provider_name
+                        proxy.instance = ip.get("provider_instance", "default")
+                        proxy.display_name = provider_config.get("display_name", provider_name)
+                        # Copy additional properties if available
+                        if "port" in ip:
+                            proxy.port = ip["port"]
+                        proxy.ready = ip.get("ready", True)
+                        proxy.id = ip.get("id")
+                        ip_list.append(proxy)
+                else:
+                    # For string format (original behavior)
+                    if ip not in delete_queue and ip not in restart_queue:
+                        proxy = create_proxy_address(ip)
+                        proxy.provider = provider_name
+                        proxy.instance = "default"  # Assume default instance for top-level IPs
+                        proxy.display_name = provider_config.get("display_name", provider_name)
+                        ip_list.append(proxy)
                     
         # Skip providers that don't have an instances field (like azure)
         if "instances" not in provider_config:
@@ -196,12 +215,29 @@ def get_ip_list() -> List[ProxyAddress]:
         for instance_name, instance_config in provider_config["instances"].items():
             if "ips" in instance_config:
                 for ip in instance_config["ips"]:
-                    if ip not in delete_queue and ip not in restart_queue:
-                        proxy = create_proxy_address(ip)
-                        proxy.provider = provider_name
-                        proxy.instance = instance_name
-                        proxy.display_name = instance_config.get("display_name")
-                        ip_list.append(proxy)
+                    # Handle both string IPs and dictionary IPs (from Azure provider)
+                    if isinstance(ip, dict):
+                        # For dictionary format, use the "ip" key as the actual IP address
+                        ip_address = ip.get("ip")
+                        if ip_address and ip_address not in delete_queue and ip_address not in restart_queue:
+                            proxy = create_proxy_address(ip_address)
+                            proxy.provider = provider_name
+                            proxy.instance = instance_name
+                            proxy.display_name = instance_config.get("display_name")
+                            # Copy additional properties if available
+                            if "port" in ip:
+                                proxy.port = ip["port"]
+                            proxy.ready = ip.get("ready", True)
+                            proxy.id = ip.get("id")
+                            ip_list.append(proxy)
+                    else:
+                        # For string format (original behavior)
+                        if ip not in delete_queue and ip not in restart_queue:
+                            proxy = create_proxy_address(ip)
+                            proxy.provider = provider_name
+                            proxy.instance = instance_name
+                            proxy.display_name = instance_config.get("display_name")
+                            ip_list.append(proxy)
                         
     return ip_list
 
@@ -337,10 +373,21 @@ class ProviderScaling(BaseModel):
     min_scaling: int = Field(ge=0, default=0)
     max_scaling: int = Field(ge=0, default=0)
 
+# IP Info model for dictionary representation of IPs (from Azure provider)
+class IPInfo(BaseModel):
+    ip: str
+    port: int = 8899
+    username: Optional[str] = None
+    password: Optional[str] = None
+    ready: bool = True
+    provider: Optional[str] = None
+    provider_instance: Optional[str] = None
+    id: Optional[str] = None
+
 # Provider instance model for multi-instance support
 class ProviderInstance(BaseModel):
     enabled: bool
-    ips: List[str] = []
+    ips: List[Union[str, Dict[str, Any], IPInfo]] = []
     scaling: ProviderScaling
     size: str
     region: Optional[str] = None

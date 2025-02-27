@@ -89,49 +89,167 @@ def droplet_id():
     return "DROPLET-ID"
 
 
-def test_list_droplets(droplets):
+@patch('cloudproxy.providers.digitalocean.functions.get_manager')
+def test_list_droplets(mock_get_manager):
     """Test listing droplets."""
-    result = list_droplets()
+    # Setup
+    mock_manager = MagicMock()
+    mock_get_manager.return_value = mock_manager
+    
+    mock_droplets = [MagicMock(id=i) for i in range(1, 5)]
+    mock_manager.get_all_droplets.return_value = mock_droplets
+    
+    # Execute
+    with patch('cloudproxy.providers.digitalocean.functions.settings.config', {
+        "providers": {
+            "digitalocean": {
+                "instances": {
+                    "default": {
+                        "secrets": {
+                            "access_token": "test-token"
+                        }
+                    }
+                }
+            }
+        }
+    }):
+        result = list_droplets()
+    
+    # Verify
+    assert mock_get_manager.called
+    mock_manager.get_all_droplets.assert_called()
     assert isinstance(result, list)
-    assert len(result) > 0
-    # Check that the first droplet has the correct ID
-    assert result[0].id == 3164444  # Verify specific droplet data
+    assert len(result) == 4
+    assert result == mock_droplets
 
 
-def test_create_proxy(mocker, droplet_id):
+@patch('cloudproxy.providers.digitalocean.functions.get_manager')
+@patch('cloudproxy.providers.digitalocean.functions.set_auth')
+def test_create_proxy(mock_set_auth, mock_get_manager):
     """Test creating a proxy."""
-    droplet = Droplet(droplet_id)
-    mocker.patch(
-        'cloudproxy.providers.digitalocean.functions.digitalocean.Droplet.create',
-        return_value=droplet
-    )
-    assert create_proxy() == True
+    # Setup
+    mock_set_auth.return_value = "mocked-user-data"
+    mock_manager = MagicMock()
+    mock_get_manager.return_value = mock_manager
+    
+    mock_droplet = MagicMock()
+    mock_manager.get_droplet.return_value = mock_droplet
+    
+    # Execute
+    with patch('cloudproxy.providers.digitalocean.functions.digitalocean.Droplet.create') as mock_create, \
+         patch('cloudproxy.providers.digitalocean.functions.settings.config', {
+             "providers": {
+                 "digitalocean": {
+                     "instances": {
+                         "default": {
+                             "secrets": {
+                                 "access_token": "test-token"
+                             },
+                             "region": "nyc1",
+                             "size": "s-1vcpu-1gb"
+                         }
+                     }
+                 }
+             },
+             "auth": {
+                 "username": "test-user",
+                 "password": "test-pass"
+             }
+         }), \
+         patch('cloudproxy.providers.digitalocean.functions.uuid.uuid1', return_value="test-uuid"):
+        mock_create.return_value = True
+        result = create_proxy()
+    
+    # Verify
+    assert mock_get_manager.called
+    assert mock_create.called
+    assert result is True
 
 
-def test_delete_proxy(mocker, droplets):
-    """Test deleting a proxy."""
-    assert len(droplets) > 0
-    droplet_id = droplets[0].id
-    mocker.patch(
-        'cloudproxy.providers.digitalocean.functions.digitalocean.Droplet.destroy',
-        return_value=True
-    )
-    assert delete_proxy(droplet_id) == True
+def test_delete_proxy():
+    """Test that we can delete a proxy."""
+    # Mock digitalocean.Droplet directly
+    with patch('cloudproxy.providers.digitalocean.functions.get_manager') as mock_get_manager, \
+         patch('cloudproxy.providers.digitalocean.functions.settings.config', {
+             "providers": {
+                 "digitalocean": {
+                     "instances": {
+                         "default": {
+                             "secrets": {
+                                 "access_token": "test-token"
+                             }
+                         }
+                     }
+                 }
+             }
+         }):
+        # Setup
+        mock_manager = MagicMock()
+        mock_get_manager.return_value = mock_manager
+        
+        mock_droplet = MagicMock()
+        mock_manager.get_droplet.return_value = mock_droplet
+        mock_droplet.destroy.return_value = True
+        
+        # Execute
+        result = delete_proxy(1)
+        
+        # Verify
+        assert mock_get_manager.called
+        mock_manager.get_droplet.assert_called_once_with(1)
+        mock_droplet.destroy.assert_called_once()
+        assert result is True
+
+
+@patch('cloudproxy.providers.digitalocean.functions.get_manager')
+def test_delete_proxy_with_instance_config(mock_get_manager, test_instance_config):
+    """Test that we can delete a proxy with a specific instance configuration."""
+    # Setup
+    mock_manager = MagicMock()
+    mock_get_manager.return_value = mock_manager
+    
+    mock_droplet = MagicMock()
+    mock_manager.get_droplet.return_value = mock_droplet
+    mock_droplet.destroy.return_value = True
+    
+    # Execute
+    result = delete_proxy(1, test_instance_config)
+    
+    # Verify
+    mock_get_manager.assert_called_once_with(test_instance_config)
+    mock_manager.get_droplet.assert_called_once_with(1)
+    mock_droplet.destroy.assert_called_once()
+    assert result is True
 
 
 @patch('cloudproxy.providers.digitalocean.functions.digitalocean.Manager')
 def test_get_manager_default(mock_manager):
     """Test get_manager with default configuration."""
-    # Setup mock
+    # Setup
     mock_manager_instance = MagicMock()
     mock_manager.return_value = mock_manager_instance
     
-    # Call function under test
-    result = get_manager()
+    # Mock settings to ensure access_token is available
+    test_config = {
+        "providers": {
+            "digitalocean": {
+                "instances": {
+                    "default": {
+                        "secrets": {
+                            "access_token": "test-token"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    with patch('cloudproxy.providers.digitalocean.functions.settings.config', test_config):
+        # Call function under test
+        result = get_manager()
     
     # Verify
-    mock_manager.assert_called_once()
-    assert mock_manager.call_args[1]['token'] == settings.config["providers"]["digitalocean"]["instances"]["default"]["secrets"]["access_token"]
+    mock_manager.assert_called_once_with(token="test-token")
     assert result == mock_manager_instance
 
 
@@ -188,23 +306,6 @@ def test_create_proxy_with_instance_config(mock_droplet, test_instance_config):
     finally:
         # Restore original config
         settings.config["providers"]["digitalocean"]["instances"] = original_config
-
-
-@patch('cloudproxy.providers.digitalocean.functions.digitalocean.Droplet')
-def test_delete_proxy_with_instance_config(mock_droplet, test_instance_config):
-    """Test deleting a proxy with a specific instance configuration."""
-    # Setup mock
-    mock_droplet_instance = MagicMock()
-    mock_droplet_instance.destroy.return_value = True
-    mock_droplet.return_value = mock_droplet_instance
-    
-    # Call function under test
-    result = delete_proxy(1234, test_instance_config)
-    
-    # Verify
-    mock_droplet.assert_called_once_with(id=1234, token="test-token-useast")
-    mock_droplet_instance.destroy.assert_called_once()
-    assert result == True
 
 
 @patch('cloudproxy.providers.digitalocean.functions.get_manager')

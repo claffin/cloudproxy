@@ -181,7 +181,7 @@ def test_delete_proxy_default(mock_get_client, mock_server):
     mock_client = MagicMock()
     mock_get_client.return_value = mock_client
     
-    mock_client.servers.get.return_value = mock_server
+    mock_client.servers.get_by_id.return_value = mock_server
     mock_server.delete.return_value = "delete-response"
     
     # Execute
@@ -189,7 +189,7 @@ def test_delete_proxy_default(mock_get_client, mock_server):
     
     # Verify
     assert mock_get_client.call_count == 1
-    mock_client.servers.get.assert_called_once_with("server-id-1")
+    mock_client.servers.get_by_id.assert_called_once_with("server-id-1")
     mock_server.delete.assert_called_once()
     assert result == "delete-response"
 
@@ -201,7 +201,7 @@ def test_delete_proxy_with_instance_config(mock_get_client, mock_server, test_in
     mock_client = MagicMock()
     mock_get_client.return_value = mock_client
     
-    mock_client.servers.get.return_value = mock_server
+    mock_client.servers.get_by_id.return_value = mock_server
     mock_server.delete.return_value = "delete-response"
     
     # Execute
@@ -209,7 +209,7 @@ def test_delete_proxy_with_instance_config(mock_get_client, mock_server, test_in
     
     # Verify
     mock_get_client.assert_called_once_with(test_instance_config)
-    mock_client.servers.get.assert_called_once_with("server-id-1")
+    mock_client.servers.get_by_id.assert_called_once_with("server-id-1")
     mock_server.delete.assert_called_once()
     assert result == "delete-response"
 

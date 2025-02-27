@@ -25,7 +25,7 @@ def test_init_schedule_all_enabled(mock_scheduler_class, setup_provider_config):
     mock_scheduler_class.return_value = mock_scheduler
     
     # Configure all providers as enabled
-    for provider in ["digitalocean", "aws", "gcp", "hetzner"]:
+    for provider in ["digitalocean", "aws", "gcp", "hetzner", "azure"]:
         settings.config["providers"][provider]["instances"]["default"]["enabled"] = True
     
     # Remove the production instance for this test
@@ -37,17 +37,15 @@ def test_init_schedule_all_enabled(mock_scheduler_class, setup_provider_config):
     
     # Verify
     mock_scheduler.start.assert_called_once()
-    assert mock_scheduler.add_job.call_count == 4  # One for each provider
+    assert mock_scheduler.add_job.call_count == 5  # One for each provider (including Azure)
     
-    # Verify the correct methods were scheduled
-    calls = mock_scheduler.add_job.call_args_list
-    functions = [call[0][0].__name__ for call in calls]
-    
-    # Check that all provider managers were scheduled
-    assert "do_manager" in functions
-    assert "aws_manager" in functions
-    assert "gcp_manager" in functions
-    assert "hetzner_manager" in functions
+    # Verify each provider gets scheduled with a proper ID
+    job_ids = [call[1].get('id', '') for call in mock_scheduler.add_job.call_args_list]
+    assert "digitalocean-default" in job_ids
+    assert "aws-default" in job_ids
+    assert "gcp-default" in job_ids
+    assert "hetzner-default" in job_ids
+    assert "azure-default" in job_ids
 
 @patch('cloudproxy.providers.manager.BackgroundScheduler')
 def test_init_schedule_all_disabled(mock_scheduler_class, setup_provider_config):
@@ -57,7 +55,7 @@ def test_init_schedule_all_disabled(mock_scheduler_class, setup_provider_config)
     mock_scheduler_class.return_value = mock_scheduler
     
     # Configure all providers as disabled
-    for provider in ["digitalocean", "aws", "gcp", "hetzner"]:
+    for provider in ["digitalocean", "aws", "gcp", "hetzner", "azure"]:
         settings.config["providers"][provider]["instances"]["default"]["enabled"] = False
     
     # Also disable the production instance if it exists
@@ -83,6 +81,7 @@ def test_init_schedule_mixed_providers(mock_scheduler_class, setup_provider_conf
     settings.config["providers"]["aws"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["gcp"]["instances"]["default"]["enabled"] = True
     settings.config["providers"]["hetzner"]["instances"]["default"]["enabled"] = False
+    settings.config["providers"]["azure"]["instances"]["default"]["enabled"] = False
     
     # Also disable the production instance if it exists
     if "production" in settings.config["providers"]["aws"]["instances"]:
@@ -95,11 +94,13 @@ def test_init_schedule_mixed_providers(mock_scheduler_class, setup_provider_conf
     mock_scheduler.start.assert_called_once()
     assert mock_scheduler.add_job.call_count == 2  # Two jobs should be added
     
-    # Verify the correct methods were scheduled
-    calls = mock_scheduler.add_job.call_args_list
-    functions = [call[0][0].__name__ for call in calls]
-    assert "do_manager" in functions
-    assert "gcp_manager" in functions
+    # Verify the correct providers were scheduled
+    job_ids = [call[1].get('id', '') for call in mock_scheduler.add_job.call_args_list]
+    assert "digitalocean-default" in job_ids
+    assert "gcp-default" in job_ids
+    assert "aws-default" not in job_ids
+    assert "hetzner-default" not in job_ids
+    assert "azure-default" not in job_ids
 
 @patch('cloudproxy.providers.manager.BackgroundScheduler')
 def test_init_schedule_multiple_instances(mock_scheduler_class, setup_provider_config):
@@ -137,6 +138,7 @@ def test_init_schedule_multiple_instances(mock_scheduler_class, setup_provider_c
     settings.config["providers"]["digitalocean"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["gcp"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["hetzner"]["instances"]["default"]["enabled"] = False
+    settings.config["providers"]["azure"]["instances"]["default"]["enabled"] = False
     
     # Execute
     init_schedule()
@@ -204,6 +206,7 @@ def test_init_schedule_multiple_providers_with_instances(mock_scheduler_class, s
     # Disable other providers for clarity
     settings.config["providers"]["gcp"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["hetzner"]["instances"]["default"]["enabled"] = False
+    settings.config["providers"]["azure"]["instances"]["default"]["enabled"] = False
     
     # Execute
     init_schedule()

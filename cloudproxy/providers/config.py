@@ -1,4 +1,5 @@
 import os
+import base64
 import requests
 from cloudproxy.providers import settings
 
@@ -27,4 +28,6 @@ def set_auth(username, password):
         # Update tinyproxy access rule
         filedata = filedata.replace("Allow 127.0.0.1", f"Allow 127.0.0.1\nAllow {ip_address}")
 
-    return filedata
+    # Base64 encode the user data for Azure
+    encoded_data = base64.b64encode(filedata.encode('utf-8')).decode('utf-8')
+    return encoded_data

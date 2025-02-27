@@ -8,6 +8,7 @@ on:
       - main
 
 jobs:
+  # First job enforces branch rules
   enforce-branch-rules:
     runs-on: ubuntu-latest
     steps:
@@ -18,6 +19,12 @@ jobs:
           echo "Your PR is from ${{ github.event.pull_request.head.ref }} to main"
           exit 1
           
+  # Separate job for tests that will show up as a required status check
+  test-suite:
+    name: Run Test Suite
+    runs-on: ubuntu-latest
+    needs: enforce-branch-rules
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
@@ -32,7 +39,8 @@ jobs:
           pip install pytest pytest-mock pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           
-      - name: Run tests
+      - name: Run pytest
+        id: pytest
         run: |
           pytest
           

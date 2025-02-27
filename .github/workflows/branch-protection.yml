@@ -1,0 +1,54 @@
+name: Branch Protection
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - dev
+      - main
+
+jobs:
+  # First job enforces branch rules
+  enforce-branch-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR target
+        if: github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref != 'dev'
+        run: |
+          echo "ERROR: Pull requests to main branch are only allowed from the dev branch"
+          echo "Your PR is from ${{ github.event.pull_request.head.ref }} to main"
+          exit 1
+          
+  # Separate job for tests that will show up as a required status check
+  test-suite:
+    name: Run Test Suite
+    runs-on: ubuntu-latest
+    needs: enforce-branch-rules
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-mock pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          
+      - name: Run pytest
+        id: pytest
+        run: |
+          pytest
+          
+      - name: Generate coverage report
+        run: |
+          pytest --cov=./ --cov-report=xml
+          
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} 

@@ -1,4 +1,4 @@
-name: CI/CD
+name: Release Workflow
 
 on:
   push:
@@ -9,7 +9,43 @@ on:
       - 'docs/**'
 
 jobs:
-  test-and-release:
+  verify-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Verify push came from dev branch
+        run: |
+          # Get the commit before the merge into main
+          LAST_MERGE_COMMIT=$(git log --merges -n 1 --pretty=format:"%H")
+          
+          if [ -z "$LAST_MERGE_COMMIT" ]; then
+            echo "ERROR: Direct push to main detected. Please use a pull request from dev branch instead."
+            exit 1
+          fi
+          
+          # Get the branches that were merged
+          MERGE_PARENTS=$(git show --no-patch --format="%P" $LAST_MERGE_COMMIT)
+          PARENT_BRANCHES=""
+          
+          for parent in $MERGE_PARENTS; do
+            branch=$(git name-rev --name-only $parent)
+            PARENT_BRANCHES="$PARENT_BRANCHES $branch"
+          done
+          
+          if [[ ! $PARENT_BRANCHES == *"dev"* ]]; then
+            echo "ERROR: Last merge was not from dev branch"
+            echo "Source branches: $PARENT_BRANCHES"
+            exit 1
+          fi
+          
+          echo "Verified merge from dev branch"
+  
+  release:
+    needs: verify-source-branch
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -61,7 +97,7 @@ jobs:
           tag_name: ${{ env.NEW_VERSION }}
           release_name: Release ${{ env.NEW_VERSION }}
           body: |
-            Automated release for changes in main branch
+            Release from dev branch to main
             
             Changes in this release:
             ${{ github.event.head_commit.message }}
@@ -84,4 +120,4 @@ jobs:
           push: true
           tags: |
             laffin/cloudproxy:latest
-            laffin/cloudproxy:${{ env.NEW_VERSION }}
+            laffin/cloudproxy:${{ env.NEW_VERSION }} 

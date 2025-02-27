@@ -82,10 +82,8 @@ When the `dev` branch is ready for release:
 This workflow is enforced by GitHub actions that:
 
 1. Prevent direct pushes to `main` and `dev` branches
-2. Run tests on all PRs to `dev` and `main`
-3. Ensure PRs to `main` only come from the `dev` branch
-4. Require all tests to pass before PRs can be merged
-5. Automatically create releases when `dev` is merged to `main`
+2. Run tests on all PRs and pushes to `develop` and `main` branches using the `python-app-testing.yml` workflow 
+3. Automatically create releases and build Docker images when changes are merged to `main` using the `main.yml` workflow
 
 ## Testing Guidelines
 

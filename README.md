@@ -180,10 +180,9 @@ If you want to contribute to CloudProxy, please follow our branch workflow:
    - Only `dev` branch can be merged into `main`
 
 4. **CI/CD**:
-   - All pull requests and pushes trigger automated tests
-   - Merges to `main` automatically create a new release and Docker image
+   - All pull requests and pushes to `develop` and `main` branches trigger automated tests via the `python-app-testing.yml` workflow
+   - Merges to `main` automatically create a new release and Docker image via the `main.yml` workflow
 
-For detailed instructions on setting up branch protection rules, see [BRANCH_PROTECTION.md](.github/BRANCH_PROTECTION.md).
 
 If you'd like to contribute to CloudProxy, please read our [contribution guidelines](.github/CONTRIBUTING.md).
 

@@ -14,7 +14,7 @@ botocore==1.34.69
 hcloud==2.3.0
 google-api-python-client==2.122.0
 anyio==3.7.1
-starlette==0.36.3
+starlette==0.40.0
 pytest==8.0.2
 pytest-cov==4.1.0
 pytest-mock==3.12.0

@@ -145,7 +145,12 @@ def create_proxy(instance_config=None):
         pass
     
     # Get security group ID
-    sg_id = ec2_client.describe_security_groups(GroupNames=[f"cloudproxy-{next((name for name, inst in config['providers']['aws']['instances'].items() if inst == instance_config), 'default')}"])
+    sg_id = ec2_client.describe_security_groups(
+        Filters=[
+            {'Name': 'vpc-id', 'Values': [default_vpc]},
+            {'Name': 'group-name', 'Values': [f"cloudproxy-{next((name for name, inst in config['providers']['aws']['instances'].items() if inst == instance_config), 'default')}"]}
+        ]
+    )
     sg_id = sg_id["SecurityGroups"][0]["GroupId"]
     
     # Create instance with appropriate spot configuration

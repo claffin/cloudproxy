@@ -50,10 +50,10 @@ CloudProxy exposes an API and modern UI for managing your proxy infrastructure. 
 * [AWS](docs/aws.md)
 * [Google Cloud](docs/gcp.md)
 * [Hetzner](docs/hetzner.md)
+* [Scaleway](docs/scaleway.md)
 
 ### Planned:
 * Azure
-* Scaleway
 * Vultr
 
 ### Features:

@@ -84,6 +84,23 @@ config = {
                 }
             }
         },
+        "scaleway": {
+            "instances": {
+                "default": {
+                    "enabled": False,
+                    "ips": [],
+                    "scaling": {"min_scaling": 0, "max_scaling": 0},
+                    "size": "",
+                    "region": "",
+                    "image": "",
+                    "organization": "",
+                    "display_name": "Scaleway",
+                    "secrets": {
+                        "auth_token": ""
+                    },
+                }
+            }
+        },
     },
 }
 
@@ -216,6 +233,35 @@ config["providers"]["azure"]["instances"]["default"]["location"] = os.environ.ge
 )
 config["providers"]["azure"]["instances"]["default"]["display_name"] = os.environ.get(
     "AZURE_DISPLAY_NAME", "Azure"
+)
+
+# Set Scaleway config
+config["providers"]["scaleway"]["instances"]["default"]["enabled"] = os.environ.get(
+    "SCALEWAY_ENABLED", "False"
+) == "True"
+config["providers"]["scaleway"]["instances"]["default"]["secrets"]["auth_token"] = os.environ.get(
+    "SCALEWAY_AUTH_TOKEN"
+)
+config["providers"]["scaleway"]["instances"]["default"]["scaling"]["min_scaling"] = int(
+    os.environ.get("SCALEWAY_MIN_SCALING", 2)
+)
+config["providers"]["scaleway"]["instances"]["default"]["scaling"]["max_scaling"] = int(
+    os.environ.get("SCALEWAY_MAX_SCALING", 2)
+)
+config["providers"]["scaleway"]["instances"]["default"]["size"] = os.environ.get(
+    "SCALEWAY_SIZE", "DEV1-S"
+)
+config["providers"]["scaleway"]["instances"]["default"]["region"] = os.environ.get(
+    "SCALEWAY_REGION", "fr-par-1"
+)
+config["providers"]["scaleway"]["instances"]["default"]["image"] = os.environ.get(
+    "SCALEWAY_IMAGE", "ubuntu_focal"
+)
+config["providers"]["scaleway"]["instances"]["default"]["organization"] = os.environ.get(
+    "SCALEWAY_ORGANIZATION"
+)
+config["providers"]["scaleway"]["instances"]["default"]["display_name"] = os.environ.get(
+    "SCALEWAY_DISPLAY_NAME", "Scaleway"
 )
 
 # Check for additional provider instances using the new format pattern

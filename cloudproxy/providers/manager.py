@@ -5,6 +5,7 @@ from cloudproxy.providers.aws.main import aws_start
 from cloudproxy.providers.gcp.main import gcp_start
 from cloudproxy.providers.digitalocean.main import do_start
 from cloudproxy.providers.hetzner.main import hetzner_start
+from cloudproxy.providers.scaleway.main import scaleway_start
 
 
 def do_manager(instance_name="default"):
@@ -47,6 +48,16 @@ def hetzner_manager(instance_name="default"):
     return ip_list
 
 
+def scaleway_manager(instance_name="default"):
+    """
+    Scaleway manager function for a specific instance.
+    """
+    instance_config = settings.config["providers"]["scaleway"]["instances"][instance_name]
+    ip_list = scaleway_start(instance_config)
+    settings.config["providers"]["scaleway"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    return ip_list
+
+
 def init_schedule():
     sched = BackgroundScheduler()
     sched.start()
@@ -57,6 +68,7 @@ def init_schedule():
         "aws": aws_manager,
         "gcp": gcp_manager,
         "hetzner": hetzner_manager,
+        "scaleway": scaleway_manager,
     }
     
     # Schedule jobs for all provider instances

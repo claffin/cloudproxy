@@ -153,3 +153,6 @@ pnpm-debug.log*
 *.sln
 *.sw?
 .cursor-project-context
+
+# Cursor rules directory - contains private development guidelines
+.cursor/

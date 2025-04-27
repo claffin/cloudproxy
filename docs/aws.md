@@ -7,7 +7,7 @@ To use AWS as a provider, you'll need to set up credentials for authentication.
 1. Login to the AWS Management Console
 2. Go to the IAM service
 3. Create a new IAM policy with the following permissions:
-   - EC2 (for managing instances): DescribeInstances, RunInstances, TerminateInstances, CreateTags, DescribeImages, DescribeInstanceStatus, DescribeInstanceTypes, DescribeAvailabilityZones, DescribeSecurityGroups, AuthorizeSecurityGroupIngress
+   - EC2 (for managing instances): DescribeInstances, RunInstances, TerminateInstances, CreateTags, DescribeImages, DescribeInstanceStatus, DescribeInstanceTypes, DescribeAvailabilityZones, DescribeSecurityGroups, AuthorizeSecurityGroupIngress, CreateSecurityGroup, DescribeVpcs
    - Systems Manager (for configuring instances): SendCommand
 4. Create a new IAM user or role and attach the policy
 5. Generate access key ID and secret access key

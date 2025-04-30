@@ -3,6 +3,7 @@ name: Publish Python Package
 # This workflow is automatically triggered when a GitHub release is created
 # by the main.yml workflow. This ensures that the PyPI package is published
 # with the same version as the Docker image and GitHub release.
+# Updated to use PyPI API token authentication instead of username/password.
 on:
   release:
     types: [created]

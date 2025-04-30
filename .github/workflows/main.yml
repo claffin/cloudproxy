@@ -39,7 +39,8 @@ jobs:
       - name: Get latest tag
         id: get_latest_tag
         run: |
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          git fetch --tags
+          latest_tag=$(git tag -l --sort=-v:refname "v*" | head -n 1 || echo "v0.0.0")
           echo "Latest tag: $latest_tag"
           echo "LATEST_TAG=$latest_tag" >> "$GITHUB_ENV"
 
@@ -51,6 +52,19 @@ jobs:
           new_version="v$major.$minor.$((patch + 1))"
           echo "NEW_VERSION=$new_version" >> "$GITHUB_ENV"
           echo "New version will be: $new_version"
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git tag -l | grep -q "^${{ env.NEW_VERSION }}$"; then
+            echo "Warning: Tag ${{ env.NEW_VERSION }} already exists"
+            # Increment patch version again if tag exists
+            latest_version=${NEW_VERSION#v}
+            IFS='.' read -r major minor patch <<< "$latest_version"
+            new_version="v$major.$minor.$((patch + 1))"
+            echo "Using incremented version: $new_version"
+            echo "NEW_VERSION=$new_version" >> "$GITHUB_ENV"
+          fi
 
       - name: Create Release
         id: create_release

@@ -78,16 +78,14 @@ jobs:
       - name: 📤 Export version for other jobs
         id: set_outputs
         run: |
-          echo "new_version=${{ env.NEW_VERSION }}" >> $GITHUB_OUTPUT
+          echo "new_version=${{ env.NEW_VERSION }}" >> "$GITHUB_OUTPUT"
 
       - name: 🚀 Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.NEW_VERSION }}
-          release_name: Release ${{ env.NEW_VERSION }}
+          name: Release ${{ env.NEW_VERSION }}
           body: |
             Automated release for changes in main branch
             

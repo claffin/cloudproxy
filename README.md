@@ -80,10 +80,50 @@ To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
-All you need is:
-* Docker
+You can use CloudProxy in two ways:
+
+1. **Docker (recommended for running the service)**
+   * Docker installed on your system
+
+2. **Python Package (for development or integration)**
+   * Python 3.9 or higher
 
 ### Installation
+
+#### As a Python Package
+
+CloudProxy is available as a Python package that you can install directly from PyPI:
+
+```bash
+pip install cloudproxy
+```
+
+Or install from source:
+
+```bash
+# Clone the repository
+git clone https://github.com/claffin/cloudproxy.git
+cd cloudproxy
+
+# Install in development mode
+pip install -e .
+
+# Or build and install
+pip install build
+python -m build
+pip install dist/cloudproxy-0.1.0-py3-none-any.whl
+```
+
+Once installed, you can import and use CloudProxy in your Python applications:
+
+```python
+from cloudproxy.providers import manager
+import cloudproxy.main as cloudproxy
+
+# Setup your environment variables first
+# Start the CloudProxy service
+cloudproxy.start()
+```
 
 #### Environment variables:
 
@@ -156,6 +196,8 @@ proxies = {
 }
 my_request = requests.get("https://api.ipify.org", proxies=proxies)
 ```
+
+For more detailed examples of using CloudProxy as a Python package, see the [Python Package Usage Guide](docs/python-package-usage.md).
 
 ## Multi-Account Provider Support
 

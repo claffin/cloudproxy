@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+include cloudproxy/providers/user_data.sh
+recursive-exclude cloudproxy-ui *
+recursive-exclude tests *
+recursive-exclude docs *
+recursive-exclude .github *
+recursive-exclude venv *
+recursive-exclude __pycache__ *
+recursive-exclude .pytest_cache * 

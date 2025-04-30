@@ -51,7 +51,7 @@ cloudproxy.start()
 
 ### Using the API Programmatically
 
-Instead of starting the full service, you can use CloudProxy's functionality programmatically:
+Instead of starting the full service, you can use CloudProxy functionality programmatically:
 
 ```python
 import os

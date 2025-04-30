@@ -66,12 +66,7 @@ CloudProxy exposes an API and modern UI for managing your proxy infrastructure. 
 * Easy scaling controls
 * Docker-based deployment
 
-### Inspired by
-This project was inspired by [Scrapoxy](https://github.com/fabienvauchelles/scrapoxy), though that project no longer seems actively maintained. 
-
-The primary advantage of CloudProxy over Scrapoxy is that CloudProxy only requires an API token from a cloud provider. CloudProxy automatically deploys and configures the proxy on the cloud instances without the user needing to preconfigure or copy an image.
-
-Please always scrape nicely, respectfully and do not slam servers.
+Please always scrape nicely, respectfully.
 
 <!-- GETTING STARTED -->
 ## Getting Started

@@ -24,12 +24,18 @@ jobs:
       - name: 📚 Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-mock
+          pip install pytest pytest-mock pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: 🧪 Run pytest
         run: |
-          pytest
+          pytest --cov=. --cov-report=cobertura
+
+      - name: Set up Codacy Project Token
+        run: echo "CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}" >> $GITHUB_ENV
+
+      - name: Upload coverage reports to Codacy
+        run: bash <(curl -Ls https://coverage.codacy.com/get.sh)
 
   prepare-release:
     name: 🏷️ Prepare Release

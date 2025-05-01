@@ -29,13 +29,13 @@ jobs:
 
       - name: 🧪 Run pytest
         run: |
-          pytest --cov=. --cov-report=xml
+          pytest --cov=. --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
 
-      - name: Set up Codacy Project Token
-        run: echo "CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}" >> $GITHUB_ENV
-
-      - name: Upload coverage reports to Codacy
-        run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   prepare-release:
     name: 🏷️ Prepare Release

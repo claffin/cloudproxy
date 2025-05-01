@@ -22,25 +22,18 @@ def reset_clients():
     ec2 = None
     ec2_client = None
 
-def get_clients(instance_config=None, ec2_resource=None, ec2_client_obj=None):
+def get_clients(instance_config=None):
     """
     Initialize and return AWS clients based on the provided configuration.
-    Accepts optional pre-configured clients.
     
     Args:
         instance_config: The specific instance configuration
-        ec2_resource: Optional pre-configured EC2 resource
-        ec2_client_obj: Optional pre-configured EC2 client
         
     Returns:
         tuple: (ec2_resource, ec2_client)
     """
     # Use global variables to allow mocking in tests
     global ec2, ec2_client
-    
-    # If specific clients are passed in, use them
-    if ec2_resource is not None and ec2_client_obj is not None:
-        return ec2_resource, ec2_client_obj
     
     # If clients are already set (likely by a test), return them
     if ec2 is not None and ec2_client is not None:
@@ -105,20 +98,18 @@ def get_tags(instance_config=None):
     return tags, tag_specification
 
 
-def create_proxy(instance_config=None, ec2_resource=None, ec2_client_obj=None):
+def create_proxy(instance_config=None):
     """
     Create an AWS proxy instance.
     
     Args:
         instance_config: The specific instance configuration
-        ec2_resource: Optional pre-configured EC2 resource
-        ec2_client_obj: Optional pre-configured EC2 client
     """
     if instance_config is None:
         instance_config = config["providers"]["aws"]["instances"]["default"]
     
     # Get clients and tags
-    ec2, ec2_client = get_clients(instance_config, ec2_resource, ec2_client_obj)
+    ec2, ec2_client = get_clients(instance_config)
     tags, tag_specification = get_tags(instance_config)
     
     # Find default VPC
@@ -216,21 +207,19 @@ def create_proxy(instance_config=None, ec2_resource=None, ec2_client_obj=None):
     return instance
 
 
-def delete_proxy(instance_id, instance_config=None, ec2_resource=None, ec2_client_obj=None):
+def delete_proxy(instance_id, instance_config=None):
     """
     Delete an AWS proxy instance.
     
     Args:
         instance_id: ID of the instance to delete
         instance_config: The specific instance configuration
-        ec2_resource: Optional pre-configured EC2 resource
-        ec2_client_obj: Optional pre-configured EC2 client
     """
     if instance_config is None:
         instance_config = config["providers"]["aws"]["instances"]["default"]
     
     # Get clients
-    ec2, ec2_client = get_clients(instance_config, ec2_resource, ec2_client_obj)
+    ec2, ec2_client = get_clients(instance_config)
     
     ids = [instance_id]
     deleted = ec2.instances.filter(InstanceIds=ids).terminate()
@@ -251,42 +240,38 @@ def delete_proxy(instance_id, instance_config=None, ec2_resource=None, ec2_clien
     return deleted
 
 
-def stop_proxy(instance_id, instance_config=None, ec2_resource=None, ec2_client_obj=None):
+def stop_proxy(instance_id, instance_config=None):
     """
     Stop an AWS proxy instance.
     
     Args:
         instance_id: ID of the instance to stop
         instance_config: The specific instance configuration
-        ec2_resource: Optional pre-configured EC2 resource
-        ec2_client_obj: Optional pre-configured EC2 client
     """
     if instance_config is None:
         instance_config = config["providers"]["aws"]["instances"]["default"]
     
     # Get clients
-    ec2, ec2_client = get_clients(instance_config, ec2_resource, ec2_client_obj)
+    ec2, ec2_client = get_clients(instance_config)
     
     ids = [instance_id]
     stopped = ec2.instances.filter(InstanceIds=ids).stop()
     return stopped
 
 
-def start_proxy(instance_id, instance_config=None, ec2_resource=None, ec2_client_obj=None):
+def start_proxy(instance_id, instance_config=None):
     """
     Start an AWS proxy instance.
     
     Args:
         instance_id: ID of the instance to start
         instance_config: The specific instance configuration
-        ec2_resource: Optional pre-configured EC2 resource
-        ec2_client_obj: Optional pre-configured EC2 client
     """
     if instance_config is None:
         instance_config = config["providers"]["aws"]["instances"]["default"]
     
     # Get clients
-    ec2, ec2_client = get_clients(instance_config, ec2_resource, ec2_client_obj)
+    ec2, ec2_client = get_clients(instance_config)
     
     ids = [instance_id]
     try:
@@ -299,24 +284,21 @@ def start_proxy(instance_id, instance_config=None, ec2_resource=None, ec2_client
     return started
 
 
-def list_instances(instance_config=None, ec2_resource=None, ec2_client_obj=None):
+def list_instances(instance_config=None):
     """
-    List all AWS proxy instances.
+    List AWS proxy instances.
     
     Args:
         instance_config: The specific instance configuration
-        ec2_resource: Optional pre-configured EC2 resource
-        ec2_client_obj: Optional pre-configured EC2 client
         
     Returns:
-        list: List of instance objects
+        list: List of AWS instances
     """
     if instance_config is None:
         instance_config = config["providers"]["aws"]["instances"]["default"]
     
-    # Get clients and tags
-    ec2, ec2_client = get_clients(instance_config, ec2_resource, ec2_client_obj)
-    tags, _ = get_tags(instance_config)
+    # Get clients
+    ec2, ec2_client = get_clients(instance_config)
     
     # Get instance ID for this configuration
     instance_id = next(

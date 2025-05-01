@@ -35,7 +35,7 @@ jobs:
         run: echo "CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}" >> $GITHUB_ENV
 
       - name: Upload coverage reports to Codacy
-        run: bash <(curl -Ls https://coverage.codacy.com/get.sh)
+        run: bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
 
   prepare-release:
     name: 🏷️ Prepare Release

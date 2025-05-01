@@ -64,9 +64,17 @@ def do_check_alive(instance_config=None):
     ip_ready = []
     for droplet in list_droplets(instance_config):
         try:
-            elapsed = datetime.datetime.now(
-                datetime.timezone.utc
-            ) - dateparser.parse(droplet.created_at)
+            # Parse the created_at timestamp to a datetime object
+            created_at = dateparser.parse(droplet.created_at)
+            if created_at is None:
+                # If parsing fails but doesn't raise an exception, log and continue
+                logger.info(f"Pending: DO {display_name} allocating (invalid timestamp)")
+                continue
+                
+            # Calculate elapsed time
+            elapsed = datetime.datetime.now(datetime.timezone.utc) - created_at
+            
+            # Check if the droplet has reached the age limit
             if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
                 delete_proxy(droplet, instance_config)
                 logger.info(
@@ -76,6 +84,7 @@ def do_check_alive(instance_config=None):
                 logger.info(f"Alive: DO {display_name} -> {str(droplet.ip_address)}")
                 ip_ready.append(droplet.ip_address)
             else:
+                # Check if the droplet has been pending for too long
                 if elapsed > datetime.timedelta(minutes=10):
                     delete_proxy(droplet, instance_config)
                     logger.info(
@@ -84,6 +93,7 @@ def do_check_alive(instance_config=None):
                 else:
                     logger.info(f"Waiting: DO {display_name} -> {str(droplet.ip_address)}")
         except TypeError:
+            # This happens when dateparser.parse raises a TypeError
             logger.info(f"Pending: DO {display_name} allocating")
     return ip_ready
 

@@ -79,7 +79,7 @@ def delete_proxy(name):
             zone=gcp["zone"],
             instance=name
         ).execute()
-    except(googleapiclient.errors.HttpError):
+    except googleapiclient.errors.HttpError:
         logger.info(f"GCP --> HTTP Error when trying to delete proxy {name}. Probably has already been deleted.")
         return None
 
@@ -90,7 +90,7 @@ def stop_proxy(name):
             zone=gcp["zone"],
             instance=name
         ).execute()
-    except(googleapiclient.errors.HttpError):
+    except googleapiclient.errors.HttpError:
         logger.info(f"GCP --> HTTP Error when trying to stop proxy {name}. Probably has already been deleted.")
         return None
 
@@ -101,7 +101,7 @@ def start_proxy(name):
             zone=gcp["zone"],
             instance=name
         ).execute()
-    except(googleapiclient.errors.HttpError):
+    except googleapiclient.errors.HttpError:
         logger.info(f"GCP --> HTTP Error when trying to start proxy {name}. Probably has already been deleted.")
         return None
 

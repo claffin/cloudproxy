@@ -17,11 +17,16 @@ To use Google Cloud Platform (GCP) as a provider, you'll need to set up credenti
 Now you have your credentials, you can use GCP as a proxy provider. Set up the environment variables as shown below:
 
 ## Configuration options
-### Environment variables:
+
+CloudProxy supports two ways to configure GCP credentials:
+1.  **Via Environment Variables (Traditional):** Suitable for static configurations. This involves setting `GCP_SA_JSON` to the *path* of your service account key file.
+2.  **Via API (New):** Allows dynamic adding, updating, and removing of credentials while the application is running. See the [API Documentation](./api.md#credential-management) for details. When using the API, you provide the *content* of the service account JSON key as a string.
+
+### Credentials via Environment variables:
 #### Required:
 ``GCP_ENABLED`` - to enable GCP as a provider, set as True. Default value: False
 
-``GCP_SA_JSON`` - the path to the service account JSON key file. For Docker, mount the file to the container and provide the path.
+``GCP_SA_JSON`` - the path to the service account JSON key file. For Docker, mount the file to the container and provide the path. **Note:** If adding/updating credentials via the `/api/credentials` endpoint, you provide the *content* of the service account JSON key as a string in the `service_account_key` field of the `secrets` payload, not the path.
 
 ``GCP_ZONE`` - the GCP zone where the instances will be created. Default value: us-central1-a
 

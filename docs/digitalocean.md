@@ -14,7 +14,12 @@ To use DigitalOcean as a provider, you'll first generate a personal access token
 Now you have your token, you can now use DigitalOcean as a proxy provider, on the main page you can see how to set it is an environment variable. 
 
 ## Configuration options
-### Environment variables: 
+
+CloudProxy supports two ways to configure DigitalOcean credentials:
+1.  **Via Environment Variables (Traditional):** Suitable for static configurations.
+2.  **Via API (New):** Allows dynamic adding, updating, and removing of credentials while the application is running. See the [API Documentation](./api.md#credential-management) for details.
+
+### Credentials via Environment variables: 
 #### Required:
 ``DIGITALOCEAN_ENABLED`` - to enable DigitalOcean as a provider, set as True. Default value: False
 

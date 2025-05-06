@@ -11,9 +11,16 @@ def do_manager(instance_name="default"):
     """
     DigitalOcean manager function for a specific instance.
     """
-    instance_config = settings.config["providers"]["digitalocean"]["instances"][instance_name]
-    ip_list = do_start(instance_config)
-    settings.config["providers"]["digitalocean"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    # Fetch instance_config for non-secret settings
+    instance_config = settings.config["providers"]["digitalocean"]["instances"].get(instance_name)
+    
+    # do_start will now handle fetching credentials via credential_manager
+    ip_list = do_start(instance_config, instance_id=instance_name)
+    
+    # Update IPs in settings.config (only if instance_config exists)
+    if instance_config:
+        settings.config["providers"]["digitalocean"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    
     return ip_list
 
 
@@ -21,9 +28,16 @@ def aws_manager(instance_name="default"):
     """
     AWS manager function for a specific instance.
     """
-    instance_config = settings.config["providers"]["aws"]["instances"][instance_name]
-    ip_list = aws_start(instance_config)
-    settings.config["providers"]["aws"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    # Fetch instance_config for non-secret settings
+    instance_config = settings.config["providers"]["aws"]["instances"].get(instance_name)
+    
+    # aws_start will now handle fetching credentials via credential_manager
+    ip_list = aws_start(instance_config, instance_id=instance_name)
+    
+    # Update IPs in settings.config (only if instance_config exists)
+    if instance_config:
+        settings.config["providers"]["aws"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    
     return ip_list
 
 
@@ -31,9 +45,16 @@ def gcp_manager(instance_name="default"):
     """
     GCP manager function for a specific instance.
     """
-    instance_config = settings.config["providers"]["gcp"]["instances"][instance_name]
-    ip_list = gcp_start(instance_config)
-    settings.config["providers"]["gcp"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    # Fetch instance_config for non-secret settings
+    instance_config = settings.config["providers"]["gcp"]["instances"].get(instance_name)
+    
+    # gcp_start will now handle fetching credentials via credential_manager
+    ip_list = gcp_start(instance_config, instance_id=instance_name)
+    
+    # Update IPs in settings.config (only if instance_config exists)
+    if instance_config:
+        settings.config["providers"]["gcp"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    
     return ip_list
 
 
@@ -41,9 +62,16 @@ def hetzner_manager(instance_name="default"):
     """
     Hetzner manager function for a specific instance.
     """
-    instance_config = settings.config["providers"]["hetzner"]["instances"][instance_name]
-    ip_list = hetzner_start(instance_config)
-    settings.config["providers"]["hetzner"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    # Fetch instance_config for non-secret settings
+    instance_config = settings.config["providers"]["hetzner"]["instances"].get(instance_name)
+    
+    # hetzner_start will now handle fetching credentials via credential_manager
+    ip_list = hetzner_start(instance_config, instance_id=instance_name)
+    
+    # Update IPs in settings.config (only if instance_config exists)
+    if instance_config:
+        settings.config["providers"]["hetzner"]["instances"][instance_name]["ips"] = [ip for ip in ip_list]
+    
     return ip_list
 
 

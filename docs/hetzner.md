@@ -13,6 +13,29 @@ To use Hetzner as a provider, you'll need to generate an API token.
 7. Click "Generate API Token".
 8. Copy the token immediately (it will only be displayed once).
 
+## Dynamic Credential Management
+
+In addition to configuring credentials via environment variables (detailed below), you can now manage Hetzner credentials dynamically using the CloudProxy API. This allows you to add, list, and remove Hetzner accounts on the fly without restarting the application.
+
+To add a Hetzner credential via the API, you will typically need to provide:
+- `instance_id`: A unique name for this credential instance (e.g., `my-hetzner-account1`).
+- `provider`: Set to `hetzner`.
+- `secrets`: A dictionary containing:
+    - `api_token`: Your Hetzner API token.
+
+Example API payload to add a Hetzner credential:
+```json
+{
+  "instance_id": "hetzner-default",
+  "provider": "hetzner",
+  "secrets": {
+    "api_token": "YOUR_HETZNER_API_TOKEN"
+  }
+}
+```
+
+For more details on using the API for credential management, please refer to the [API Documentation](./api.md#credential-management).
+
 Now you have your token, you can use Hetzner as a proxy provider by configuring the environment variables as shown below.
 
 ## Configuration options

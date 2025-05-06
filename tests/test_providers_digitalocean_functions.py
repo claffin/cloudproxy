@@ -89,8 +89,18 @@ def droplet_id():
     return "DROPLET-ID"
 
 
-def test_list_droplets(droplets):
+def test_list_droplets(mocker, droplets):
     """Test listing droplets."""
+    # Patch the credential_manager and add mock credentials for the default instance
+    mock_credential_manager = MagicMock()
+    mock_credential_manager.get_credentials.return_value = {"access_token": "mock_token"}
+    mocker.patch('cloudproxy.providers.digitalocean.functions.credential_manager', mock_credential_manager)
+
+    # Patch get_manager to return a mock manager that uses the mocked credential_manager
+    mock_do_manager = MagicMock()
+    mocker.patch('cloudproxy.providers.digitalocean.functions.get_manager', return_value=mock_do_manager)
+    mock_do_manager.get_all_droplets.return_value = droplets # Ensure the original droplet data is used
+
     result = list_droplets()
     assert isinstance(result, list)
     assert len(result) > 0
@@ -100,6 +110,15 @@ def test_list_droplets(droplets):
 
 def test_create_proxy(mocker, droplet_id):
     """Test creating a proxy."""
+    # Patch the credential_manager and add mock credentials for the default instance
+    mock_credential_manager = MagicMock()
+    mock_credential_manager.get_credentials.return_value = {"access_token": "mock_token"}
+    mocker.patch('cloudproxy.providers.digitalocean.functions.credential_manager', mock_credential_manager)
+
+    # Patch get_manager to return a mock manager that uses the mocked credential_manager
+    mock_do_manager = MagicMock()
+    mocker.patch('cloudproxy.providers.digitalocean.functions.get_manager', return_value=mock_do_manager)
+
     droplet = Droplet(droplet_id)
     mocker.patch(
         'cloudproxy.providers.digitalocean.functions.digitalocean.Droplet.create',
@@ -135,72 +154,93 @@ def test_delete_proxy(mocker, droplets):
 @patch('cloudproxy.providers.digitalocean.functions.digitalocean.Manager')
 def test_get_manager_default(mock_manager):
     """Test get_manager with default configuration."""
-    # Setup mock
-    mock_manager_instance = MagicMock()
-    mock_manager.return_value = mock_manager_instance
-    
-    # Call function under test
-    result = get_manager()
-    
-    # Verify
-    mock_manager.assert_called_once()
-    assert mock_manager.call_args[1]['token'] == settings.config["providers"]["digitalocean"]["instances"]["default"]["secrets"]["access_token"]
-    assert result == mock_manager_instance
+    # Patch the credential_manager and add mock credentials for the default instance
+    mock_credential_manager = MagicMock()
+    mock_credential_manager.get_credentials.return_value = {"access_token": "mock_token"}
+    # Use patch as a context manager within the test
+    with patch('cloudproxy.providers.digitalocean.functions.credential_manager', mock_credential_manager):
+        # Setup mock
+        mock_manager_instance = MagicMock()
+        mock_manager.return_value = mock_manager_instance
+        
+        # Call function under test
+        result = get_manager(instance_id='default')
+        
+        # Verify
+        mock_manager.assert_called_once_with(token="mock_token") # Verify Manager was called with the mock token
+        assert result == mock_manager_instance
 
 
 @patch('cloudproxy.providers.digitalocean.functions.digitalocean.Manager')
 def test_get_manager_with_instance_config(mock_manager, test_instance_config):
     """Test get_manager with a specific instance configuration."""
-    # Setup mock
-    mock_manager_instance = MagicMock()
-    mock_manager.return_value = mock_manager_instance
+    # Patch the credential_manager and add mock credentials for the specific instance
+    mock_credential_manager = MagicMock()
+    # The get_manager function derives the instance_id when instance_config is passed directly.
+    # Based on create_proxy, it looks for a matching config in settings.config.
+    # We'll assume the instance_id derived will be 'useast' based on the test_instance_config fixture.
+    mock_credential_manager.get_credentials.return_value = {"access_token": "test-token-useast"}
     
-    # Call function under test
-    result = get_manager(test_instance_config)
-    
-    # Verify
-    mock_manager.assert_called_once()
-    assert mock_manager.call_args[1]['token'] == "test-token-useast"
-    assert result == mock_manager_instance
+    # Use patch as a context manager within the test
+    with patch('cloudproxy.providers.digitalocean.functions.credential_manager', mock_credential_manager):
+        # Setup mock
+        mock_manager_instance = MagicMock()
+        mock_manager.return_value = mock_manager_instance
+        
+        # Call function under test
+        result = get_manager(test_instance_config)
+        
+        # Verify
+        # Verify Manager was called with the token from the test_instance_config
+        mock_manager.assert_called_once_with(token="test-token-useast")
+        assert result == mock_manager_instance
 
 
 @patch('cloudproxy.providers.digitalocean.functions.digitalocean.Droplet')
 def test_create_proxy_with_instance_config(mock_droplet, test_instance_config):
     """Test creating a proxy with a specific instance configuration."""
-    # Setup mock
-    mock_droplet_instance = MagicMock()
-    mock_droplet.return_value = mock_droplet_instance
-    
-    # Save the original config to restore later
-    original_config = settings.config["providers"]["digitalocean"]["instances"].copy()
-    
-    # Add our test instance config
-    settings.config["providers"]["digitalocean"]["instances"]["useast"] = test_instance_config
-    
-    try:
-        # Call function under test
-        result = create_proxy(test_instance_config)
-        
-        # Verify
-        mock_droplet.assert_called_once()
-        args, kwargs = mock_droplet.call_args
-        
-        # Verify token, region, and size from instance config were used
-        assert kwargs['token'] == "test-token-useast"
-        assert kwargs['region'] == "nyc1"
-        assert kwargs['size_slug'] == "s-1vcpu-1gb"
-        
-        # Verify that correct tags are set
-        assert "cloudproxy" in kwargs['tags']
-        assert "cloudproxy-useast" in kwargs['tags']
-        
-        # Verify name format includes instance identifier
-        assert "cloudproxy-useast-" in kwargs['name']
-        
-        assert result == True
-    finally:
-        # Restore original config
-        settings.config["providers"]["digitalocean"]["instances"] = original_config
+    # Patch the credential_manager and add mock credentials for the specific instance
+    mock_credential_manager = MagicMock()
+    mock_credential_manager.get_credentials.return_value = {"access_token": "test-token-useast"}
+    # Use patch as a context manager within the test
+    with patch('cloudproxy.providers.digitalocean.functions.credential_manager', mock_credential_manager):
+        # Patch get_manager to return a mock manager that uses the mocked credential_manager
+        mock_do_manager = MagicMock()
+        with patch('cloudproxy.providers.digitalocean.functions.get_manager', return_value=mock_do_manager):
+            # Setup mock
+            mock_droplet_instance = MagicMock()
+            mock_droplet.return_value = mock_droplet_instance
+            
+            # Save the original config to restore later
+            original_config = settings.config["providers"]["digitalocean"]["instances"].copy()
+            
+            # Add our test instance config
+            settings.config["providers"]["digitalocean"]["instances"]["useast"] = test_instance_config
+            
+            try:
+                # Call function under test
+                result = create_proxy(test_instance_config)
+                
+                # Verify
+                mock_droplet.assert_called_once()
+                args, kwargs = mock_droplet.call_args
+                
+                # Verify token, region, and size from instance config were used
+                assert kwargs['token'] == "test-token-useast"
+                assert kwargs['region'] == "nyc1"
+                assert kwargs['size_slug'] == "s-1vcpu-1gb"
+                
+                # Verify that correct tags are set
+                assert "cloudproxy" in kwargs['tags']
+                assert "cloudproxy-useast" in kwargs['tags']
+                
+                # Verify name format includes instance identifier
+                assert "cloudproxy-useast-" in kwargs['name']
+                
+                assert result == True
+            finally:
+                # Restore original config
+                settings.config["providers"]["digitalocean"]["instances"] = original_config
 
 
 @patch('cloudproxy.providers.digitalocean.functions.get_manager')
@@ -216,10 +256,11 @@ def test_delete_proxy_with_instance_config(mock_get_manager, mocker, test_instan
     mock_manager.get_droplet.return_value = mock_droplet
     
     # Call function under test
-    result = delete_proxy(1234, test_instance_config)
+    # Pass instance_id explicitly to ensure get_manager is called with the correct ID
+    result = delete_proxy(1234, instance_id='useast')
     
     # Verify
-    mock_get_manager.assert_called_once_with(test_instance_config)
+    mock_get_manager.assert_called_once_with(instance_id='useast')
     mock_manager.get_droplet.assert_called_once_with(1234)
     mock_droplet.destroy.assert_called_once()
     assert result == True

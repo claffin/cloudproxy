@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, ANY
 import datetime
 from datetime import timezone
 import itertools
@@ -223,6 +223,8 @@ def test_gcp_check_alive_not_alive_too_long(mock_start_proxy, mock_delete_proxy,
     # Verify
     assert mock_delete_proxy.call_count == 1 # Should delete the instance
     assert len(result) == 0
+    mock_delete_proxy.assert_called_once_with("old-instance", instance_id="default")
+
 
 @patch('cloudproxy.providers.gcp.main.check_alive')
 @patch('cloudproxy.providers.gcp.main.list_instances')
@@ -256,6 +258,7 @@ def test_gcp_check_alive_age_limit_exceeded(mock_start_proxy, mock_delete_proxy,
         # Verify
         assert mock_delete_proxy.call_count == 1 # Should delete the instance
         assert len(result) == 0
+        mock_delete_proxy.assert_called_once_with("old-instance-age", instance_id="default")
     finally:
         # Restore original age limit
         config["age_limit"] = original_age_limit
@@ -299,6 +302,8 @@ def test_gcp_check_delete(mock_delete_proxy, mock_list_instances, setup_instance
     # Verify
     assert mock_delete_proxy.call_count == 1 # Should delete the instance in delete queue
     assert "1.2.3.4" not in delete_queue # IP should be removed from queue
+    mock_delete_proxy.assert_called_once_with("instance-1", instance_id="default")
+
 
 @patch('cloudproxy.providers.gcp.main.list_instances')
 @patch('cloudproxy.providers.gcp.main.stop_proxy')
@@ -315,6 +320,8 @@ def test_gcp_check_stop(mock_stop_proxy, mock_list_instances, setup_instances):
     # Verify
     assert mock_stop_proxy.call_count == 1 # Should stop the instance in restart queue
     assert "1.2.3.4" not in restart_queue # IP should be removed from queue
+    mock_stop_proxy.assert_called_once_with("instance-1", instance_id="default")
+
 
 @patch('cloudproxy.providers.gcp.main.gcp_check_delete')
 @patch('cloudproxy.providers.gcp.main.gcp_check_stop')
@@ -334,12 +341,13 @@ def test_gcp_start(mock_gcp_deployment, mock_gcp_check_alive, mock_gcp_check_sto
         result = gcp_start()
 
         # Verify
-        mock_gcp_check_delete.assert_called_once()
-        mock_gcp_check_stop.assert_called_once()
-        # The gcp_start function will pass the instance_config and instance_id
-        instance_config_val = config["providers"]["gcp"]["instances"]["default"]
-        mock_gcp_deployment.assert_called_once_with(3, instance_config_val, instance_id="default")
-        mock_gcp_check_alive.assert_called_once()
+        # We need to get the instance_config that gcp_start would use
+        expected_instance_config = config["providers"]["gcp"]["instances"]["default"]
+        
+        mock_gcp_check_delete.assert_called_once_with(expected_instance_config, instance_id="default")
+        mock_gcp_check_stop.assert_called_once_with(expected_instance_config, instance_id="default")
+        mock_gcp_deployment.assert_called_once_with(3, expected_instance_config, instance_id="default")
+        mock_gcp_check_alive.assert_called_once_with(expected_instance_config, instance_id="default")
 
         assert result == ["1.2.3.4", "5.6.7.8"] # Should return IPs from check_alive
     finally:

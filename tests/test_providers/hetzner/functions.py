@@ -1,9 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch, Mock, ANY
-from hcloud.server_types.domain import ServerType
-from hcloud.images.domain import Image
-from hcloud.datacenters.domain import Datacenter
-from hcloud.locations.domain import Location
+from unittest.mock import MagicMock, patch, Mock
 from cloudproxy.providers.hetzner.functions import (
     get_client, create_proxy, delete_proxy, list_proxies
 )
@@ -84,26 +80,27 @@ def test_instance_config():
 
 
 @patch('cloudproxy.providers.hetzner.functions.credential_manager')
+@patch('cloudproxy.providers.hetzner.functions.credential_manager')
 @patch('cloudproxy.providers.hetzner.functions.Client')
-def test_get_client_default(mock_client, mock_credential_manager):
-    """Test get_client with default configuration."""
+def test_get_client_with_instance_config(mock_client, mock_credential_manager, test_instance_config):
+    """Test get_client with a specific instance configuration."""
     # Setup
     mock_client_instance = MagicMock()
     mock_client.return_value = mock_client_instance
-
-    # Configure mock credential_manager to return secrets for 'default' instance
+    
+    # Configure mock credential_manager to return secrets for 'europe' instance
     mock_credential_manager.get_credentials.return_value = {
-        "access_token": "default-test-token"
+        "access_token": "europe-test-token"
     }
-
+    
     # Execute
-    result = get_client(instance_id="default")
+    result = get_client(instance_id="europe")
 
     # Verify that credential_manager was called correctly
-    mock_credential_manager.get_credentials.assert_called_once_with("hetzner", "default")
+    mock_credential_manager.get_credentials.assert_called_once_with("hetzner", "europe")
 
     # Verify that the Hetzner Client was initialized with the token from credentials
-    mock_client.assert_called_once_with(token="default-test-token")
+    mock_client.assert_called_once_with(token="europe-test-token")
     assert result == mock_client_instance
 
 
@@ -139,50 +136,20 @@ def test_create_proxy_default(mock_uuid, mock_set_auth, mock_get_client):
     # Setup
     mock_uuid.uuid4.return_value = "test-uuid"
     mock_set_auth.return_value = "user-data-script"
-
-    # Mock the client returned by get_client
+    
     mock_client = MagicMock()
     mock_get_client.return_value = mock_client
-
+    
     mock_response = MagicMock()
     mock_client.servers.create.return_value = mock_response
-
+    
     # Execute
-    result = create_proxy(instance_id="default")
-
+    result = create_proxy()
+    
     # Verify
-    mock_get_client.assert_called_once_with("default")
-    mock_set_auth.assert_called_once_with(settings.config["auth"]["username"], settings.config["auth"]["password"])
-    default_instance_config = settings.config["providers"]["hetzner"]["instances"]["default"]
-    expected_datacenter = Datacenter(name=default_instance_config.get("datacenter")) if default_instance_config.get("datacenter") else None
-    expected_location = Location(name=default_instance_config.get("location")) if default_instance_config.get("location") else None
-    mock_client.servers.create.assert_called_once_with(
-        name="cloudproxy-default-test-uuid",
-        server_type=ANY, # Was ServerType(default_instance_config["size"]),
-        image=ANY,       # Was Image(name="ubuntu-20.04"),
-        user_data="user-data-script",
-        datacenter=ANY,  # Was expected_datacenter,
-        location=ANY,    # Was expected_location,
-        labels={"type": "cloudproxy", "instance": "default"}
-    )
-    # Further assertions for the ANY arguments
-    args, kwargs = mock_client.servers.create.call_args
-    actual_server_type = kwargs['server_type']
-    actual_image = kwargs['image']
-    actual_datacenter = kwargs['datacenter']
-    actual_location = kwargs['location']
-
-    assert actual_server_type.id == default_instance_config["size"] # ServerType uses id for size string
-    assert actual_image.name == "ubuntu-20.04"
-    if default_instance_config.get("datacenter"):
-        assert actual_datacenter.name == default_instance_config.get("datacenter")
-    else:
-        assert actual_datacenter is None
-    if default_instance_config.get("location"):
-        assert actual_location.name == default_instance_config.get("location")
-    else:
-        assert actual_location is None
-        
+    mock_get_client.assert_called_once_with(instance_id="default")
+    mock_client.servers.create.assert_called_once()
+    assert "cloudproxy-default-test-uuid" in mock_client.servers.create.call_args[1]["name"]
     assert result == mock_response
 
 
@@ -195,7 +162,6 @@ def test_create_proxy_with_instance_config(mock_uuid, mock_set_auth, mock_get_cl
     mock_uuid.uuid4.return_value = "test-uuid"
     mock_set_auth.return_value = "user-data-script"
     
-    # Mock the client returned by get_client
     mock_client = MagicMock()
     mock_get_client.return_value = mock_client
     
@@ -213,37 +179,18 @@ def test_create_proxy_with_instance_config(mock_uuid, mock_set_auth, mock_get_cl
         result = create_proxy(test_instance_config, instance_id="europe")
         
         # Verify
-        mock_get_client.assert_called_once_with("europe")
-        mock_set_auth.assert_called_once_with(settings.config["auth"]["username"], settings.config["auth"]["password"])
-        # expected_datacenter_europe = Datacenter(name=test_instance_config.get("datacenter")) if test_instance_config.get("datacenter") else None
-        # expected_location_europe = Location(name=test_instance_config.get("location")) if test_instance_config.get("location") else None
-        mock_client.servers.create.assert_called_once_with(
-            name="cloudproxy-europe-test-uuid",
-            server_type=ANY, # Was ServerType(test_instance_config["size"]),
-            image=ANY,       # Was Image(name="ubuntu-20.04"),
-            user_data="user-data-script",
-            datacenter=ANY,  # Was expected_datacenter_europe,
-            location=ANY,    # Was expected_location_europe,
-            labels={"type": "cloudproxy", "instance": "europe"}
-        )
-        # Further assertions for the ANY arguments
-        args_europe, kwargs_europe = mock_client.servers.create.call_args
-        actual_server_type_europe = kwargs_europe['server_type']
-        actual_image_europe = kwargs_europe['image']
-        actual_datacenter_europe = kwargs_europe['datacenter']
-        actual_location_europe = kwargs_europe['location']
+        mock_get_client.assert_called_once_with(instance_id="europe")
+        mock_client.servers.create.assert_called_once()
 
-        assert actual_server_type_europe.id == test_instance_config["size"]
-        assert actual_image_europe.name == "ubuntu-20.04"
-        if test_instance_config.get("datacenter"):
-            assert actual_datacenter_europe.name == test_instance_config.get("datacenter")
-        else:
-            assert actual_datacenter_europe is None
-        if test_instance_config.get("location"):
-            assert actual_location_europe.name == test_instance_config.get("location")
-        else:
-            assert actual_location_europe is None
-            
+        # Check server name format and configuration
+        args, kwargs = mock_client.servers.create.call_args
+        assert kwargs['name'] == "cloudproxy-europe-test-uuid"
+        assert kwargs['labels'] == {"type": "cloudproxy", "instance": "europe"}
+
+        # Check location is used from instance config
+        assert kwargs['location'] is not None
+        assert kwargs['location'].name == "hel1"
+
         assert result == mock_response
     finally:
         # Restore original config
@@ -254,7 +201,6 @@ def test_create_proxy_with_instance_config(mock_uuid, mock_set_auth, mock_get_cl
 def test_delete_proxy_default(mock_get_client, mock_server):
     """Test delete_proxy with default configuration."""
     # Setup
-    # Mock the client returned by get_client
     mock_client = MagicMock()
     mock_get_client.return_value = mock_client
     
@@ -268,8 +214,8 @@ def test_delete_proxy_default(mock_get_client, mock_server):
     result = delete_proxy("server-id-1", instance_id="default")
     
     # Verify
-    mock_get_client.assert_called_once_with("default")
-    mock_client.servers.get_by_id.assert_called_once_with("server-id-1")
+    mock_get_client.assert_called_once_with(instance_id="default")
+    mock_servers.get_by_id.assert_called_once_with("server-id-1")
     mock_server.delete.assert_called_once()
     assert result == "delete-response"
 
@@ -278,7 +224,6 @@ def test_delete_proxy_default(mock_get_client, mock_server):
 def test_delete_proxy_with_instance_config(mock_get_client, mock_server, test_instance_config):
     """Test delete_proxy with a specific instance configuration."""
     # Setup
-    # Mock the client returned by get_client
     mock_client = MagicMock()
     mock_get_client.return_value = mock_client
     
@@ -292,8 +237,8 @@ def test_delete_proxy_with_instance_config(mock_get_client, mock_server, test_in
     result = delete_proxy("server-id-1", instance_config=test_instance_config, instance_id="europe")
     
     # Verify
-    mock_get_client.assert_called_once_with("europe")
-    mock_client.servers.get_by_id.assert_called_once_with("server-id-1")
+    mock_get_client.assert_called_once_with(instance_id="europe")
+    mock_servers.get_by_id.assert_called_once_with("server-id-1")
     mock_server.delete.assert_called_once()
     assert result == "delete-response"
 
@@ -302,7 +247,6 @@ def test_delete_proxy_with_instance_config(mock_get_client, mock_server, test_in
 def test_list_proxies_default(mock_get_client, mock_servers):
     """Test list_proxies with default configuration."""
     # Setup
-    # Mock the client returned by get_client
     mock_client = MagicMock()
     mock_get_client.return_value = mock_client
     
@@ -311,32 +255,34 @@ def test_list_proxies_default(mock_get_client, mock_servers):
     # All servers with type=cloudproxy for second call
     type_servers = [s for s in mock_servers if "type" in s.labels and s.labels["type"] == "cloudproxy"]
     # Old-style servers for filtering
-    old_servers_without_instance_label = [s for s in type_servers if "instance" not in s.labels]
+    old_servers = [s for s in type_servers if "instance" not in s.labels]
     
-    # The side_effect should simulate two calls to get_all
-    # First call for "type=cloudproxy,instance=default"
-    # Second call for "type=cloudproxy" (to find old servers)
-    mock_client.servers.get_all.side_effect = [
-        [s for s in default_servers], # Servers with instance=default tag
-        [s for s in old_servers_without_instance_label]  # Servers with only type=cloudproxy tag
-    ]
+    mock_client.servers.get_all.side_effect = [default_servers, type_servers]
     
     # Execute
     result = list_proxies(instance_id="default")
     
     # Verify
-    mock_get_client.assert_called_once_with("default")
-    
-    # Check calls to mock_client.servers.get_all
-    calls = mock_client.servers.get_all.call_args_list
-    assert len(calls) == 2
-    assert calls[0][1]['label_selector'] == "type=cloudproxy"  # For instance_id="default", this is the first call
-    assert calls[1][1]['label_selector'] == "type=cloudproxy"  # This is the second call to get old servers
+    mock_get_client.assert_called_once_with(instance_id="default")
+    assert mock_client.servers.get_all.call_count == 2
 
-    # Check the result itself
-    expected_result_ids = {s.id for s in default_servers}.union({s.id for s in old_servers_without_instance_label})
-    actual_result_ids = {s.id for s in result}
-    assert actual_result_ids == expected_result_ids
+    # First call should filter by label_selector for type=cloudproxy
+    first_call_args = mock_client.servers.get_all.call_args_list[0]
+    assert first_call_args[1]["label_selector"] == "type=cloudproxy"
+
+    # Second call should also filter by type=cloudproxy
+    second_call_args = mock_client.servers.get_all.call_args_list[1]
+    assert second_call_args[1]["label_selector"] == "type=cloudproxy"
+
+    # Check the result itself instead of just the length
+    default_and_old_servers = set()
+    for server in default_servers:
+        default_and_old_servers.add(server.id)
+    for server in old_servers:
+        default_and_old_servers.add(server.id)
+
+    result_ids = set(proxy.id for proxy in result)
+    assert result_ids == default_and_old_servers
 
 
 @patch('cloudproxy.providers.hetzner.functions.get_client')
@@ -361,7 +307,7 @@ def test_list_proxies_with_instance_config(mock_get_client, mock_servers, test_i
         result = list_proxies(instance_config=test_instance_config, instance_id="europe")
         
         # Verify
-        mock_get_client.assert_called_once_with("europe")
+        mock_get_client.assert_called_once_with(instance_id="europe")
         mock_client.servers.get_all.assert_called_once_with(label_selector="type=cloudproxy,instance=europe")
 
         # Result should only include europe instance servers

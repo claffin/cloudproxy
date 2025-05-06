@@ -92,7 +92,7 @@ def test_do_manager(mock_do_start, setup_manager_test):
     
     # Check that do_start was called with the default instance config
     default_config = settings.config["providers"]["digitalocean"]["instances"]["default"]
-    mock_do_start.assert_called_once_with(default_config)
+    mock_do_start.assert_called_once_with(default_config, instance_id="default")
 
 @patch('cloudproxy.providers.manager.do_start')
 def test_do_manager_custom_instance(mock_do_start, setup_manager_test, test_instance_config):
@@ -113,7 +113,7 @@ def test_do_manager_custom_instance(mock_do_start, setup_manager_test, test_inst
     
     # Check that do_start was called with the test instance config
     test_config = settings.config["providers"]["digitalocean"]["instances"]["test"]
-    mock_do_start.assert_called_once_with(test_config)
+    mock_do_start.assert_called_once_with(test_config, instance_id="test")
 
 
 # Test AWS manager
@@ -133,7 +133,7 @@ def test_aws_manager(mock_aws_start, setup_manager_test):
     
     # Check that aws_start was called with the default instance config
     default_config = settings.config["providers"]["aws"]["instances"]["default"]
-    mock_aws_start.assert_called_once_with(default_config)
+    mock_aws_start.assert_called_once_with(default_config, instance_id="default")
 
 @patch('cloudproxy.providers.manager.aws_start')
 def test_aws_manager_custom_instance(mock_aws_start, setup_manager_test, test_instance_config):
@@ -154,7 +154,7 @@ def test_aws_manager_custom_instance(mock_aws_start, setup_manager_test, test_in
     
     # Check that aws_start was called with the test instance config
     test_config = settings.config["providers"]["aws"]["instances"]["production"]
-    mock_aws_start.assert_called_once_with(test_config)
+    mock_aws_start.assert_called_once_with(test_config, instance_id="production")
 
 
 # Test GCP manager
@@ -174,7 +174,7 @@ def test_gcp_manager(mock_gcp_start, setup_manager_test):
     
     # Check that gcp_start was called with the default instance config
     default_config = settings.config["providers"]["gcp"]["instances"]["default"]
-    mock_gcp_start.assert_called_once_with(default_config)
+    mock_gcp_start.assert_called_once_with(default_config, instance_id="default")
 
 @patch('cloudproxy.providers.manager.gcp_start')
 def test_gcp_manager_custom_instance(mock_gcp_start, setup_manager_test, test_instance_config):
@@ -195,7 +195,7 @@ def test_gcp_manager_custom_instance(mock_gcp_start, setup_manager_test, test_in
     
     # Check that gcp_start was called with the test instance config
     test_config = settings.config["providers"]["gcp"]["instances"]["dev"]
-    mock_gcp_start.assert_called_once_with(test_config)
+    mock_gcp_start.assert_called_once_with(test_config, instance_id="dev")
 
 
 # Test Hetzner manager
@@ -215,7 +215,7 @@ def test_hetzner_manager(mock_hetzner_start, setup_manager_test):
     
     # Check that hetzner_start was called with the default instance config
     default_config = settings.config["providers"]["hetzner"]["instances"]["default"]
-    mock_hetzner_start.assert_called_once_with(default_config)
+    mock_hetzner_start.assert_called_once_with(default_config, instance_id="default")
 
 @patch('cloudproxy.providers.manager.hetzner_start')
 def test_hetzner_manager_custom_instance(mock_hetzner_start, setup_manager_test, test_instance_config):
@@ -236,7 +236,7 @@ def test_hetzner_manager_custom_instance(mock_hetzner_start, setup_manager_test,
     
     # Check that hetzner_start was called with the test instance config
     test_config = settings.config["providers"]["hetzner"]["instances"]["highcpu"]
-    mock_hetzner_start.assert_called_once_with(test_config)
+    mock_hetzner_start.assert_called_once_with(test_config, instance_id="highcpu")
 
 
 # Test error handling in managers

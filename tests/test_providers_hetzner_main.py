@@ -110,7 +110,7 @@ class TestHetznerMain(unittest.TestCase):
                 hetzner_check_alive(mock_instance_config)
 
         # Use the instance config directly in assertion
-        mock_delete_proxy.assert_called_once_with(mock_proxy, mock_instance_config)
+        mock_delete_proxy.assert_called_once_with(mock_proxy, instance_id="default")
         mock_check_alive.assert_not_called()
 
     @patch("cloudproxy.providers.hetzner.main.config", new_callable=MagicMock)
@@ -218,7 +218,7 @@ class TestHetznerMain(unittest.TestCase):
                 ready_ips = hetzner_check_alive(mock_instance_config)
 
         # Use the instance config directly in assertion
-        mock_delete_proxy.assert_called_once_with(mock_proxy, mock_instance_config)
+        mock_delete_proxy.assert_called_once_with(mock_proxy, instance_id="default")
         mock_check_alive.assert_called_once_with("1.1.1.1")
         self.assertEqual(ready_ips, [])
 
@@ -243,8 +243,8 @@ class TestHetznerMain(unittest.TestCase):
 
         self.assertEqual(mock_delete_proxy.call_count, 2)
         # Use the instance config directly in assertions
-        mock_delete_proxy.assert_any_call(mock_proxy_delete, mock_instance_config)
-        mock_delete_proxy.assert_any_call(mock_proxy_restart, mock_instance_config)
+        mock_delete_proxy.assert_any_call(mock_proxy_delete, instance_id="default")
+        mock_delete_proxy.assert_any_call(mock_proxy_restart, instance_id="default")
         self.assertNotIn("1.1.1.1", mock_delete_queue)
         self.assertNotIn("1.1.1.2", mock_restart_queue)
 
@@ -279,10 +279,10 @@ class TestHetznerMain(unittest.TestCase):
         mock_config["providers"] = {"hetzner": {"instances": {"default": mock_instance_config}}}
         mock_hetzner_check_alive.return_value = ["1.1.1.1"]
 
-        ready_ips = hetzner_start(mock_instance_config)
+        ready_ips = hetzner_start(mock_instance_config, instance_id="default")
 
         # Use the instance config directly in assertions
-        mock_hetzner_check_delete.assert_called_once_with(mock_instance_config)
-        mock_hetzner_deployment.assert_called_once_with(1, mock_instance_config)
-        mock_hetzner_check_alive.assert_called_once_with(mock_instance_config)
+        mock_hetzner_check_delete.assert_called_once_with(mock_instance_config, instance_id="default")
+        mock_hetzner_deployment.assert_called_once_with(1, mock_instance_config, instance_id="default")
+        mock_hetzner_check_alive.assert_called_once_with(mock_instance_config, instance_id="default")
         self.assertEqual(ready_ips, ["1.1.1.1"])

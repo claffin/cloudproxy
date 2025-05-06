@@ -17,6 +17,9 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from pydantic import BaseModel, IPvAnyAddress, Field, field_validator
 
+from cloudproxy.credentials import CredentialManager, credential_manager
+from cloudproxy.api.credentials_api import router as credentials_router
+
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue
 
@@ -56,6 +59,9 @@ app = FastAPI(
     docs_url=None,
     redoc_url=None
 )
+
+# Include the new credentials router
+app.include_router(credentials_router)
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -115,6 +121,10 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 def main():
+    # Initialize the global CredentialManager instance
+    global credential_manager
+    credential_manager = CredentialManager()
+
     # Intercept everything at the root logger
     logging.root.handlers = [InterceptHandler()]
     logging.root.setLevel(logging.INFO)

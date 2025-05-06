@@ -65,6 +65,7 @@ CloudProxy exposes an API and modern UI for managing your proxy infrastructure. 
 * Health monitoring
 * Easy scaling controls
 * Docker-based deployment
+* Dynamic credential management via API (add, list, remove provider credentials on the fly)
 
 Please always scrape nicely, respectfully.
 
@@ -203,6 +204,8 @@ CloudProxy now supports multiple accounts per provider, allowing you to:
 - Organize proxies by account/instance for better management
 - Scale each account independently
 
+While environment variables (detailed below) are one way to configure these instances, you can also dynamically add, list, and remove credentials for these instances using the [Credential Management API](./docs/api.md#credential-management).
+
 Each provider can have multiple "instances", which represent different accounts or configurations. Each instance has its own:
 
 - Scaling parameters (min/max)
@@ -232,6 +235,38 @@ DIGITALOCEAN_SECONDACCOUNT_MIN_SCALING=3
 ```
 
 ## CloudProxy API Examples
+
+### Manage Provider Credentials (New)
+
+CloudProxy now offers API endpoints to dynamically manage provider credentials (add, list, remove) without needing to restart the application or solely rely on environment variables. This is particularly useful for managing multiple accounts or updating credentials on the fly.
+
+**Example: Add a new AWS credential**
+```shell
+curl -X 'POST' 'http://localhost:8000/credentials' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "instance_id": "my-new-aws-account",
+    "provider": "aws",
+    "secrets": {
+      "aws_access_key_id": "YOUR_ACCESS_KEY_ID",
+      "aws_secret_access_key": "YOUR_SECRET_ACCESS_KEY",
+      "region": "us-east-1"
+    }
+  }'
+```
+
+**Example: List all configured credentials**
+```shell
+curl -X 'GET' 'http://localhost:8000/credentials' -H 'accept: application/json'
+```
+
+**Example: Remove a credential**
+```shell
+curl -X 'DELETE' 'http://localhost:8000/credentials/my-new-aws-account' -H 'accept: application/json'
+```
+
+For detailed information on request/response schemas and other providers, please refer to the [Credential Management API Documentation](./docs/api.md#credential-management).
 
 ### List available proxy servers
 #### Request

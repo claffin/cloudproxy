@@ -307,6 +307,93 @@ All API responses follow a standardized format that includes:
 - Response format matches Get Provider Instance Details
 - Validation ensures max_scaling >= min_scaling
 
+### Credential Management
+
+These endpoints allow for dynamic management of cloud provider credentials while the application is running. Credentials managed via these endpoints are stored in-memory and will need to be re-added after an application restart.
+
+#### Add or Update Credentials
+- `POST /api/credentials/{provider_name}/{instance_id}`
+- Adds new credentials or updates existing credentials for a specific provider instance.
+- The `provider_name` should be one of `aws`, `gcp`, `digitalocean`, `hetzner`, etc.
+- The `instance_id` is a user-defined identifier for this set of credentials (e.g., "my-work-account", "project-x-gcp"). This `instance_id` will be used by the application to find the appropriate credentials when interacting with the provider for the instance configuration defined in `settings.config` that has the same name.
+- Request body:
+```json
+{
+  "secrets": {
+    "key1": "value1",
+    "key2": "value2"
+    // ... other provider-specific secrets
+  }
+}
+```
+- **Example for AWS (note the inclusion of `region`):**
+```json
+{
+  "secrets": {
+    "access_key_id": "YOUR_AWS_ACCESS_KEY_ID",
+    "secret_access_key": "YOUR_AWS_SECRET_ACCESS_KEY",
+    "region": "us-west-2" 
+  }
+}
+```
+- **Example for DigitalOcean:**
+```json
+{
+  "secrets": {
+    "access_token": "YOUR_DIGITALOCEAN_ACCESS_TOKEN"
+  }
+}
+```
+- **Example for GCP:**
+```json
+{
+  "secrets": {
+    "service_account_key": "{ \"type\": \"service_account\", ... }" 
+  }
+}
+```
+- **Example for Hetzner:**
+```json
+{
+  "secrets": {
+    "access_token": "YOUR_HETZNER_ACCESS_TOKEN"
+  }
+}
+```
+- Response format:
+```json
+{
+  "message": "Credentials added/updated for {provider_name}/{instance_id}"
+}
+```
+
+#### List Credential Configurations
+- `GET /api/credentials`
+- Lists all provider and instance ID combinations for which credentials are currently stored.
+- Response format:
+```json
+[
+  [
+    "aws",
+    "my-work-account"
+  ],
+  [
+    "digitalocean",
+    "default"
+  ]
+]
+```
+
+#### Remove Credentials
+- `DELETE /api/credentials/{provider_name}/{instance_id}`
+- Removes the stored credentials for a specific provider instance.
+- Response format:
+```json
+{
+  "message": "Credentials removed for {provider_name}/{instance_id}"
+}
+```
+
 ## Error Responses
 
 All error responses follow a standard format:
@@ -338,4 +425,4 @@ All API responses are in JSON format. Error responses include:
 
 ## Rate Limiting
 
-Currently, there are no rate limits on the API endpoints. However, cloud provider API calls may be subject to rate limiting based on your provider's policies. 
+Currently, there are no rate limits on the API endpoints. However, cloud provider API calls may be subject to rate limiting based on your provider's policies.

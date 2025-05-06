@@ -14,15 +14,21 @@ To use AWS as a provider, you'll need to set up credentials for authentication.
 
 ## Environment Variables
 
-### Required:
+CloudProxy supports two ways to configure AWS credentials:
+1.  **Via Environment Variables (Traditional):** Suitable for static configurations.
+2.  **Via API (New):** Allows dynamic adding, updating, and removing of credentials while the application is running. See the [API Documentation](./api.md#credential-management) for details.
+
+### Credentials via Environment Variables
+
+#### Required:
 ``AWS_ENABLED`` - to enable AWS as a provider, set as True. Default value: False
 
 ``AWS_ACCESS_KEY_ID`` - the access key ID for CloudProxy to authenticate with AWS.
 
 ``AWS_SECRET_ACCESS_KEY`` - the secret access key for CloudProxy to authenticate with AWS.
 
-### Optional:
-``AWS_REGION`` - the AWS region where instances will be deployed, e.g., eu-west-2. Default: us-east-1
+### Optional (for Environment Variable Configuration):
+``AWS_REGION`` - the AWS region where instances will be deployed, e.g., eu-west-2. Default: us-east-1. **Note:** If adding/updating credentials via the `/api/credentials` endpoint, the `region` must be included directly within the `secrets` payload.
 
 ``AWS_AMI`` - the Amazon Machine Image (AMI) ID to use for instances. This should be Ubuntu 22.04. Default: region-specific default AMI
 

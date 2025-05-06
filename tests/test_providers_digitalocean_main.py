@@ -64,17 +64,6 @@ def test_initiatedo(mocker):
     assert result == ["192.1.1.1"]
 
 
-def test_list_droplets(droplets):
-    """Test listing droplets."""
-    result = list_droplets()
-    assert isinstance(result, list)
-    assert len(result) > 0
-    assert result[0].id == 3164444  # Verify specific droplet data
-    # Store the result in a module-level variable if needed by other tests
-    global test_droplets
-    test_droplets = result
-
-
 def test_delete_proxy(mocker, droplets):
     """Test deleting a proxy."""
     assert len(droplets) > 0

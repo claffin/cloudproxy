@@ -307,6 +307,24 @@ All API responses follow a standardized format that includes:
 - Response format matches Get Provider Instance Details
 - Validation ensures max_scaling >= min_scaling
 
+## Proxy of Proxies
+
+CloudProxy can be configured to act as a single proxy endpoint that forwards requests to the managed proxies. This simplifies client configuration and enables features like load distribution and automatic failover.
+
+### Enabling and Configuration
+
+The proxy of proxies feature is controlled by the following environment variables:
+
+- `PROXY_OF_PROXIES_ENABLED`: Set to `True` to enable the proxy server. Defaults to `False`.
+- `PROXY_OF_PROXIES_PORT`: The port the proxy server will listen on. Defaults to `8080`.
+- `PROXY_SELECTION_STRATEGY`: The strategy used to select a proxy from the available pool. Supported values are `random`, `round-robin`, and `least-used`. Defaults to `random`.
+
+### How to Use
+
+When enabled, the proxy server will run on the configured port (default 8080). Clients can configure their applications to use `http://your_cloudproxy_host:8080` as their proxy. CloudProxy will then handle forwarding the requests to an available managed proxy based on the selected strategy.
+
+Authentication for the proxy of proxies uses the same basic authentication configured for the individual proxies via the `PROXY_USERNAME` and `PROXY_PASSWORD` environment variables.
+
 ## Error Responses
 
 All error responses follow a standard format:

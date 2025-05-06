@@ -102,6 +102,11 @@ config = {
             }
         },
     },
+    "proxy_of_proxies": {
+        "enabled": os.environ.get("PROXY_OF_PROXIES_ENABLED", "False") == "True",
+        "port": int(os.environ.get("PROXY_OF_PROXIES_PORT", 8080)),
+        "selection_strategy": os.environ.get("PROXY_SELECTION_STRATEGY", "random"),  # random, round-robin, least-used
+    },
 }
 
 delete_queue = set()

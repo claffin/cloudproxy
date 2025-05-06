@@ -125,6 +125,26 @@ def main():
         logging.getLogger(name).propagate = True
     
     # Start uvicorn with modified logging config
+
+    # Start the proxy server if enabled
+    if settings.config["proxy_of_proxies"]["enabled"]:
+        import uvicorn
+        import threading
+
+        def run_proxy_server():
+            uvicorn.run(
+                proxy_app,
+                host="0.0.0.0",
+                port=settings.config["proxy_of_proxies"]["port"],
+                log_level="info"
+            )
+
+        proxy_thread = threading.Thread(target=run_proxy_server)
+        proxy_thread.daemon = True
+        proxy_thread.start()
+        logger.info(f"Proxy server started on port {settings.config['proxy_of_proxies']['port']}")
+
+    # Start the API server
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 
 

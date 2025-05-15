@@ -13,16 +13,26 @@ from cloudproxy.providers.gcp.functions import (
 )
 from cloudproxy.providers.settings import delete_queue, restart_queue, config
 
-def gcp_deployment(min_scaling):
-    total_instances = len(list_instances())
+def gcp_deployment(min_scaling, instance_config=None):
+    """
+    Deploy GCP instances based on min_scaling requirements.
+    
+    Args:
+        min_scaling: The minimum number of instances to maintain
+        instance_config: The specific instance configuration
+    """
+    if instance_config is None:
+        instance_config = config["providers"]["gcp"]["instances"]["default"]
+
+    total_instances = len(list_instances(instance_config))
     if min_scaling < total_instances:
         logger.info("Overprovisioned: GCP destroying.....")
         for instance in itertools.islice(
-            list_instances(), 0, (total_instances - min_scaling)
+            list_instances(instance_config), 0, (total_instances - min_scaling)
         ):
             access_configs = instance['networkInterfaces'][0]['accessConfigs'][0]
             msg = f"{instance['name']} {access_configs['natIP']}"
-            delete_proxy(instance['name'])
+            delete_proxy(instance['name'], instance_config)
             logger.info("Destroyed: GCP -> " + msg)
     if min_scaling - total_instances < 1:
         logger.info("Minimum GCP instances met")
@@ -30,13 +40,22 @@ def gcp_deployment(min_scaling):
         total_deploy = min_scaling - total_instances
         logger.info("Deploying: " + str(total_deploy) + " GCP instances")
         for _ in range(total_deploy):
-            create_proxy()
+            create_proxy(instance_config)
             logger.info("Deployed")
-    return len(list_instances())
+    return len(list_instances(instance_config))
 
-def gcp_check_alive():
+def gcp_check_alive(instance_config=None):
+    """
+    Check if any GCP instances are alive.
+    
+    Args:
+        instance_config: The specific instance configuration
+    """
+    if instance_config is None:
+        instance_config = config["providers"]["gcp"]["instances"]["default"]
+
     ip_ready = []
-    for instance in list_instances():
+    for instance in list_instances(instance_config):
         try:
             elapsed = datetime.datetime.now(
                 datetime.timezone.utc
@@ -50,7 +69,7 @@ def gcp_check_alive():
             
             elif instance['status'] == "TERMINATED":
                 logger.info("Waking up: GCP -> Instance " + instance['name'])
-                started = start_proxy(instance['name'])
+                started = start_proxy(instance['name'], instance_config)
                 if not started:
                     logger.info("Could not wake up, trying again later.")
             
@@ -83,8 +102,17 @@ def gcp_check_alive():
             logger.info("Pending: GCP -> Allocating IP")
     return ip_ready
 
-def gcp_check_delete():
-    for instance in list_instances():
+def gcp_check_delete(instance_config=None):
+    """
+    Check if any GCP instances need to be deleted.
+    
+    Args:
+        instance_config: The specific instance configuration
+    """
+    if instance_config is None:
+        instance_config = config["providers"]["gcp"]["instances"]["default"]
+
+    for instance in list_instances(instance_config):
         access_configs = instance['networkInterfaces'][0]['accessConfigs'][0]
         if 'natIP' in  access_configs and access_configs['natIP'] in delete_queue: 
             msg = f"{instance['name']}, {access_configs['natIP']}"
@@ -92,18 +120,39 @@ def gcp_check_delete():
             logger.info("Destroyed: not wanted -> " + msg)
             delete_queue.remove(access_configs['natIP'])
 
-def gcp_check_stop():
-    for instance in list_instances():
+def gcp_check_stop(instance_config=None):
+    """
+    Check if any GCP instances need to be stopped.
+    
+    Args:
+        instance_config: The specific instance configuration
+    """
+    if instance_config is None:
+        instance_config = config["providers"]["gcp"]["instances"]["default"]
+
+    for instance in list_instances(instance_config):
         access_configs = instance['networkInterfaces'][0]['accessConfigs'][0]
         if 'natIP' in  access_configs and access_configs['natIP'] in restart_queue:
             msg = f"{instance['name']}, {access_configs['natIP']}"
-            stop_proxy(instance['name'])
+            stop_proxy(instance['name'], instance_config)
             logger.info("Stopped: getting new IP -> " + msg)
             restart_queue.remove(access_configs['natIP'])
 
-def gcp_start():
-    gcp_check_delete()
-    gcp_check_stop()
-    gcp_deployment(config["providers"]["gcp"]["scaling"]["min_scaling"])
-    ip_ready = gcp_check_alive()
+def gcp_start(instance_config=None):
+    """
+    Start the GCP provider lifecycle.
+    
+    Args:
+        instance_config: The specific instance configuration
+    
+    Returns:
+        list: List of ready IP addresses
+    """
+    if instance_config is None:
+        instance_config = config["providers"]["gcp"]["instances"]["default"]
+
+    gcp_check_delete(instance_config)
+    gcp_check_stop(instance_config)
+    gcp_deployment(instance_config["scaling"]["min_scaling"], instance_config)
+    ip_ready = gcp_check_alive(instance_config)
     return ip_ready

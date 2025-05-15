@@ -51,7 +51,22 @@ def fetch_ip(ip_address):
 
 def check_alive(ip_address):
     try:
-        result = requests.get("http://ipecho.net/plain", proxies={'http': "http://" + ip_address + ":8899"}, timeout=10)
+        if settings.config["no_auth"]:
+            proxies = {
+                "http": "http://" + ip_address + ":8899",
+                "https": "http://" + ip_address + ":8899",
+            }
+        else:
+            auth = (
+                settings.config["auth"]["username"] + ":" + settings.config["auth"]["password"]
+            )
+
+            proxies = {
+                "http": "http://" + auth + "@" + ip_address + ":8899",
+                "https": "http://" + auth + "@" + ip_address + ":8899",
+            }
+    
+        result = requests.get("http://ipecho.net/plain", proxies=proxies, timeout=10)
         if result.status_code in (200, 407):
             return True
         else:

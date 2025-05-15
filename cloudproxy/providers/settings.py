@@ -155,7 +155,7 @@ config["providers"]["gcp"]["instances"]["default"]["scaling"]["max_scaling"] = i
     os.environ.get("GCP_MAX_SCALING", 2)
 )
 config["providers"]["gcp"]["instances"]["default"]["size"] = os.environ.get("GCP_SIZE", "f1-micro")
-config["providers"]["gcp"]["instances"]["default"]["zone"] = os.environ.get("GCP_REGION", "us-central1-a")
+config["providers"]["gcp"]["instances"]["default"]["zone"] = os.environ.get("GCP_ZONE", "us-central1-a")
 config["providers"]["gcp"]["instances"]["default"]["image_project"] = os.environ.get("GCP_IMAGE_PROJECT", "ubuntu-os-cloud")
 config["providers"]["gcp"]["instances"]["default"]["image_family"] = os.environ.get("GCP_IMAGE_FAMILY", "ubuntu-minimal-2004-lts")
 config["providers"]["gcp"]["instances"]["default"]["display_name"] = os.environ.get("GCP_DISPLAY_NAME", "GCP")

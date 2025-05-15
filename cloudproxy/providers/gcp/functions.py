@@ -9,6 +9,9 @@ from google.oauth2 import service_account
 from cloudproxy.providers.config import set_auth
 from cloudproxy.providers.settings import config
 
+gcp = None
+compute = None
+
 def get_client(instance_config=None):
     """
     Initialize and return a GCP client based on the provided configuration.
@@ -21,21 +24,27 @@ def get_client(instance_config=None):
     """
 
     global gcp, compute
+    if gcp is not None and compute is not None:
+        return gcp, compute
 
     if instance_config is None:
         instance_config = config["providers"]["gcp"]["instances"]["default"]
 
     gcp = config["providers"]["gcp"]
-    if gcp["enabled"] == 'True':
-        try:
-            credentials = service_account.Credentials.from_service_account_info(
-                json.loads(gcp["secrets"]["service_account_key"])
+    try:
+        if 'sa_json' in instance_config["secrets"]:
+            credentials = service_account.Credentials.from_service_account_file(
+                instance_config["secrets"]["sa_json"]
             )
-            compute = googleapiclient.discovery.build('compute', 'v1', credentials=credentials)
+        else:
+            credentials = service_account.Credentials.from_service_account_info(
+                json.loads(instance_config["secrets"]["service_account_key"])
+            )
+        compute = googleapiclient.discovery.build('compute', 'v1', credentials=credentials)
 
-            return gcp, compute
-        except TypeError:
-            logger.error("GCP -> Invalid service account key")
+        return gcp, compute
+    except TypeError:
+        logger.error("GCP -> Invalid service account key")
 
 
 def create_proxy(instance_config=None):

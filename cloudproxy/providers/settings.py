@@ -148,6 +148,7 @@ config["providers"]["gcp"]["instances"]["default"]["project"] = os.environ.get("
 config["providers"]["gcp"]["instances"]["default"]["secrets"]["service_account_key"] = os.environ.get(
     "GCP_SERVICE_ACCOUNT_KEY"
 )
+config["providers"]["gcp"]["instances"]["default"]["secrets"]["sa_json"] = os.environ.get("GCP_SA_JSON")
 config["providers"]["gcp"]["instances"]["default"]["scaling"]["min_scaling"] = int(
     os.environ.get("GCP_MIN_SCALING", 2)
 )

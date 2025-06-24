@@ -21,7 +21,9 @@ Now you have your credentials, you can use GCP as a proxy provider. Set up the e
 #### Required:
 ``GCP_ENABLED`` - to enable GCP as a provider, set as True. Default value: False
 
-``GCP_SA_JSON`` - the path to the service account JSON key file. For Docker, mount the file to the container and provide the path.
+``GCP_SA_JSON`` or `GCP_SERVICE_ACCOUNT_KEY` - the path to the service account JSON key file. For Docker, mount the file to the container and provide the path. If both `GCP_SA_JSON` and `GCP_SERVICE_ACCOUNT_KEY` are set, `GCP_SA_JSON` will override the other.
+
+``GCP_SERVICE_ACCOUNT_KEY`` or (`GCP_SA_JSON`) - service acount JSON key content. If both `GCP_SA_JSON` and `GCP_SERVICE_ACCOUNT_KEY` are set, `GCP_SA_JSON` will override the other.
 
 ``GCP_ZONE`` - the GCP zone where the instances will be created. Default value: us-central1-a
 

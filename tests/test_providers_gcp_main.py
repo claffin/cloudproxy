@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, ANY
 import datetime
 from datetime import timezone
 import itertools
@@ -336,7 +336,7 @@ def test_gcp_start(mock_gcp_deployment, mock_gcp_check_alive, mock_gcp_check_sto
         # Verify
         mock_gcp_check_delete.assert_called_once()
         mock_gcp_check_stop.assert_called_once()
-        mock_gcp_deployment.assert_called_once_with(3)
+        mock_gcp_deployment.assert_called_once_with(3, ANY)
         mock_gcp_check_alive.assert_called_once()
 
         assert result == ["1.2.3.4", "5.6.7.8"] # Should return IPs from check_alive

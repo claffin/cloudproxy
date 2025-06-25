@@ -36,8 +36,10 @@ from cloudproxy.providers.gcp.functions import (
 )
 from cloudproxy.providers.settings import config
 
+@patch('cloudproxy.providers.gcp.functions.get_client')
 @patch('uuid.uuid4')
-def test_create_proxy(mock_uuid, mock_gcp_environment):
+def test_create_proxy(mock_uuid, mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     """Test create_proxy function"""
     # Setup
     mock_uuid.return_value = "test-uuid"
@@ -78,8 +80,9 @@ def test_create_proxy(mock_uuid, mock_gcp_environment):
     assert body["networkInterfaces"][0]["accessConfigs"][0]["type"] == "ONE_TO_ONE_NAT"
     assert "startup-script" in body["metadata"]["items"][0]["key"]
 
-def test_delete_proxy_success(mock_gcp_environment):
-    """Test delete_proxy function successful case"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_delete_proxy_success(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     name = "cloudproxy-123"
@@ -101,8 +104,9 @@ def test_delete_proxy_success(mock_gcp_environment):
     )
     assert result == {"status": "RUNNING"}
 
-def test_delete_proxy_http_error(mock_gcp_environment):
-    """Test delete_proxy function when HTTP error occurs"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_delete_proxy_http_error(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     name = "cloudproxy-123"
@@ -121,8 +125,9 @@ def test_delete_proxy_http_error(mock_gcp_environment):
     # Verify
     assert result is None
 
-def test_stop_proxy_success(mock_gcp_environment):
-    """Test stop_proxy function successful case"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_stop_proxy_success(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     name = "cloudproxy-123"
@@ -144,8 +149,9 @@ def test_stop_proxy_success(mock_gcp_environment):
     )
     assert result == {"status": "STOPPING"}
 
-def test_stop_proxy_http_error(mock_gcp_environment):
-    """Test stop_proxy function when HTTP error occurs"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_stop_proxy_http_error(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     name = "cloudproxy-123"
@@ -164,8 +170,9 @@ def test_stop_proxy_http_error(mock_gcp_environment):
     # Verify
     assert result is None
 
-def test_start_proxy_success(mock_gcp_environment):
-    """Test start_proxy function successful case"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_start_proxy_success(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     name = "cloudproxy-123"
@@ -187,8 +194,9 @@ def test_start_proxy_success(mock_gcp_environment):
     )
     assert result == {"status": "RUNNING"}
 
-def test_start_proxy_http_error(mock_gcp_environment):
-    """Test start_proxy function when HTTP error occurs"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_start_proxy_http_error(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     name = "cloudproxy-123"
@@ -207,8 +215,9 @@ def test_start_proxy_http_error(mock_gcp_environment):
     # Verify
     assert result is None
 
-def test_list_instances_with_instances(mock_gcp_environment):
-    """Test list_instances function when instances exist"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_list_instances_with_instances(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     
@@ -238,8 +247,9 @@ def test_list_instances_with_instances(mock_gcp_environment):
     assert len(result) == 1
     assert result[0]["name"] == "cloudproxy-123"
 
-def test_list_instances_no_instances(mock_gcp_environment):
-    """Test list_instances function when no instances exist"""
+@patch('cloudproxy.providers.gcp.functions.get_client')
+def test_list_instances_no_instances(mock_get_client, mock_gcp_environment):
+    mock_get_client.return_value = (None, mock_gcp_environment)
     # Setup
     mock_compute = mock_gcp_environment
     

@@ -72,24 +72,27 @@ def test_check_alive_for_different_instances(mock_requests_get, mock_proxy_data)
     mock_response.status_code = 200
     mock_requests_get.return_value = mock_response
     
-    # Test check_alive for each proxy
-    for proxy in mock_proxy_data:
-        # Call function under test
-        result = check_alive(proxy["ip"])
-        
-        # Verify result
-        assert result is True, f"check_alive for {proxy['ip']} from {proxy['provider']}/{proxy['instance']} should return True"
-        
-        # Verify correct proxy was used in the request
-        expected_proxy = {'http': f'http://{proxy["ip"]}:8899'}
-        mock_requests_get.assert_called_with(
-            "http://ipecho.net/plain", 
-            proxies=expected_proxy, 
-            timeout=10
-        )
-        
-        # Reset mock for next iteration
-        mock_requests_get.reset_mock()
+    # Set no_auth to True
+    original_no_auth = settings.config["no_auth"]
+    settings.config["no_auth"] = True
+    try:
+        # Test check_alive for each proxy
+        for proxy in mock_proxy_data:
+            # Call function under test
+            result = check_alive(proxy["ip"])
+            # Verify result
+            assert result is True, f"check_alive for {proxy['ip']} from {proxy['provider']}/{proxy['instance']} should return True"
+            # Verify correct proxy was used in the request
+            expected_proxy = {'http': f'http://{proxy["ip"]}:8899', 'https': f'http://{proxy["ip"]}:8899'}
+            mock_requests_get.assert_called_with(
+                "http://ipecho.net/plain", 
+                proxies=expected_proxy, 
+                timeout=10
+            )
+            # Reset mock for next iteration
+            mock_requests_get.reset_mock()
+    finally:
+        settings.config["no_auth"] = original_no_auth
 
 
 @patch('cloudproxy.check.requests_retry_session')

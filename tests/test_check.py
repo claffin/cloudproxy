@@ -114,16 +114,21 @@ def test_check_alive_success(mock_get):
     mock_response.status_code = 200
     mock_get.return_value = mock_response
     
-    # Execute
-    result = check_alive("10.0.0.1")
-    
-    # Verify
-    assert result is True
-    mock_get.assert_called_once_with(
-        "http://ipecho.net/plain", 
-        proxies={'http': "http://10.0.0.1:8899"}, 
-        timeout=10
-    )
+    # Set no_auth to True
+    original_no_auth = settings.config["no_auth"]
+    settings.config["no_auth"] = True
+    try:
+        # Execute
+        result = check_alive("10.0.0.1")
+        # Verify
+        assert result is True
+        mock_get.assert_called_once_with(
+            "http://ipecho.net/plain", 
+            proxies={'http': "http://10.0.0.1:8899", 'https': "http://10.0.0.1:8899"}, 
+            timeout=10
+        )
+    finally:
+        settings.config["no_auth"] = original_no_auth
 
 @patch('cloudproxy.check.requests.get')
 def test_check_alive_auth_required(mock_get):

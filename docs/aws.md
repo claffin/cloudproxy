@@ -1,6 +1,44 @@
 # AWS Configuration
 
-To use AWS as a provider, you'll need to set up credentials for authentication.
+Configure CloudProxy to use Amazon Web Services (AWS) for creating proxy servers.
+
+## Quick Start
+
+```bash
+# Run with Docker (recommended)
+docker run -d \
+  -e PROXY_USERNAME='your_username' \
+  -e PROXY_PASSWORD='your_password' \
+  -e AWS_ENABLED=True \
+  -e AWS_ACCESS_KEY_ID="your-access-key" \
+  -e AWS_SECRET_ACCESS_KEY="your-secret-key" \
+  -e AWS_REGION="us-east-1" \
+  -p 8000:8000 \
+  laffin/cloudproxy:latest
+
+# Or using an environment file
+cat > .env << EOF
+PROXY_USERNAME=your_username
+PROXY_PASSWORD=your_password
+AWS_ENABLED=True
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_REGION=us-east-1
+EOF
+
+docker run -d --env-file .env -p 8000:8000 laffin/cloudproxy:latest
+```
+
+<details>
+<summary>For development (Python)</summary>
+
+```bash
+export AWS_ENABLED=True
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-key"
+python -m cloudproxy
+```
+</details>
 
 ## AWS IAM Setup
 
@@ -14,25 +52,29 @@ To use AWS as a provider, you'll need to set up credentials for authentication.
 
 ## Environment Variables
 
-### Required:
-``AWS_ENABLED`` - to enable AWS as a provider, set as True. Default value: False
+### Required
+| Variable | Description | Default |
+|----------|-------------|---------||
+| `AWS_ENABLED` | Enable AWS as a provider | `False` |
+| `AWS_ACCESS_KEY_ID` | AWS access key ID | Required |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key | Required |
 
-``AWS_ACCESS_KEY_ID`` - the access key ID for CloudProxy to authenticate with AWS.
+### Optional
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AWS_REGION` | AWS region for instances | `us-east-1` |
+| `AWS_AMI` | Ubuntu 22.04 AMI ID (region-specific) | Auto-detected |
+| `AWS_MIN_SCALING` | Target number of proxies to maintain | `2` |
+| `AWS_MAX_SCALING` | Reserved for future autoscaling (currently unused) | `2` |
+| `AWS_SIZE` | Instance type (t2.micro is free tier) | `t2.micro` |
+| `AWS_SPOT` | Use spot instances for cost savings | `False` |
 
-``AWS_SECRET_ACCESS_KEY`` - the secret access key for CloudProxy to authenticate with AWS.
+**Common Regions**: us-east-1, us-west-2, eu-west-1, eu-central-1, ap-southeast-1
 
-### Optional:
-``AWS_REGION`` - the AWS region where instances will be deployed, e.g., eu-west-2. Default: us-east-1
-
-``AWS_AMI`` - the Amazon Machine Image (AMI) ID to use for instances. This should be Ubuntu 22.04. Default: region-specific default AMI
-
-``AWS_MIN_SCALING`` - minimum number of proxies to provision. Default: 2
-
-``AWS_MAX_SCALING`` - maximum number of proxies to provision. Default: 2
-
-``AWS_SIZE`` - the instance type to use. t2.micro is included in the free tier. Default: t2.micro
-
-``AWS_SPOT`` - whether to use spot instances (can be cheaper but may be terminated by AWS). Set to True or False. Default: False
+**Recommended Instance Types**: 
+- `t2.micro` - Free tier eligible, sufficient for most use cases
+- `t3.micro` - Better performance, still cost-effective
+- `t2.small` - For higher traffic requirements
 
 ## Multi-Account Support
 
@@ -82,10 +124,57 @@ For each instance, you can configure:
 #### Optional for each instance:
 - `AWS_INSTANCENAME_REGION` - AWS region for this instance
 - `AWS_INSTANCENAME_AMI` - AMI ID for this instance (region-specific)
-- `AWS_INSTANCENAME_MIN_SCALING` - minimum number of proxies for this instance
-- `AWS_INSTANCENAME_MAX_SCALING` - maximum number of proxies for this instance
+- `AWS_INSTANCENAME_MIN_SCALING` - target number of proxies to maintain for this instance
+- `AWS_INSTANCENAME_MAX_SCALING` - reserved for future autoscaling (currently unused)
 - `AWS_INSTANCENAME_SIZE` - instance type for this instance
 - `AWS_INSTANCENAME_SPOT` - whether to use spot instances for this instance
 - `AWS_INSTANCENAME_DISPLAY_NAME` - a friendly name for the instance that will appear in the UI
 
 Each instance operates independently, maintaining its own pool of proxies according to its configuration.
+
+## Troubleshooting
+
+### Common Issues
+
+#### Instances not being created
+- Verify your IAM credentials have the required permissions
+- Check AWS service quotas in your region
+- Ensure the AMI ID is valid for your selected region
+- Review CloudProxy logs for specific AWS API errors
+
+#### Permission errors
+```bash
+# Test your credentials
+aws sts get-caller-identity --profile cloudproxy
+```
+
+#### AMI-related issues
+- The AMI must be Ubuntu 22.04 for the proxy setup to work
+- Different regions require different AMI IDs
+- Find Ubuntu AMIs: `aws ec2 describe-images --owners 099720109477 --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"`
+
+#### Spot instance termination
+- Spot instances can be terminated by AWS when capacity is needed
+- Use on-demand instances (SPOT=False) for more stability
+- Monitor spot pricing in your region
+
+### Cost Optimization
+
+- Use `t2.micro` instances if you're on the free tier
+- Enable spot instances for up to 90% cost savings (but less stability)
+- Choose regions with lower pricing
+- Set MIN_SCALING to the exact number of proxies you need (this is the fixed count that will be maintained)
+- Use the AGE_LIMIT variable to rotate proxies and avoid long-running instances
+
+### Security Best Practices
+
+- Use IAM roles instead of access keys when running on EC2
+- Rotate access keys regularly
+- Apply the principle of least privilege to IAM policies
+- Use separate AWS accounts for production and testing
+
+## See Also
+
+- [API Documentation](api.md) - Complete API reference
+- [Security Best Practices](security.md) - Credential management guide
+- [AWS EC2 Documentation](https://docs.aws.amazon.com/ec2/) - Official AWS docs

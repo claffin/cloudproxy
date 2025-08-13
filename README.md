@@ -13,14 +13,14 @@
 [quality-shield]: https://img.shields.io/codacy/grade/39a9788caa854baebe01beb720e9c5a8?style=for-the-badge&logo=codacy&logoColor=white
 [build-shield]: https://img.shields.io/github/actions/workflow/status/claffin/cloudproxy/main.yml?style=for-the-badge&logo=docker&logoColor=white
 [docker-pulls-shield]: https://img.shields.io/docker/pulls/laffin/cloudproxy?style=for-the-badge&logo=docker&logoColor=white
-[python-shield]: https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python&logoColor=white
+[python-shield]: https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white
 [license-shield]: https://img.shields.io/github/license/claffin/cloudproxy?style=for-the-badge&logo=opensourceinitiative&logoColor=white
 [commit-shield]: https://img.shields.io/github/last-commit/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
 [issues-shield]: https://img.shields.io/github/issues/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
 [stars-shield]: https://img.shields.io/github/stars/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
 [contributors-shield]: https://img.shields.io/github/contributors/claffin/cloudproxy?style=for-the-badge&logo=github&logoColor=white
 
-[python-url]: https://www.python.org/downloads/release/python-3110/
+[python-url]: https://www.python.org/downloads/
 [codecov-url]: https://app.codecov.io/gh/claffin/cloudproxy
 [codacy-url]: https://www.codacy.com/gh/claffin/cloudproxy/dashboard
 [docker-url]: https://hub.docker.com/r/laffin/cloudproxy
@@ -32,6 +32,28 @@
 # CloudProxy
 
 ![cloudproxy](docs/images/cloudproxy.gif)
+
+## Table of Contents
+
+- [About The Project](#about-the-project)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Variables](#environment-variables)
+- [Testing](#testing)
+- [Development](#development)
+- [Usage](#usage)
+  - [Web Interface](#web-interface)
+  - [API Documentation](#api-documentation)
+  - [Programmatic Usage](#programmatic-usage)
+- [Multi-Account Provider Support](#multi-account-provider-support)
+- [API Examples](#cloudproxy-api-examples)
+- [Roadmap](#roadmap)
+- [Limitations](#limitations)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+- [Troubleshooting](#troubleshooting)
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
@@ -57,14 +79,14 @@ CloudProxy exposes an API and modern UI for managing your proxy infrastructure. 
 * Vultr
 
 ### Features:
+* **Docker-first deployment** - Simple, isolated, production-ready
 * Modern UI with real-time updates
 * Interactive API documentation
 * Multi-provider support
 * Multiple accounts per provider
 * Automatic proxy rotation
 * Health monitoring
-* Easy scaling controls
-* Docker-based deployment
+* Fixed proxy pool management (maintains target count)
 
 Please always scrape nicely, respectfully.
 
@@ -75,25 +97,112 @@ To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
-You can use CloudProxy in two ways:
+CloudProxy is designed to run as a Docker container:
 
-1. **Docker (recommended for running the service)**
-   * Docker installed on your system
-
-2. **Python Package (for development or integration)**
-   * Python 3.9 or higher
+* **Docker** - Required for running CloudProxy (recommended for all deployments)
+* **Python 3.9+** - Only needed for development or custom integrations
 
 ### Installation
 
-#### As a Python Package
+#### Docker Deployment (Recommended)
 
-CloudProxy is available as a Python package that you can install directly from PyPI:
+CloudProxy is distributed as a Docker image for easy deployment:
 
 ```bash
-pip install cloudproxy
+# Quick start with DigitalOcean
+docker run -d \
+  -e PROXY_USERNAME='your_username' \
+  -e PROXY_PASSWORD='your_password' \
+  -e DIGITALOCEAN_ENABLED=True \
+  -e DIGITALOCEAN_ACCESS_TOKEN='your_token' \
+  -p 8000:8000 \
+  laffin/cloudproxy:latest
+
+# Using environment file (recommended for production)
+docker run -d \
+  --env-file .env \
+  -p 8000:8000 \
+  laffin/cloudproxy:0.6.0-beta  # Use specific version tag
 ```
 
-Or install from source:
+**Docker Compose Example:**
+```yaml
+version: '3.8'
+services:
+  cloudproxy:
+    image: laffin/cloudproxy:latest
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
+```
+
+It is recommended to use a Docker image tagged to a specific version (e.g., `laffin/cloudproxy:0.6.0-beta`). See [releases](https://github.com/claffin/cloudproxy/releases) for the latest version.
+
+#### Environment Configuration
+
+##### Authentication
+CloudProxy requires authentication configuration for the proxy servers:
+
+- `PROXY_USERNAME`, `PROXY_PASSWORD` - Basic authentication credentials (alphanumeric characters only)
+- `ONLY_HOST_IP` - Set to `True` to restrict access to the host server IP only
+- Both methods can be used simultaneously for enhanced security
+
+##### Optional Settings
+- `AGE_LIMIT` - Proxy age limit in seconds (0 = disabled, default: disabled)
+
+See individual [provider documentation](docs/) for provider-specific environment variables.
+
+#### Python Package (Development & Integration)
+
+For development or integrating CloudProxy into existing Python applications:
+
+```bash
+# Install from PyPI
+pip install cloudproxy
+
+# Or install from source for development
+git clone https://github.com/claffin/cloudproxy.git
+cd cloudproxy
+pip install -e .
+```
+
+See the [Python Package Usage Guide](docs/python-package-usage.md) for development and integration examples.
+
+## Testing
+
+CloudProxy includes a comprehensive test suite to ensure reliability:
+
+### Unit Tests
+```bash
+# Run all tests
+pytest -v
+
+# Run specific test file
+pytest tests/test_specific.py -v
+
+# Run with coverage
+pytest --cov=cloudproxy tests/
+```
+
+### End-to-End Testing
+**Warning:** These tests create real cloud instances and will incur costs!
+
+```bash
+# Run full end-to-end test
+./test_cloudproxy.sh
+
+# Run without cleanup (for debugging)
+./test_cloudproxy.sh --no-cleanup --skip-connection-test
+
+# Test specific providers
+./test_cloudproxy.sh --provider digitalocean
+```
+
+## Development
+
+### Setting up Development Environment
 
 ```bash
 # Clone the repository
@@ -103,54 +212,44 @@ cd cloudproxy
 # Install in development mode
 pip install -e .
 
-# Or build and install
-pip install build
-python -m build
-pip install dist/cloudproxy-0.1.0-py3-none-any.whl
+# Install development dependencies
+pip install -r requirements.txt
+
+# Run the application locally
+python -m cloudproxy
 ```
 
-Once installed, you can import and use CloudProxy in your Python applications:
+### UI Development
 
-```python
-from cloudproxy.providers import manager
-import cloudproxy.main as cloudproxy
+```bash
+# Navigate to UI directory
+cd cloudproxy-ui
 
-# Setup your environment variables first
-# Start the CloudProxy service
-cloudproxy.start()
+# Install dependencies
+npm install
+
+# Run development server (hot reload enabled)
+npm run serve
+
+# Build for production
+npm run build
 ```
 
-#### Environment variables:
+### Adding a New Provider
 
-Basic authentication is used for proxy access. Configure via environment variables:
-* PROXY_USERNAME
-* PROXY_PASSWORD
+1. Create a new directory under `cloudproxy/providers/`
+2. Implement `main.py` with the provider orchestration logic
+3. Implement `functions.py` with cloud API interactions
+4. Follow the standard interface pattern used by existing providers
+5. Add configuration handling in `providers/config.py`
+6. Add tests in `tests/test_provider_name.py`
 
-##### Required
-You have two available methods of proxy authentication: username and password or IP restriction. You can use either one or both simultaneously.
+### Code Style
 
-- `PROXY_USERNAME`, `PROXY_PASSWORD` - set the username and password for the forward proxy. The username and password should consist of alphanumeric characters. Using special characters may cause issues due to how URL encoding works.
-- `ONLY_HOST_IP` - set this variable to true if you want to restrict access to the proxy only to the host server (i.e., the IP address of the server running the CloudProxy Docker container).
-
-##### Optional
-- `AGE_LIMIT` - set the age limit for your forward proxies in seconds. Once the age limit is reached, the proxy is replaced. A value of 0 disables the feature. Default: disabled.
-
-See individual provider pages for environment variables required in above providers supported section.
-
-#### Docker (recommended)
-
-For example:
-
-   ```shell
-   docker run -e PROXY_USERNAME='CHANGE_THIS_USERNAME' \
-       -e PROXY_PASSWORD='CHANGE_THIS_PASSWORD' \
-       -e ONLY_HOST_IP=True \
-       -e DIGITALOCEAN_ENABLED=True \
-       -e DIGITALOCEAN_ACCESS_TOKEN='YOUR SECRET ACCESS KEY' \
-       -it -p 8000:8000 laffin/cloudproxy:latest
-   ```
-
-It is recommended to use a Docker image tagged to a version e.g. `laffin/cloudproxy:0.6.0-beta`, see [releases](https://github.com/claffin/cloudproxy/releases) for latest version.
+- Python code follows PEP 8 standards
+- Use type hints for function parameters and returns
+- Add comprehensive error handling with Loguru logging
+- Write unit tests for all new functionality
 
 <!-- USAGE EXAMPLES -->
 ## Usage
@@ -233,277 +332,53 @@ DIGITALOCEAN_SECONDACCOUNT_MIN_SCALING=3
 
 ## CloudProxy API Examples
 
-### List available proxy servers
-#### Request
+CloudProxy exposes a comprehensive REST API for managing your proxy infrastructure. Here are some common examples:
 
-`GET /?offset=0&limit=10`
+### Quick Examples
 
-    curl -X 'GET' 'http://localhost:8000/?offset=0&limit=10' -H 'accept: application/json'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "total": 2,
-  "proxies": [
-    {
-      "ip": "192.168.1.1",
-      "port": 8899,
-      "auth_enabled": true,
-      "url": "http://username:password@192.168.1.1:8899"
-    },
-    {
-      "ip": "192.168.1.2",
-      "port": 8899,
-      "auth_enabled": true,
-      "url": "http://username:password@192.168.1.2:8899"
-    }
-  ]
-}
+#### Get a random proxy
+```bash
+curl -X 'GET' 'http://localhost:8000/random' -H 'accept: application/json'
 ```
 
-### Get random proxy server
-#### Request
-
-`GET /random`
-
-    curl -X 'GET' 'http://localhost:8000/random' -H 'accept: application/json'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "message": "Random proxy retrieved successfully",
-  "proxy": {
-    "ip": "192.168.1.1",
-    "port": 8899,
-    "auth_enabled": true,
-    "url": "http://username:password@192.168.1.1:8899"
-  }
-}
+#### List all proxies
+```bash
+curl -X 'GET' 'http://localhost:8000/' -H 'accept: application/json'
 ```
 
-### Remove proxy server
-#### Request
-
-`DELETE /destroy`
-
-    curl -X 'DELETE' 'http://localhost:8000/destroy?ip_address=192.1.1.1' -H 'accept: application/json'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "message": "Proxy scheduled for deletion",
-  "proxy": {
-    "ip": "192.1.1.1",
-    "port": 8899,
-    "auth_enabled": true,
-    "url": "http://username:password@192.1.1.1:8899"
-  }
-}
+#### Set target proxy count
+```bash
+# CloudProxy will maintain exactly 5 proxies
+curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean' \
+  -H 'Content-Type: application/json' \
+  -d '{"min_scaling": 5, "max_scaling": 5}'
 ```
 
-### Restart proxy server
-#### Request
+### Python Usage Example
+```python
+import requests
 
-`DELETE /restart`
+# Get a random proxy
+response = requests.get("http://localhost:8000/random").json()
+proxy_url = response["proxy"]["url"]
 
-    curl -X 'DELETE' 'http://localhost:8000/restart?ip_address=192.1.1.1' -H 'accept: application/json'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "message": "Proxy scheduled for restart",
-  "proxy": {
-    "ip": "192.1.1.1",
-    "port": 8899,
-    "auth_enabled": true,
-    "url": "http://username:password@192.1.1.1:8899"
-  }
-}
+# Use the proxy
+proxies = {"http": proxy_url, "https": proxy_url}
+result = requests.get("https://api.ipify.org", proxies=proxies)
 ```
 
-### Get providers
-#### Request
+For comprehensive API documentation with all endpoints, request/response schemas, and advanced usage examples, see the [API Examples Documentation](docs/api-examples.md).
 
-`GET /providers`
-
-    curl -X 'GET' 'http://localhost:8000/providers' -H 'accept: application/json'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "providers": {
-    "digitalocean": {
-      "enabled": true,
-      "ips": ["192.168.1.1"],
-      "scaling": {
-        "min_scaling": 2,
-        "max_scaling": 2
-      },
-      "size": "s-1vcpu-1gb",
-      "region": "lon1",
-      "instances": {
-        "default": {
-          "enabled": true,
-          "ips": ["192.168.1.1"],
-          "scaling": {
-            "min_scaling": 2,
-            "max_scaling": 2
-          },
-          "size": "s-1vcpu-1gb",
-          "region": "lon1",
-          "display_name": "Default Account"
-        },
-        "secondary": {
-          "enabled": true,
-          "ips": ["192.168.1.2"],
-          "scaling": {
-            "min_scaling": 1,
-            "max_scaling": 3
-          },
-          "size": "s-1vcpu-1gb",
-          "region": "nyc1",
-          "display_name": "US Account"
-        }
-      }
-    },
-    "aws": {
-      "enabled": false,
-      "ips": [],
-      "scaling": {
-        "min_scaling": 2,
-        "max_scaling": 2
-      },
-      "size": "t2.micro",
-      "region": "eu-west-2",
-      "ami": "ami-096cb92bb3580c759",
-      "spot": false
-    }
-  }
-}
-```
-
-### Update provider scaling
-#### Request
-
-`PATCH /providers/digitalocean`
-
-    curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean' \
-      -H 'accept: application/json' \
-      -H 'Content-Type: application/json' \
-      -d '{"min_scaling": 5, "max_scaling": 5}'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "message": "Provider 'digitalocean' scaling configuration updated successfully",
-  "provider": {
-    "enabled": true,
-    "ips": ["192.168.1.1", "192.168.1.2"],
-    "scaling": {
-      "min_scaling": 5,
-      "max_scaling": 5
-    },
-    "size": "s-1vcpu-1gb",
-    "region": "lon1"
-  }
-}
-```
-
-### Get provider instance
-#### Request
-
-`GET /providers/digitalocean/secondary`
-
-    curl -X 'GET' 'http://localhost:8000/providers/digitalocean/secondary' -H 'accept: application/json'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "message": "Provider 'digitalocean' instance 'secondary' configuration retrieved successfully",
-  "provider": "digitalocean",
-  "instance": "secondary",
-  "config": {
-    "enabled": true,
-    "ips": ["192.168.1.2"],
-    "scaling": {
-      "min_scaling": 1,
-      "max_scaling": 3
-    },
-    "size": "s-1vcpu-1gb",
-    "region": "nyc1",
-    "display_name": "US Account"
-  }
-}
-```
-
-### Update provider instance scaling
-#### Request
-
-`PATCH /providers/digitalocean/secondary`
-
-    curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean/secondary' \
-      -H 'accept: application/json' \
-      -H 'Content-Type: application/json' \
-      -d '{"min_scaling": 2, "max_scaling": 5}'
-
-#### Response
-```json
-{
-  "metadata": {
-    "request_id": "123e4567-e89b-12d3-a456-426614174000",
-    "timestamp": "2024-02-24T08:00:00Z"
-  },
-  "message": "Provider 'digitalocean' instance 'secondary' scaling configuration updated successfully",
-  "provider": "digitalocean",
-  "instance": "secondary",
-  "config": {
-    "enabled": true,
-    "ips": ["192.168.1.2"],
-    "scaling": {
-      "min_scaling": 2,
-      "max_scaling": 5
-    },
-    "size": "s-1vcpu-1gb",
-    "region": "nyc1",
-    "display_name": "US Account"
-  }
-}
-```
-
-CloudProxy runs on a schedule of every 30 seconds, it will check if the minimum scaling has been met, if not then it will deploy the required number of proxies. The new proxy info will appear in IPs once they are deployed and ready to be used.
+CloudProxy runs on a schedule of every 30 seconds to maintain the target number of proxies specified by MIN_SCALING. If the current count differs from the target, it will create or remove proxies as needed. The new proxy info will appear in IPs once they are deployed and ready to be used.
 
 <!-- ROADMAP -->
 ## Roadmap
 
-The project is at early alpha with limited features. In the future more providers will be supported, autoscaling will be implemented and a rich API to allow for blacklisting and recycling of proxies.
+The project is at early alpha with limited features. Future enhancements may include:
+- Support for additional cloud providers
+- Autoscaling based on demand (MIN_SCALING and MAX_SCALING)
+- Enhanced API for blacklisting and recycling of proxies
+- Load-based proxy management
 
 See the [open issues](https://github.com/claffin/cloudproxy/issues) for a list of proposed features (and known issues).
 
@@ -537,34 +412,54 @@ Christian Laffin - [@christianlaffin](https://twitter.com/christianlaffin) - chr
 
 Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin/cloudproxy)
 
+<!-- TROUBLESHOOTING -->
+## Troubleshooting
+
+### Common Issues
+
+#### Proxies not being created
+- Check that the provider is enabled (e.g., `DIGITALOCEAN_ENABLED=True`)
+- Verify API credentials are correct and have necessary permissions
+- Check the logs for authentication errors
+- Ensure minimum scaling is set above 0
+
+#### Authentication failures
+- Verify `PROXY_USERNAME` and `PROXY_PASSWORD` are set
+- Ensure credentials only contain alphanumeric characters (special characters may cause URL encoding issues)
+- Check if `ONLY_HOST_IP` is restricting access
+
+#### Provider-specific issues
+- **AWS**: Ensure the AMI ID is valid for your region
+- **GCP**: Check that the service account has necessary permissions
+- **DigitalOcean**: Verify the access token has write permissions
+- **Hetzner**: Ensure the API token is valid
+
+#### Docker container issues
+```bash
+# Check container logs
+docker logs <container-id>
+
+# Verify environment variables are passed correctly
+docker exec <container-id> env | grep PROXY
+
+# Test connectivity to the API
+curl http://localhost:8000/providers
+```
+
+#### Proxies being deleted unexpectedly
+- Check the `AGE_LIMIT` setting - proxies older than this will be automatically replaced
+- Verify proxies are passing health checks
+- Check cloud provider quotas and limits
+
+#### UI not loading
+- Ensure you're accessing `/ui` not just the root URL
+- Check that the UI files were built correctly (`npm run build` in cloudproxy-ui/)
+- Verify the FastAPI server is serving static files
+
+For more detailed debugging, enable verbose logging by checking the application logs in the `logs/` directory.
 
 
-<!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements
-
-* []()
-* []()
-* []()
 
 
 
 
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/claffin/cloudproxy.svg?style=flat-square
-[contributors-url]: https://github.com/claffin/cloudproxy/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/claffin/cloudproxy.svg?style=flat-square
-[forks-url]: https://github.com/claffin/cloudproxy/network/members
-[stars-shield]: https://img.shields.io/github/stars/claffin/cloudproxy.svg?style=flat-square
-[stars-url]: https://github.com/claffin/cloudproxy/stargazers
-[issues-shield]: https://img.shields.io/github/issues/claffin/cloudproxy.svg?style=flat-square
-[issues-url]: https://github.com/claffin/cloudproxy/issues
-[license-shield]: https://img.shields.io/github/license/claffin/cloudproxy.svg?style=flat-square
-[license-url]: https://github.com/claffin/cloudproxy/blob/master/LICENSE.txt
-[docker-url]: https://hub.docker.com/r/laffin/cloudproxy
-[docker-shield]: https://img.shields.io/github/workflow/status/claffin/cloudproxy/CI?style=flat-square
-[codecov-url]: https://app.codecov.io/gh/claffin/cloudproxy
-[codecov-shield]: https://img.shields.io/codecov/c/github/claffin/cloudproxy?style=flat-square
-[codacy-shield]: https://img.shields.io/codacy/grade/39a9788caa854baebe01beb720e9c5a8?style=flat-square
-[codacy-url]: https://www.codacy.com/gh/claffin/cloudproxy/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=claffin/cloudproxy&amp;utm_campaign=Badge_Grade

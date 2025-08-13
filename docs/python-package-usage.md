@@ -1,10 +1,35 @@
-# Using CloudProxy as a Python Package
+# Using CloudProxy as a Python Package (Development & Integration)
 
-This guide explains how to install and use CloudProxy as a Python package in your own projects.
+> **Note:** Docker is the recommended way to deploy CloudProxy in production. This guide is for developers who need to:
+> - Integrate CloudProxy directly into Python applications
+> - Develop custom automation workflows
+> - Contribute to CloudProxy development
+> - Build custom proxy management solutions
+>
+> For standard deployments, please use the [Docker installation method](../README.md#docker-deployment-recommended).
+
+This guide explains how to install and use CloudProxy as a Python package for development and integration purposes.
+
+## When to Use Docker vs Python Package
+
+### Use Docker When:
+- ✅ Deploying CloudProxy in production
+- ✅ Running CloudProxy as a standalone service
+- ✅ You need isolation from your system Python environment
+- ✅ Managing CloudProxy through its web UI and API
+- ✅ Running in containers, Kubernetes, or cloud platforms
+- ✅ You want the simplest setup and maintenance
+
+### Use Python Package When:
+- ✅ Integrating proxy management into existing Python code
+- ✅ Building custom automation that needs direct access to CloudProxy internals
+- ✅ Developing or testing CloudProxy features
+- ✅ Creating specialized proxy rotation logic
+- ✅ Embedding CloudProxy in larger Python applications
 
 ## Installation
 
-CloudProxy can be installed directly from PyPI:
+CloudProxy can be installed directly from PyPI for development use:
 
 ```bash
 pip install cloudproxy
@@ -23,7 +48,7 @@ pip install -e .
 # Or build and install
 pip install build
 python -m build
-pip install dist/cloudproxy-0.6.23-py3-none-any.whl
+pip install dist/cloudproxy-*.whl  # Use the generated wheel file
 ```
 
 ## Basic Usage
@@ -68,8 +93,9 @@ manager.init_schedule()
 proxies = manager.get_all_ips()
 print(f"Available proxies: {proxies}")
 
-# Scale the number of proxies for a specific provider
-manager.scaling_handler("digitalocean", min_scaling=3, max_scaling=5)
+# Set the target number of proxies for a specific provider
+# Note: Only min_scaling is currently used - proxies will be maintained at this exact count
+manager.scaling_handler("digitalocean", min_scaling=3, max_scaling=3)
 ```
 
 ## Direct Proxy Access (Without the API)
@@ -284,11 +310,11 @@ CloudProxy supports multiple instances of the same provider, which allows you to
 import os
 from cloudproxy.providers import manager
 
-# Setup the first DigitalOcean instance
+# Setup the first DigitalOcean instance (default)
 os.environ["DIGITALOCEAN_ENABLED"] = "True"
 os.environ["DIGITALOCEAN_ACCESS_TOKEN"] = "first_token"
-os.environ["DIGITALOCEAN_DEFAULT_REGION"] = "lon1"
-os.environ["DIGITALOCEAN_DEFAULT_MIN_SCALING"] = "2"
+os.environ["DIGITALOCEAN_REGION"] = "lon1"
+os.environ["DIGITALOCEAN_MIN_SCALING"] = "2"
 
 # Setup a second DigitalOcean instance
 os.environ["DIGITALOCEAN_SECONDARY_ENABLED"] = "True"
@@ -336,39 +362,39 @@ cloudproxy.start()
 #### DigitalOcean
 - `DIGITALOCEAN_ENABLED`: Set to "True" to enable
 - `DIGITALOCEAN_ACCESS_TOKEN`: Your API token
-- `DIGITALOCEAN_DEFAULT_REGION`: Region to deploy in (default: "lon1")
-- `DIGITALOCEAN_DEFAULT_SIZE`: Droplet size (default: "s-1vcpu-1gb")
-- `DIGITALOCEAN_DEFAULT_MIN_SCALING`: Minimum number of proxies (default: 2)
-- `DIGITALOCEAN_DEFAULT_MAX_SCALING`: Maximum number of proxies (default: 2)
+- `DIGITALOCEAN_REGION`: Region to deploy in (default: "lon1")
+- `DIGITALOCEAN_SIZE`: Droplet size (default: "s-1vcpu-1gb")
+- `DIGITALOCEAN_MIN_SCALING`: Target number of proxies to maintain (default: 2)
+- `DIGITALOCEAN_MAX_SCALING`: Reserved for future autoscaling (default: 2)
 
 #### AWS
 - `AWS_ENABLED`: Set to "True" to enable
-- `AWS_ACCESS_KEY`: Your AWS access key
-- `AWS_SECRET_KEY`: Your AWS secret key
-- `AWS_DEFAULT_REGION`: Region to deploy in (default: "eu-west-2")
-- `AWS_DEFAULT_SIZE`: Instance type (default: "t2.micro")
-- `AWS_DEFAULT_MIN_SCALING`: Minimum number of proxies (default: 2)
-- `AWS_DEFAULT_MAX_SCALING`: Maximum number of proxies (default: 2)
-- `AWS_DEFAULT_AMI`: AMI ID to use (default varies by region)
-- `AWS_DEFAULT_SPOT`: Use spot instances (default: "false")
+- `AWS_ACCESS_KEY_ID`: Your AWS access key ID
+- `AWS_SECRET_ACCESS_KEY`: Your AWS secret access key
+- `AWS_REGION`: Region to deploy in (default: "us-east-1")
+- `AWS_SIZE`: Instance type (default: "t2.micro")
+- `AWS_MIN_SCALING`: Target number of proxies to maintain (default: 2)
+- `AWS_MAX_SCALING`: Reserved for future autoscaling (default: 2)
+- `AWS_AMI`: AMI ID to use (default varies by region)
+- `AWS_SPOT`: Use spot instances (default: "False")
 
 #### Google Cloud Platform
 - `GCP_ENABLED`: Set to "True" to enable
-- `GCP_SERVICE_ACCOUNT`: Your GCP service account JSON
-- `GCP_DEFAULT_ZONE`: Zone to deploy in (default: "europe-west2-a")
-- `GCP_DEFAULT_REGION`: Region to deploy in (default: "europe-west2")
-- `GCP_DEFAULT_SIZE`: Machine type (default: "e2-micro")
-- `GCP_DEFAULT_MIN_SCALING`: Minimum number of proxies (default: 2) 
-- `GCP_DEFAULT_MAX_SCALING`: Maximum number of proxies (default: 2)
-- `GCP_DEFAULT_PROJECT`: GCP project ID
+- `GCP_SA_JSON`: Path to service account JSON file (preferred)
+- `GCP_SERVICE_ACCOUNT_KEY`: Service account JSON content as string (alternative)
+- `GCP_ZONE`: Zone to deploy in (default: "us-central1-a")
+- `GCP_SIZE`: Machine type (default: "e2-micro")
+- `GCP_MIN_SCALING`: Target number of proxies to maintain (default: 2)
+- `GCP_MAX_SCALING`: Reserved for future autoscaling (default: 2)
+- `GCP_PROJECT`: GCP project ID (required)
 
 #### Hetzner
 - `HETZNER_ENABLED`: Set to "True" to enable
 - `HETZNER_API_TOKEN`: Your Hetzner API token
-- `HETZNER_DEFAULT_LOCATION`: Location to deploy in (default: "nbg1")
-- `HETZNER_DEFAULT_SIZE`: Server type (default: "cx11")
-- `HETZNER_DEFAULT_MIN_SCALING`: Minimum number of proxies (default: 2)
-- `HETZNER_DEFAULT_MAX_SCALING`: Maximum number of proxies (default: 2)
+- `HETZNER_LOCATION`: Location to deploy in (default: "nbg1")
+- `HETZNER_SIZE`: Server type (default: "cx11")
+- `HETZNER_MIN_SCALING`: Target number of proxies to maintain (default: 2)
+- `HETZNER_MAX_SCALING`: Reserved for future autoscaling (default: 2)
 
 ## Troubleshooting
 
@@ -376,8 +402,9 @@ cloudproxy.start()
 
 #### "No proxies available" error
 - Check that you've correctly configured your cloud provider credentials
-- Verify that the minimum scaling is set correctly
+- Verify that MIN_SCALING is set to a value greater than 0
 - Allow enough time for proxy deployment (can take 1-3 minutes)
+- Remember that CloudProxy maintains exactly MIN_SCALING proxies, not a range
 
 #### Authentication failures
 - Ensure `PROXY_USERNAME` and `PROXY_PASSWORD` are correctly set

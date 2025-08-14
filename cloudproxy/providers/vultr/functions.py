@@ -105,10 +105,7 @@ def create_proxy(instance_config: Optional[Dict] = None) -> bool:
 
         data = response.json()
         logger.info(
-            f"Created Vultr instance: {
-                data.get(
-                    'instance',
-                    {}).get('id')}")
+            f"Created Vultr instance: {data.get('instance', {}).get('id')}")
         return True
 
     except requests.exceptions.RequestException as e:

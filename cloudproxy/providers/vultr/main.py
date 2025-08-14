@@ -43,8 +43,7 @@ def vultr_deployment(min_scaling, instance_config=None):
     else:
         total_deploy = min_scaling - total_instances
         logger.info(
-            f"Deploying: {
-                str(total_deploy)} Vultr {display_name} instances")
+            f"Deploying: {str(total_deploy)} Vultr {display_name} instances")
         for _ in range(total_deploy):
             create_proxy(instance_config)
             logger.info(f"Deployed Vultr {display_name} instance")
@@ -84,9 +83,7 @@ def vultr_check_alive(instance_config=None):
                     seconds=config["age_limit"]):
                 delete_proxy(instance, instance_config)
                 logger.info(
-                    f"Recycling Vultr {display_name} instance, reached age limit -> {
-                        str(
-                            instance.ip_address)}"
+                    f"Recycling Vultr {display_name} instance, reached age limit -> {str(instance.ip_address)}"
                 )
             elif instance.status == "active" and instance.ip_address and check_alive(instance.ip_address):
                 logger.info(
@@ -97,9 +94,7 @@ def vultr_check_alive(instance_config=None):
                 if elapsed > datetime.timedelta(minutes=10):
                     delete_proxy(instance, instance_config)
                     logger.info(
-                        f"Destroyed: took too long Vultr {display_name} -> {
-                            str(
-                                instance.ip_address)}"
+                        f"Destroyed: took too long Vultr {display_name} -> {str(instance.ip_address)}"
                     )
                 else:
                     logger.info(
@@ -126,9 +121,7 @@ def vultr_check_delete(instance_config=None):
     # Log current delete queue state
     if delete_queue:
         logger.info(
-            f"Current delete queue contains {
-                len(delete_queue)} IP addresses: {
-                ', '.join(delete_queue)}")
+            f"Current delete queue contains {len(delete_queue)} IP addresses: {', '.join(delete_queue)}")
 
     instances = list_instances(instance_config)
     if not instances:
@@ -137,8 +130,7 @@ def vultr_check_delete(instance_config=None):
         return
 
     logger.info(
-        f"Checking {
-            len(instances)} Vultr {display_name} instances for deletion")
+        f"Checking {len(instances)} Vultr {display_name} instances for deletion")
 
     for instance in instances:
         try:
@@ -147,8 +139,7 @@ def vultr_check_delete(instance_config=None):
             # Check if this instance's IP is in the delete or restart queue
             if instance_ip in delete_queue or instance_ip in restart_queue:
                 logger.info(
-                    f"Found instance {
-                        instance.id} with IP {instance_ip} in deletion queue - deleting now")
+                    f"Found instance {instance.id} with IP {instance_ip} in deletion queue - deleting now")
 
                 # Attempt to delete the instance
                 delete_result = delete_proxy(instance, instance_config)
@@ -179,8 +170,7 @@ def vultr_check_delete(instance_config=None):
                 i.ip_address) for i in instances)]
     if remaining_delete:
         logger.warning(
-            f"IPs remaining in delete queue that weren't found as instances: {
-                ', '.join(remaining_delete)}")
+            f"IPs remaining in delete queue that weren't found as instances: {', '.join(remaining_delete)}")
 
 
 def vultr_fw(instance_config=None):

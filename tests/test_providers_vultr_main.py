@@ -37,7 +37,8 @@ class TestVultrMain:
                         }
                     }
                 },
-                "age_limit": 3600  # 1 hour
+                "age_limit": 3600,  # 1 hour
+                "rolling_deployment": {"enabled": False, "min_available": 3, "batch_size": 2}
             }.get(x, {})
             yield mock_cfg
     

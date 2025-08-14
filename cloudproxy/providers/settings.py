@@ -84,6 +84,20 @@ config = {
                 }
             }
         },
+        "vultr": {
+            "instances": {
+                "default": {
+                    "enabled": False,
+                    "ips": [],
+                    "scaling": {"min_scaling": 0, "max_scaling": 0},
+                    "plan": "",
+                    "region": "",
+                    "os_id": 1743,  # Ubuntu 22.04 LTS x64
+                    "display_name": "Vultr",
+                    "secrets": {"api_token": ""},
+                }
+            }
+        },
     },
 }
 
@@ -219,6 +233,32 @@ config["providers"]["azure"]["instances"]["default"]["display_name"] = os.enviro
     "AZURE_DISPLAY_NAME", "Azure"
 )
 
+# Set Vultr config - original format for backward compatibility
+config["providers"]["vultr"]["instances"]["default"]["enabled"] = os.environ.get(
+    "VULTR_ENABLED", "False"
+) == "True"
+config["providers"]["vultr"]["instances"]["default"]["secrets"]["api_token"] = os.environ.get(
+    "VULTR_API_TOKEN"
+)
+config["providers"]["vultr"]["instances"]["default"]["scaling"]["min_scaling"] = int(
+    os.environ.get("VULTR_MIN_SCALING", 2)
+)
+config["providers"]["vultr"]["instances"]["default"]["scaling"]["max_scaling"] = int(
+    os.environ.get("VULTR_MAX_SCALING", 2)
+)
+config["providers"]["vultr"]["instances"]["default"]["plan"] = os.environ.get(
+    "VULTR_PLAN", "vc2-1c-1gb"  # 1 vCPU, 1GB RAM plan
+)
+config["providers"]["vultr"]["instances"]["default"]["region"] = os.environ.get(
+    "VULTR_REGION", "ewr"  # New Jersey region
+)
+config["providers"]["vultr"]["instances"]["default"]["os_id"] = int(
+    os.environ.get("VULTR_OS_ID", 1743)  # Ubuntu 22.04 LTS x64
+)
+config["providers"]["vultr"]["instances"]["default"]["display_name"] = os.environ.get(
+    "VULTR_DISPLAY_NAME", "Vultr"
+)
+
 # Check for additional provider instances using the new format pattern
 for provider_key in config["providers"].keys():
     provider_upper = provider_key.upper()
@@ -248,7 +288,7 @@ for provider_key in config["providers"].keys():
                 # Copy relevant fields from default instance
                 default_instance = config["providers"][provider_key]["instances"]["default"]
                 for field in ["region", "zone", "location", "ami", "spot", "datacenter", 
-                             "image_project", "image_family", "project"]:
+                             "image_project", "image_family", "project", "plan", "os_id"]:
                     if field in default_instance:
                         config["providers"][provider_key]["instances"][instance_name][field] = default_instance[field]
                 
@@ -272,8 +312,10 @@ for provider_key in config["providers"].keys():
                     elif setting_name == "display_name":
                         config["providers"][provider_key]["instances"][instance_name]["display_name"] = env_value
                     elif setting_name in ["size", "region", "zone", "location", "ami", "project", 
-                                          "image_project", "image_family", "datacenter"]:
+                                          "image_project", "image_family", "datacenter", "plan"]:
                         config["providers"][provider_key]["instances"][instance_name][setting_name] = env_value
+                    elif setting_name == "os_id":
+                        config["providers"][provider_key]["instances"][instance_name]["os_id"] = int(env_value)
                     elif setting_name == "spot":
                         config["providers"][provider_key]["instances"][instance_name]["spot"] = env_value == "True"
                     elif setting_name in default_instance["secrets"]:

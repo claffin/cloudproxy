@@ -153,3 +153,4 @@ pnpm-debug.log*
 *.sln
 *.sw?
 .cursor-project-context
+CLAUDE.md

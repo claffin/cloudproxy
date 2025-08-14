@@ -72,11 +72,11 @@ CloudProxy exposes an API and modern UI for managing your proxy infrastructure. 
 * [AWS](docs/aws.md)
 * [Google Cloud](docs/gcp.md)
 * [Hetzner](docs/hetzner.md)
+* [Vultr](docs/vultr.md)
 
 ### Planned:
 * Azure
 * Scaleway
-* Vultr
 
 ### Features:
 * **Docker-first deployment** - Simple, isolated, production-ready
@@ -348,10 +348,15 @@ curl -X 'GET' 'http://localhost:8000/' -H 'accept: application/json'
 
 #### Set target proxy count
 ```bash
-# CloudProxy will maintain exactly 5 proxies
+# CloudProxy will maintain exactly 5 proxies (DigitalOcean)
 curl -X 'PATCH' 'http://localhost:8000/providers/digitalocean' \
   -H 'Content-Type: application/json' \
   -d '{"min_scaling": 5, "max_scaling": 5}'
+
+# Or for Vultr
+curl -X 'PATCH' 'http://localhost:8000/providers/vultr' \
+  -H 'Content-Type: application/json' \
+  -d '{"min_scaling": 3, "max_scaling": 3}'
 ```
 
 ### Python Usage Example
@@ -433,6 +438,7 @@ Project Link: [https://github.com/claffin/cloudproxy](https://github.com/claffin
 - **GCP**: Check that the service account has necessary permissions
 - **DigitalOcean**: Verify the access token has write permissions
 - **Hetzner**: Ensure the API token is valid
+- **Vultr**: Verify the API token has appropriate permissions and the selected plan/region is available
 
 #### Docker container issues
 ```bash

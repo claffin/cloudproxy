@@ -247,7 +247,8 @@ export default {
         'aws': 'AWS',
         'gcp': 'GCP',
         'hetzner': 'Hetzner',
-        'azure': 'Azure'
+        'azure': 'Azure',
+        'vultr': 'Vultr'
       };
       
       const providerName = specialCases[name] || name.charAt(0).toUpperCase() + name.slice(1);
@@ -265,7 +266,8 @@ export default {
         aws: 'cloud-fill',
         gcp: 'google',
         hetzner: 'hdd-rack',
-        azure: 'microsoft'
+        azure: 'microsoft',
+        vultr: 'server'
       };
       return icons[provider] || 'cloud-fill';
     };

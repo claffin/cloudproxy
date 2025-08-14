@@ -342,7 +342,8 @@ class ProviderInstance(BaseModel):
     enabled: bool
     ips: List[str] = []
     scaling: ProviderScaling
-    size: str
+    size: Optional[str] = None  # Made optional, some providers use different naming
+    plan: Optional[str] = None  # For Vultr provider
     region: Optional[str] = None
     location: Optional[str] = None
     datacenter: Optional[str] = None
@@ -350,6 +351,7 @@ class ProviderInstance(BaseModel):
     image_project: Optional[str] = None
     image_family: Optional[str] = None
     ami: Optional[str] = None
+    os_id: Optional[int] = None  # For Vultr provider
     spot: Optional[bool] = None
     display_name: Optional[str] = None
     project: Optional[str] = None

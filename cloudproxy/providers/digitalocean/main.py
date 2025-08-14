@@ -14,6 +14,7 @@ from cloudproxy.providers.digitalocean.functions import (
 )
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue, config
+from cloudproxy.providers.rolling import rolling_manager
 
 
 def do_deployment(min_scaling, instance_config=None):
@@ -61,7 +62,18 @@ def do_check_alive(instance_config=None):
     # Get instance display name for logging
     display_name = instance_config.get("display_name", "default")
     
+    # Get instance name for rolling deployment tracking
+    instance_name = next(
+        (name for name, inst in config["providers"]["digitalocean"]["instances"].items() 
+         if inst == instance_config), 
+        "default"
+    )
+    
     ip_ready = []
+    pending_ips = []
+    droplets_to_recycle = []
+    
+    # First pass: identify healthy and pending droplets
     for droplet in list_droplets(instance_config):
         try:
             # Parse the created_at timestamp to a datetime object
@@ -69,6 +81,7 @@ def do_check_alive(instance_config=None):
             if created_at is None:
                 # If parsing fails but doesn't raise an exception, log and continue
                 logger.info(f"Pending: DO {display_name} allocating (invalid timestamp)")
+                pending_ips.append(str(droplet.ip_address))
                 continue
                 
             # Calculate elapsed time
@@ -76,10 +89,7 @@ def do_check_alive(instance_config=None):
             
             # Check if the droplet has reached the age limit
             if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                delete_proxy(droplet, instance_config)
-                logger.info(
-                    f"Recycling DO {display_name} droplet, reached age limit -> {str(droplet.ip_address)}"
-                )
+                droplets_to_recycle.append((droplet, elapsed))
             elif check_alive(droplet.ip_address):
                 logger.info(f"Alive: DO {display_name} -> {str(droplet.ip_address)}")
                 ip_ready.append(droplet.ip_address)
@@ -92,9 +102,53 @@ def do_check_alive(instance_config=None):
                     )
                 else:
                     logger.info(f"Waiting: DO {display_name} -> {str(droplet.ip_address)}")
+                    pending_ips.append(str(droplet.ip_address))
         except TypeError:
             # This happens when dateparser.parse raises a TypeError
             logger.info(f"Pending: DO {display_name} allocating")
+            if hasattr(droplet, 'ip_address'):
+                pending_ips.append(str(droplet.ip_address))
+    
+    # Update rolling manager with current proxy health status
+    rolling_manager.update_proxy_health("digitalocean", instance_name, ip_ready, pending_ips)
+    
+    # Handle rolling deployments for age-limited droplets
+    if droplets_to_recycle and config["rolling_deployment"]["enabled"]:
+        rolling_config = config["rolling_deployment"]
+        
+        for droplet, elapsed in droplets_to_recycle:
+            droplet_ip = str(droplet.ip_address)
+            
+            # Check if we can recycle this droplet according to rolling deployment rules
+            if rolling_manager.can_recycle_proxy(
+                provider="digitalocean",
+                instance=instance_name,
+                proxy_ip=droplet_ip,
+                total_healthy=len(ip_ready),
+                min_available=rolling_config["min_available"],
+                batch_size=rolling_config["batch_size"],
+                rolling_enabled=True,
+                min_scaling=instance_config["scaling"]["min_scaling"]
+            ):
+                # Mark as recycling and delete
+                rolling_manager.mark_proxy_recycling("digitalocean", instance_name, droplet_ip)
+                delete_proxy(droplet, instance_config)
+                rolling_manager.mark_proxy_recycled("digitalocean", instance_name, droplet_ip)
+                logger.info(
+                    f"Rolling deployment: Recycled DO {display_name} droplet (age limit) -> {droplet_ip}"
+                )
+            else:
+                logger.info(
+                    f"Rolling deployment: Deferred recycling DO {display_name} droplet -> {droplet_ip}"
+                )
+    elif droplets_to_recycle and not config["rolling_deployment"]["enabled"]:
+        # Standard non-rolling recycling
+        for droplet, elapsed in droplets_to_recycle:
+            delete_proxy(droplet, instance_config)
+            logger.info(
+                f"Recycling DO {display_name} droplet, reached age limit -> {str(droplet.ip_address)}"
+            )
+    
     return ip_ready
 
 

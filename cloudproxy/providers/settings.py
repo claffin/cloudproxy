@@ -6,6 +6,11 @@ config = {
     "no_auth": False,
     "only_host_ip": False,
     "age_limit": 0,
+    "rolling_deployment": {
+        "enabled": False,
+        "min_available": 3,
+        "batch_size": 2,
+    },
     "providers": {
         "digitalocean": {
             "instances": {
@@ -112,6 +117,11 @@ config["auth"]["password"] = os.environ.get("PROXY_PASSWORD", "changeme")
 config["age_limit"] = int(os.environ.get('AGE_LIMIT', 0))
 config["no_auth"] = config["auth"]["username"] == "changeme" and config["auth"]["password"] == "changeme"
 config["only_host_ip"] = os.environ.get("ONLY_HOST_IP", False)
+
+# Set rolling deployment configuration
+config["rolling_deployment"]["enabled"] = os.environ.get("ROLLING_DEPLOYMENT", "False") == "True"
+config["rolling_deployment"]["min_available"] = int(os.environ.get("ROLLING_MIN_AVAILABLE", 3))
+config["rolling_deployment"]["batch_size"] = int(os.environ.get("ROLLING_BATCH_SIZE", 2))
 
 # Set DigitalOcean config - original format for backward compatibility
 config["providers"]["digitalocean"]["instances"]["default"]["enabled"] = os.environ.get(

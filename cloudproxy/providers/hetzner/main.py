@@ -8,6 +8,7 @@ from cloudproxy.check import check_alive
 from cloudproxy.providers import settings
 from cloudproxy.providers.hetzner.functions import list_proxies, delete_proxy, create_proxy
 from cloudproxy.providers.settings import config, delete_queue, restart_queue
+from cloudproxy.providers.rolling import rolling_manager
 
 
 def hetzner_deployment(min_scaling, instance_config=None):
@@ -58,16 +59,24 @@ def hetzner_check_alive(instance_config=None):
     # Get instance display name for logging
     display_name = instance_config.get("display_name", "default")
     
+    # Get instance name for rolling deployment tracking
+    instance_name = next(
+        (name for name, inst in config["providers"]["hetzner"]["instances"].items() 
+         if inst == instance_config), 
+        "default"
+    )
+    
     ip_ready = []
+    pending_ips = []
+    proxies_to_recycle = []
+    
     for proxy in list_proxies(instance_config):
         elapsed = datetime.datetime.now(
             datetime.timezone.utc
         ) - dateparser.parse(str(proxy.created))
         if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
-            delete_proxy(proxy, instance_config)
-            logger.info(
-                f"Recycling Hetzner {display_name} proxy, reached age limit -> {str(proxy.public_net.ipv4.ip)}"
-            )
+            # Queue for potential recycling
+            proxies_to_recycle.append((proxy, elapsed))
         elif check_alive(proxy.public_net.ipv4.ip):
             logger.info(f"Alive: Hetzner {display_name} -> {str(proxy.public_net.ipv4.ip)}")
             ip_ready.append(proxy.public_net.ipv4.ip)
@@ -79,6 +88,42 @@ def hetzner_check_alive(instance_config=None):
                 )
             else:
                 logger.info(f"Waiting: Hetzner {display_name} -> {str(proxy.public_net.ipv4.ip)}")
+                pending_ips.append(str(proxy.public_net.ipv4.ip))
+    
+    # Update rolling manager with current proxy health status
+    rolling_manager.update_proxy_health("hetzner", instance_name, ip_ready, pending_ips)
+    
+    # Handle rolling deployments for age-limited proxies
+    if proxies_to_recycle and config["rolling_deployment"]["enabled"]:
+        rolling_config = config["rolling_deployment"]
+        
+        for prox, elapsed in proxies_to_recycle:
+            proxy_ip = str(prox.public_net.ipv4.ip)
+            
+            # Check if we can recycle this proxy according to rolling deployment rules
+            if rolling_manager.can_recycle_proxy(
+                provider="hetzner",
+                instance=instance_name,
+                proxy_ip=proxy_ip,
+                total_healthy=len(ip_ready),
+                min_available=rolling_config["min_available"],
+                batch_size=rolling_config["batch_size"],
+                rolling_enabled=True,
+                min_scaling=instance_config["scaling"]["min_scaling"]
+            ):
+                # Mark as recycling and delete
+                rolling_manager.mark_proxy_recycling("hetzner", instance_name, proxy_ip)
+                delete_proxy(prox, instance_config)
+                rolling_manager.mark_proxy_recycled("hetzner", instance_name, proxy_ip)
+                logger.info(f"Rolling deployment: Recycled Hetzner {display_name} proxy (age limit) -> {proxy_ip}")
+            else:
+                logger.info(f"Rolling deployment: Deferred recycling Hetzner {display_name} proxy -> {proxy_ip}")
+    elif proxies_to_recycle and not config["rolling_deployment"]["enabled"]:
+        # Standard non-rolling recycling
+        for prox, elapsed in proxies_to_recycle:
+            delete_proxy(prox, instance_config)
+            logger.info(f"Recycling Hetzner {display_name} proxy, reached age limit -> {str(prox.public_net.ipv4.ip)}")
+    
     return ip_ready
 
 

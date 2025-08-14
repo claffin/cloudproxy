@@ -46,6 +46,7 @@
   - [Web Interface](#web-interface)
   - [API Documentation](#api-documentation)
   - [Programmatic Usage](#programmatic-usage)
+- [Rolling Deployments](#rolling-deployments)
 - [Multi-Account Provider Support](#multi-account-provider-support)
 - [API Examples](#cloudproxy-api-examples)
 - [Roadmap](#roadmap)
@@ -85,6 +86,7 @@ CloudProxy exposes an API and modern UI for managing your proxy infrastructure. 
 * Multi-provider support
 * Multiple accounts per provider
 * Automatic proxy rotation
+* **Rolling deployments** - Zero-downtime proxy recycling
 * Health monitoring
 * Fixed proxy pool management (maintains target count)
 
@@ -292,6 +294,47 @@ my_request = requests.get("https://api.ipify.org", proxies=proxies)
 ```
 
 For more detailed examples of using CloudProxy as a Python package, see the [Python Package Usage Guide](docs/python-package-usage.md).
+
+## Rolling Deployments
+
+CloudProxy supports rolling deployments to ensure zero-downtime proxy recycling. This feature maintains a minimum number of healthy proxies during age-based recycling operations.
+
+### Configuration
+
+Enable rolling deployments with these environment variables:
+
+```bash
+# Enable rolling deployments
+ROLLING_DEPLOYMENT=True
+
+# Minimum proxies to keep available during recycling
+ROLLING_MIN_AVAILABLE=3  
+
+# Maximum proxies to recycle simultaneously
+ROLLING_BATCH_SIZE=2
+```
+
+### How It Works
+
+When proxies reach their age limit:
+1. The system checks if recycling would violate minimum availability
+2. Proxies are recycled in batches to maintain service continuity
+3. New proxies are created as old ones are removed
+4. The process continues until all aged proxies are replaced
+
+### Monitoring
+
+Check rolling deployment status via the API:
+
+```bash
+# Get overall status
+curl http://localhost:8000/rolling
+
+# Get provider-specific status
+curl http://localhost:8000/rolling/digitalocean
+```
+
+For detailed documentation, see the [Rolling Deployments Guide](docs/rolling-deployments.md).
 
 ## Multi-Account Provider Support
 

@@ -82,56 +82,6 @@
             </div>
           </div>
         </div>
-        
-        <!-- Rolling Status Section -->
-        <div
-          v-if="status && Object.keys(status).length > 0"
-          class="rolling-status mt-3"
-        >
-          <h6 class="text-muted mb-2">
-            Current Status
-          </h6>
-          <div class="row">
-            <div
-              v-for="(providerStatus, providerKey) in status"
-              :key="providerKey"
-              class="col-md-6 mb-2"
-            >
-              <div class="status-card p-2 border rounded">
-                <div class="d-flex justify-content-between align-items-center">
-                  <strong>{{ providerKey }}</strong>
-                  <div class="status-badges">
-                    <span
-                      v-if="providerStatus.healthy > 0"
-                      class="badge bg-success me-1"
-                    >
-                      {{ providerStatus.healthy }} healthy
-                    </span>
-                    <span
-                      v-if="providerStatus.pending_recycle > 0"
-                      class="badge bg-warning me-1"
-                    >
-                      {{ providerStatus.pending_recycle }} pending
-                    </span>
-                    <span
-                      v-if="providerStatus.recycling > 0"
-                      class="badge bg-danger"
-                    >
-                      {{ providerStatus.recycling }} recycling
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div
-          v-else-if="config.enabled"
-          class="text-muted text-center py-3"
-        >
-          No active rolling deployments
-        </div>
       </div>
     </div>
   </div>
@@ -151,23 +101,21 @@ export default {
       min_available: 3,
       batch_size: 2
     });
-    const status = ref({});
 
     const toggleExpanded = () => {
       expanded.value = !expanded.value;
       if (expanded.value) {
-        fetchRollingStatus();
+        fetchConfig();
       }
     };
 
-    const fetchRollingStatus = async () => {
+    const fetchConfig = async () => {
       try {
         const response = await fetch('/rolling');
         const data = await response.json();
         config.value = data.config;
-        status.value = data.status;
       } catch (error) {
-        toast.show('Failed to fetch rolling deployment status', {
+        toast.show('Failed to fetch rolling deployment configuration', {
           title: 'Error',
           variant: 'danger',
           placement: 'bottom-right',
@@ -187,8 +135,6 @@ export default {
         });
         
         if (response.ok) {
-          const data = await response.json();
-          status.value = data.status;
           toast.show('Rolling deployment configuration updated', {
             title: 'Success',
             variant: 'success',
@@ -209,17 +155,16 @@ export default {
     };
 
     onMounted(() => {
-      // Optionally fetch status on mount if you want it visible by default
-      // fetchRollingStatus();
+      // Optionally fetch configuration on mount
+      // fetchConfig();
     });
 
     return {
       expanded,
       config,
-      status,
       toggleExpanded,
       updateConfig,
-      fetchRollingStatus
+      fetchConfig
     };
   }
 };
@@ -228,15 +173,6 @@ export default {
 <style scoped>
 .rolling-config-panel {
   margin-bottom: 1rem;
-}
-
-.status-card {
-  background-color: #f8f9fa;
-}
-
-.status-badges {
-  display: flex;
-  gap: 0.25rem;
 }
 
 .form-check-input:checked {

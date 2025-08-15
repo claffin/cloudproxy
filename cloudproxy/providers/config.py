@@ -26,5 +26,8 @@ def set_auth(username, password):
         filedata = filedata.replace("sudo ufw allow 8899/tcp", f"sudo ufw allow from {ip_address} to any port 8899 proto tcp")
         # Update tinyproxy access rule
         filedata = filedata.replace("Allow 127.0.0.1", f"Allow 127.0.0.1\nAllow {ip_address}")
+    else:
+        # When ONLY_HOST_IP is False, allow connections from any IP
+        filedata = filedata.replace("Allow 127.0.0.1", "Allow 0.0.0.0/0")
 
     return filedata

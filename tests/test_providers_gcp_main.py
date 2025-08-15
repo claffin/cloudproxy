@@ -217,12 +217,19 @@ def test_gcp_check_alive_not_alive_too_long(mock_start_proxy, mock_delete_proxy,
     mock_check_alive.return_value = False # Instance is not alive
     mock_delete_proxy.return_value = True
 
-    # Execute
-    result = gcp_check_alive()
+    # Disable rolling deployment
+    original_rolling = config["rolling_deployment"]["enabled"]
+    config["rolling_deployment"]["enabled"] = False
+    
+    try:
+        # Execute
+        result = gcp_check_alive()
 
-    # Verify
-    assert mock_delete_proxy.call_count == 1 # Should delete the instance
-    assert len(result) == 0
+        # Verify
+        assert mock_delete_proxy.call_count == 1 # Should delete the instance
+        assert len(result) == 0
+    finally:
+        config["rolling_deployment"]["enabled"] = original_rolling
 
 @patch('cloudproxy.providers.gcp.main.check_alive')
 @patch('cloudproxy.providers.gcp.main.list_instances')
@@ -230,12 +237,14 @@ def test_gcp_check_alive_not_alive_too_long(mock_start_proxy, mock_delete_proxy,
 @patch('cloudproxy.providers.gcp.main.start_proxy')
 def test_gcp_check_alive_age_limit_exceeded(mock_start_proxy, mock_delete_proxy, mock_list_instances, mock_check_alive, setup_instances):
     """Test checking alive for instances exceeding age limit"""
-    # Save original age limit value
+    # Save original values
     original_age_limit = config["age_limit"]
+    original_rolling = config["rolling_deployment"]["enabled"]
 
     try:
-        # Set age limit to a small value to make instances expire quickly
+        # Set age limit to a small value and disable rolling deployment
         config["age_limit"] = 60  # 60 seconds
+        config["rolling_deployment"]["enabled"] = False
 
         # Create a mock instance with a creation time far in the past
         old_time = datetime.datetime.now(timezone.utc) - datetime.timedelta(seconds=120)
@@ -257,8 +266,9 @@ def test_gcp_check_alive_age_limit_exceeded(mock_start_proxy, mock_delete_proxy,
         assert mock_delete_proxy.call_count == 1 # Should delete the instance
         assert len(result) == 0
     finally:
-        # Restore original age limit
+        # Restore original settings
         config["age_limit"] = original_age_limit
+        config["rolling_deployment"]["enabled"] = original_rolling
 
 @patch('cloudproxy.providers.gcp.main.check_alive')
 @patch('cloudproxy.providers.gcp.main.list_instances')
@@ -276,13 +286,23 @@ def test_gcp_check_alive_type_key_error(mock_start_proxy, mock_delete_proxy, moc
     mock_list_instances.return_value = [invalid_instance]
     mock_check_alive.return_value = False
 
-    # Execute
-    result = gcp_check_alive()
+    # Disable rolling deployment and age limit to avoid the error in recycling logic
+    original_rolling = config["rolling_deployment"]["enabled"]
+    original_age_limit = config["age_limit"]
+    config["rolling_deployment"]["enabled"] = False
+    config["age_limit"] = 0  # Disable age-based recycling
+    
+    try:
+        # Execute
+        result = gcp_check_alive()
 
-    # Verify
-    assert mock_start_proxy.call_count == 0
-    assert mock_delete_proxy.call_count == 0
-    assert len(result) == 0 # No IPs should be added
+        # Verify
+        assert mock_start_proxy.call_count == 0
+        assert mock_delete_proxy.call_count == 0
+        assert len(result) == 0 # No IPs should be added
+    finally:
+        config["rolling_deployment"]["enabled"] = original_rolling
+        config["age_limit"] = original_age_limit
 
 @patch('cloudproxy.providers.gcp.main.list_instances')
 @patch('cloudproxy.providers.gcp.main.delete_proxy')

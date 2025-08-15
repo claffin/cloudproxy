@@ -279,10 +279,13 @@ def test_aws_check_alive_age_limit_exceeded_directly():
     """Test the aws_check_alive function directly with simulated old instance"""
     # Save original age limit value
     original_age_limit = config["age_limit"]
+    original_rolling = config["rolling_deployment"]["enabled"]
     
     try:
         # Set age limit to a small value to make instances expire quickly
         config["age_limit"] = 60  # 60 seconds
+        # Disable rolling deployment to allow immediate deletion
+        config["rolling_deployment"]["enabled"] = False
         
         # Create a mock instance with a launch time far in the past
         with patch('cloudproxy.providers.aws.main.list_instances') as mock_list_instances:
@@ -309,8 +312,9 @@ def test_aws_check_alive_age_limit_exceeded_directly():
                         assert mock_delete_proxy.call_count == 1  # Should delete the expired instance
                         assert len(result) == 0  # No IPs in result as the instance was deleted
     finally:
-        # Restore original age limit
+        # Restore original settings
         config["age_limit"] = original_age_limit
+        config["rolling_deployment"]["enabled"] = original_rolling
 
 @patch('cloudproxy.providers.aws.main.list_instances')
 @patch('cloudproxy.providers.aws.main.delete_proxy')

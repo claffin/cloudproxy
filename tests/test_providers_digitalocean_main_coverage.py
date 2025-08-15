@@ -297,15 +297,24 @@ def test_do_check_alive_active_droplets(mock_check_alive, mock_list_droplets, mo
     # Setup
     mock_list_droplets.return_value = mock_droplets
     mock_check_alive.return_value = True
+    # Disable rolling deployment and age limit to avoid interference
+    original_rolling = config["rolling_deployment"]["enabled"]
+    original_age_limit = config["age_limit"]
+    config["rolling_deployment"]["enabled"] = False
+    config["age_limit"] = 0  # Disable age-based recycling
     
-    # Execute
-    result = do_check_alive()
-    
-    # Verify
-    assert len(result) == 3
-    assert "1.2.3.4" in result
-    assert "5.6.7.8" in result
-    assert "9.10.11.12" in result
+    try:
+        # Execute
+        result = do_check_alive()
+        
+        # Verify
+        assert len(result) == 3
+        assert "1.2.3.4" in result
+        assert "5.6.7.8" in result
+        assert "9.10.11.12" in result
+    finally:
+        config["rolling_deployment"]["enabled"] = original_rolling
+        config["age_limit"] = original_age_limit
     mock_check_alive.assert_has_calls([
         call("1.2.3.4"),
         call("5.6.7.8"),
@@ -359,9 +368,11 @@ def test_do_check_alive_age_limit(mock_delete_proxy, mock_check_alive, mock_list
     mock_check_alive.return_value = True
     mock_delete_proxy.return_value = True
     
-    # Set age limit to 1 hour
+    # Set age limit to 1 hour and disable rolling deployment
     original_age_limit = config["age_limit"]
+    original_rolling = config["rolling_deployment"]["enabled"]
     config["age_limit"] = 3600  # 1 hour in seconds
+    config["rolling_deployment"]["enabled"] = False
     
     try:
         # Execute
@@ -379,8 +390,9 @@ def test_do_check_alive_age_limit(mock_delete_proxy, mock_check_alive, mock_list
         args, _ = mock_delete_proxy.call_args
         assert args[0] == mock_droplets[2]  # First parameter should be the third droplet
     finally:
-        # Restore original age limit
+        # Restore original settings
         config["age_limit"] = original_age_limit
+        config["rolling_deployment"]["enabled"] = original_rolling
 
 @patch('cloudproxy.providers.digitalocean.main.list_droplets')
 @patch('cloudproxy.providers.digitalocean.main.check_alive')
@@ -390,14 +402,23 @@ def test_do_check_alive_invalid_timestamp(mock_check_alive, mock_list_droplets, 
     mock_droplets[0].created_at = "invalid-timestamp"
     mock_list_droplets.return_value = mock_droplets
     mock_check_alive.return_value = True
+    # Disable rolling deployment and age limit
+    original_rolling = config["rolling_deployment"]["enabled"]
+    original_age_limit = config["age_limit"]
+    config["rolling_deployment"]["enabled"] = False
+    config["age_limit"] = 0  # Disable age-based recycling
     
-    # Execute
-    result = do_check_alive()
-    
-    # Verify
-    assert len(result) == 2  # Only two valid droplets should be in the result
-    assert "5.6.7.8" in result
-    assert "9.10.11.12" in result
+    try:
+        # Execute
+        result = do_check_alive()
+        
+        # Verify
+        assert len(result) == 2  # Only two valid droplets should be in the result
+        assert "5.6.7.8" in result
+        assert "9.10.11.12" in result
+    finally:
+        config["rolling_deployment"]["enabled"] = original_rolling
+        config["age_limit"] = original_age_limit
 
 @patch('cloudproxy.providers.digitalocean.main.list_droplets')
 @patch('cloudproxy.providers.digitalocean.main.delete_proxy')

@@ -1,5 +1,5 @@
 # Build stage for UI
-FROM nikolaik/python-nodejs:python3.11-nodejs16 AS ui-builder
+FROM node:18-slim AS ui-builder
 WORKDIR /app/cloudproxy-ui
 
 # Copy only package files first to leverage cache

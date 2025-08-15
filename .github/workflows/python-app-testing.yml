@@ -95,3 +95,11 @@ jobs:
         flags: frontend
         name: frontend-coverage
         fail_ci_if_error: false
+
+  testing:
+    name: Testing
+    needs: [backend-test, frontend-test]
+    runs-on: ubuntu-latest
+    steps:
+    - name: ✅ All tests passed
+      run: echo "All tests completed successfully"

@@ -14,9 +14,12 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'tests/',
+        'cypress/',
         '*.config.js',
         'dist/',
-        '.eslintrc.js'
+        '.eslintrc.js',
+        '**/*.cy.js',
+        '**/*.spec.js'
       ]
     }
   },

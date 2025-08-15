@@ -5,7 +5,15 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "test:e2e": "cypress run --headless",
+    "test:all": "npm run test:run && npm run test:e2e"
   },
   "dependencies": {
     "axios": "^1.6.7",
@@ -18,12 +26,21 @@
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/eslint-parser": "^7.23.10",
+    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/vue": "^8.1.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vitest/ui": "^3.2.4",
     "@vue/cli-plugin-babel": "~5.0.8",
     "@vue/cli-plugin-eslint": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
     "@vue/compiler-sfc": "^3.4.21",
+    "@vue/test-utils": "^2.4.6",
+    "cypress": "^14.5.4",
     "eslint": "^8.57.0",
-    "eslint-plugin-vue": "^9.22.0"
+    "eslint-plugin-vue": "^9.22.0",
+    "happy-dom": "^18.0.1",
+    "msw": "^2.10.5",
+    "vitest": "^3.2.4"
   },
   "eslintConfig": {
     "root": true,

@@ -20,7 +20,7 @@ MinSpareServers 5
 MaxSpareServers 20
 StartServers 10
 MaxRequestsPerChild 0
-Allow 127.0.0.1
+Allow 0.0.0.0/0
 ViaProxyName "tinyproxy"
 ConnectPort 443
 ConnectPort 563

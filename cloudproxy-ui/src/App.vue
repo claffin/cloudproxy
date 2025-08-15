@@ -35,9 +35,9 @@
     </div>
 
     <div class="container">
-      <RollingConfig />
       <div class="card main-card">
         <div class="card-body p-0">
+          <RollingConfig />
           <ListProxies />
         </div>
       </div>

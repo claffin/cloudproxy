@@ -27,6 +27,8 @@ def test_init_schedule_all_enabled(mock_scheduler_class, setup_provider_config):
     # Configure all providers as enabled
     for provider in ["digitalocean", "aws", "gcp", "hetzner"]:
         settings.config["providers"][provider]["instances"]["default"]["enabled"] = True
+    # Disable Vultr to keep expected count
+    settings.config["providers"]["vultr"]["instances"]["default"]["enabled"] = False
     
     # Remove the production instance for this test
     if "production" in settings.config["providers"]["aws"]["instances"]:
@@ -57,7 +59,7 @@ def test_init_schedule_all_disabled(mock_scheduler_class, setup_provider_config)
     mock_scheduler_class.return_value = mock_scheduler
     
     # Configure all providers as disabled
-    for provider in ["digitalocean", "aws", "gcp", "hetzner"]:
+    for provider in ["digitalocean", "aws", "gcp", "hetzner", "vultr"]:
         settings.config["providers"][provider]["instances"]["default"]["enabled"] = False
     
     # Also disable the production instance if it exists
@@ -83,6 +85,7 @@ def test_init_schedule_mixed_providers(mock_scheduler_class, setup_provider_conf
     settings.config["providers"]["aws"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["gcp"]["instances"]["default"]["enabled"] = True
     settings.config["providers"]["hetzner"]["instances"]["default"]["enabled"] = False
+    settings.config["providers"]["vultr"]["instances"]["default"]["enabled"] = False
     
     # Also disable the production instance if it exists
     if "production" in settings.config["providers"]["aws"]["instances"]:
@@ -137,6 +140,7 @@ def test_init_schedule_multiple_instances(mock_scheduler_class, setup_provider_c
     settings.config["providers"]["digitalocean"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["gcp"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["hetzner"]["instances"]["default"]["enabled"] = False
+    settings.config["providers"]["vultr"]["instances"]["default"]["enabled"] = False
     
     # Execute
     init_schedule()
@@ -204,6 +208,7 @@ def test_init_schedule_multiple_providers_with_instances(mock_scheduler_class, s
     # Disable other providers for clarity
     settings.config["providers"]["gcp"]["instances"]["default"]["enabled"] = False
     settings.config["providers"]["hetzner"]["instances"]["default"]["enabled"] = False
+    settings.config["providers"]["vultr"]["instances"]["default"]["enabled"] = False
     
     # Execute
     init_schedule()

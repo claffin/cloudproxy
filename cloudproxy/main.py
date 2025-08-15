@@ -19,6 +19,7 @@ from pydantic import BaseModel, IPvAnyAddress, Field, field_validator
 
 from cloudproxy.providers import settings
 from cloudproxy.providers.settings import delete_queue, restart_queue
+from cloudproxy.providers.rolling import rolling_manager
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
@@ -724,6 +725,162 @@ def configure_instance(
         provider=provider,
         instance=instance,
         config=ProviderInstance(**instance_config)
+    )
+
+# Rolling Deployment Models
+class RollingDeploymentConfig(BaseModel):
+    enabled: bool = Field(description="Whether rolling deployment is enabled")
+    min_available: int = Field(ge=0, description="Minimum number of proxies to keep available during recycling")
+    batch_size: int = Field(ge=1, description="Maximum number of proxies to recycle simultaneously")
+
+class RollingDeploymentStatus(BaseModel):
+    healthy: int = Field(description="Number of healthy proxies")
+    pending: int = Field(description="Number of pending proxies")
+    pending_recycle: int = Field(description="Number of proxies pending recycling")
+    recycling: int = Field(description="Number of proxies currently being recycled")
+    last_update: str = Field(description="Last update timestamp")
+    healthy_ips: List[str] = Field(description="List of healthy proxy IPs")
+    pending_recycle_ips: List[str] = Field(description="List of IPs pending recycling")
+    recycling_ips: List[str] = Field(description="List of IPs currently being recycled")
+
+class RollingDeploymentResponse(BaseModel):
+    metadata: Metadata = Field(default_factory=Metadata)
+    message: str
+    config: RollingDeploymentConfig
+    status: Dict[str, RollingDeploymentStatus] = Field(description="Status by provider/instance")
+
+@app.get("/rolling", tags=["Rolling Deployment"], response_model=RollingDeploymentResponse)
+def get_rolling_deployment_status():
+    """
+    Get the current rolling deployment configuration and status.
+    
+    Returns:
+        RollingDeploymentResponse: Current rolling deployment configuration and status
+    """
+    config = RollingDeploymentConfig(
+        enabled=settings.config["rolling_deployment"]["enabled"],
+        min_available=settings.config["rolling_deployment"]["min_available"],
+        batch_size=settings.config["rolling_deployment"]["batch_size"]
+    )
+    
+    raw_status = rolling_manager.get_recycling_status()
+    status = {}
+    for key, data in raw_status.items():
+        status[key] = RollingDeploymentStatus(**data)
+    
+    return RollingDeploymentResponse(
+        message="Rolling deployment status retrieved successfully",
+        config=config,
+        status=status
+    )
+
+@app.patch("/rolling", tags=["Rolling Deployment"], response_model=RollingDeploymentResponse)
+def update_rolling_deployment_config(update: RollingDeploymentConfig):
+    """
+    Update the rolling deployment configuration.
+    
+    Args:
+        update: New rolling deployment configuration
+        
+    Returns:
+        RollingDeploymentResponse: Updated configuration and current status
+    """
+    # Update configuration
+    settings.config["rolling_deployment"]["enabled"] = update.enabled
+    settings.config["rolling_deployment"]["min_available"] = update.min_available
+    settings.config["rolling_deployment"]["batch_size"] = update.batch_size
+    
+    # Get current status
+    raw_status = rolling_manager.get_recycling_status()
+    status = {}
+    for key, data in raw_status.items():
+        status[key] = RollingDeploymentStatus(**data)
+    
+    return RollingDeploymentResponse(
+        message="Rolling deployment configuration updated successfully",
+        config=update,
+        status=status
+    )
+
+@app.get("/rolling/{provider}", tags=["Rolling Deployment"], response_model=RollingDeploymentResponse)
+def get_provider_rolling_status(provider: str):
+    """
+    Get rolling deployment status for a specific provider.
+    
+    Args:
+        provider: The name of the provider
+        
+    Returns:
+        RollingDeploymentResponse: Rolling deployment status for the provider
+        
+    Raises:
+        HTTPException: If the provider is not found
+    """
+    if provider not in settings.config["providers"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' not found"
+        )
+    
+    config = RollingDeploymentConfig(
+        enabled=settings.config["rolling_deployment"]["enabled"],
+        min_available=settings.config["rolling_deployment"]["min_available"],
+        batch_size=settings.config["rolling_deployment"]["batch_size"]
+    )
+    
+    raw_status = rolling_manager.get_recycling_status(provider=provider)
+    status = {}
+    for key, data in raw_status.items():
+        status[key] = RollingDeploymentStatus(**data)
+    
+    return RollingDeploymentResponse(
+        message=f"Rolling deployment status for '{provider}' retrieved successfully",
+        config=config,
+        status=status
+    )
+
+@app.get("/rolling/{provider}/{instance}", tags=["Rolling Deployment"], response_model=RollingDeploymentResponse)
+def get_instance_rolling_status(provider: str, instance: str):
+    """
+    Get rolling deployment status for a specific provider instance.
+    
+    Args:
+        provider: The name of the provider
+        instance: The name of the instance
+        
+    Returns:
+        RollingDeploymentResponse: Rolling deployment status for the instance
+        
+    Raises:
+        HTTPException: If the provider or instance is not found
+    """
+    if provider not in settings.config["providers"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' not found"
+        )
+    
+    if instance not in settings.config["providers"][provider]["instances"]:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Provider '{provider}' instance '{instance}' not found"
+        )
+    
+    config = RollingDeploymentConfig(
+        enabled=settings.config["rolling_deployment"]["enabled"],
+        min_available=settings.config["rolling_deployment"]["min_available"],
+        batch_size=settings.config["rolling_deployment"]["batch_size"]
+    )
+    
+    raw_status = rolling_manager.get_recycling_status(provider=provider, instance=instance)
+    status = {}
+    for key, data in raw_status.items():
+        status[key] = RollingDeploymentStatus(**data)
+    
+    return RollingDeploymentResponse(
+        message=f"Rolling deployment status for '{provider}/{instance}' retrieved successfully",
+        config=config,
+        status=status
     )
 
 if __name__ == "__main__":

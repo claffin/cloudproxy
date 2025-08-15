@@ -83,8 +83,8 @@ def test_set_auth_without_auth(setup_config_test):
     
     # Verify BasicAuth line was removed
     assert "\nBasicAuth PROXY_USERNAME PROXY_PASSWORD\n" not in result
-    # The replacement seems to leave an extra newline, so we get three newlines
-    assert "Allow 127.0.0.1\n\n\nConnectPort" in result
+    # When only_host_ip is False, Allow should be changed to 0.0.0.0/0
+    assert "Allow 0.0.0.0/0" in result
 
 
 def test_set_auth_with_host_ip(setup_config_test):

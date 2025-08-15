@@ -32,6 +32,13 @@
                 <i class="bi bi-hdd-stack me-1" />
                 {{ provider.data.ips.length }} Active
               </span>
+              <span
+                v-if="getRollingInfo(provider.providerKey, provider.instanceKey)"
+                class="status-badge ms-2"
+              >
+                <i class="bi bi-arrow-repeat me-1" />
+                {{ getRollingInfo(provider.providerKey, provider.instanceKey) }}
+              </span>
               <label
                 for="sb-inline"
                 class="mx-3"
@@ -97,6 +104,12 @@
         >
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
+              <span
+                :class="getStatusBadgeClass(getProxyStatus(provider.providerKey, provider.instanceKey, ips))"
+                class="badge me-2"
+              >
+                {{ getStatusLabel(getProxyStatus(provider.providerKey, provider.instanceKey, ips)) }}
+              </span>
               <div
                 v-tooltip="'Proxy is active and responding'"
                 class="proxy-status"
@@ -192,6 +205,7 @@ export default {
     const toast = useToast();
     const data = ref({});
     const listremove_data = ref([]);
+    const rollingStatus = ref({});
     const auth = ref({
       username: '',
       password: '',
@@ -277,6 +291,9 @@ export default {
         const res = await fetch("/providers");
         const responseData = await res.json();
         data.value = responseData.providers;
+        
+        // Also fetch rolling status
+        fetchRollingStatus();
       } catch (error) {
         toast.show('Failed to fetch providers', {
           title: 'Error',
@@ -285,6 +302,71 @@ export default {
           solid: true,
         });
       }
+    };
+    
+    const fetchRollingStatus = async () => {
+      try {
+        const res = await fetch("/rolling");
+        const responseData = await res.json();
+        rollingStatus.value = responseData.status || {};
+      } catch (error) {
+        // Silently fail - rolling status is optional
+        console.error('Failed to fetch rolling status:', error);
+      }
+    };
+    
+    const getProxyStatus = (providerKey, instanceKey, proxyIp) => {
+      const statusKey = `${providerKey}/${instanceKey}`;
+      const status = rollingStatus.value[statusKey];
+      
+      if (!status) return 'healthy';
+      
+      if (status.recycling_ips && status.recycling_ips.includes(proxyIp)) {
+        return 'recycling';
+      }
+      if (status.pending_recycle_ips && status.pending_recycle_ips.includes(proxyIp)) {
+        return 'pending_recycle';
+      }
+      
+      return 'healthy';
+    };
+    
+    const getStatusBadgeClass = (status) => {
+      switch(status) {
+        case 'recycling':
+          return 'bg-warning text-dark';
+        case 'pending_recycle':
+          return 'bg-info';
+        default:
+          return 'bg-success';
+      }
+    };
+    
+    const getStatusLabel = (status) => {
+      switch(status) {
+        case 'recycling':
+          return 'Recycling';
+        case 'pending_recycle':
+          return 'Pending Recycle';
+        default:
+          return 'Healthy';
+      }
+    };
+    
+    const getRollingInfo = (providerKey, instanceKey) => {
+      const statusKey = `${providerKey}/${instanceKey}`;
+      const status = rollingStatus.value[statusKey];
+      
+      if (!status) return null;
+      
+      const recyclingCount = status.recycling || 0;
+      const pendingCount = status.pending_recycle || 0;
+      
+      if (recyclingCount > 0 || pendingCount > 0) {
+        return `${recyclingCount} recycling, ${pendingCount} pending`;
+      }
+      
+      return null;
     };
 
     const removeProxy = async (proxy) => {
@@ -401,9 +483,13 @@ export default {
     };
 
     onMounted(() => {
+      // Initial load
+      getAuthSettings();
+      
       setInterval(() => {
         getName();
         listremoveProxy();
+        fetchRollingStatus();
       }, 3000);
     });
 
@@ -417,13 +503,19 @@ export default {
       data,
       listremove_data,
       auth,
+      rollingStatus,
       sortedProviderInstances,
       formatProviderName,
       getProviderIcon,
       removeProxy,
       updateProvider,
       makeToast,
-      copyToClipboard
+      copyToClipboard,
+      fetchRollingStatus,
+      getProxyStatus,
+      getStatusBadgeClass,
+      getStatusLabel,
+      getRollingInfo
     };
   }
 };
@@ -562,5 +654,30 @@ h2 {
   background-color: #f7fafc;
   border-radius: 8px;
   color: var(--text-gray);
+}
+
+/* Status badges for proxy health */
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.bg-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.badge.bg-info {
+  background-color: #17a2b8;
+  color: white;
 }
 </style>

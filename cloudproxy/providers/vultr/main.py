@@ -13,6 +13,7 @@ from cloudproxy.providers.vultr.functions import (
     VultrFirewallExistsException,
 )
 from cloudproxy.providers.settings import delete_queue, restart_queue, config
+from cloudproxy.providers.rolling import rolling_manager
 
 
 def vultr_deployment(min_scaling, instance_config=None):
@@ -62,8 +63,18 @@ def vultr_check_alive(instance_config=None):
 
     # Get instance display name for logging
     display_name = instance_config.get("display_name", "default")
+    
+    # Get instance name for rolling deployment tracking
+    instance_name = next(
+        (name for name, inst in config["providers"]["vultr"]["instances"].items() 
+         if inst == instance_config), 
+        "default"
+    )
 
     ip_ready = []
+    pending_ips = []
+    instances_to_recycle = []
+    
     for instance in list_instances(instance_config):
         try:
             # Parse the created_at timestamp to a datetime object
@@ -81,10 +92,8 @@ def vultr_check_alive(instance_config=None):
             # Check if the instance has reached the age limit
             if config["age_limit"] > 0 and elapsed > datetime.timedelta(
                     seconds=config["age_limit"]):
-                delete_proxy(instance, instance_config)
-                logger.info(
-                    f"Recycling Vultr {display_name} instance, reached age limit -> {str(instance.ip_address)}"
-                )
+                # Queue for potential recycling
+                instances_to_recycle.append((instance, elapsed))
             elif instance.status == "active" and instance.ip_address and check_alive(instance.ip_address):
                 logger.info(
                     f"Alive: Vultr {display_name} -> {str(instance.ip_address)}")
@@ -99,9 +108,55 @@ def vultr_check_alive(instance_config=None):
                 else:
                     logger.info(
                         f"Waiting: Vultr {display_name} -> {str(instance.ip_address)}")
+                    if instance.ip_address:
+                        pending_ips.append(instance.ip_address)
         except TypeError:
             # This happens when dateparser.parse raises a TypeError
             logger.info(f"Pending: Vultr {display_name} allocating")
+            if hasattr(instance, 'ip_address') and instance.ip_address:
+                pending_ips.append(instance.ip_address)
+    
+    # Update rolling manager with current proxy health status
+    rolling_manager.update_proxy_health("vultr", instance_name, ip_ready, pending_ips)
+    
+    # Handle rolling deployments for age-limited instances
+    if instances_to_recycle and config["rolling_deployment"]["enabled"]:
+        rolling_config = config["rolling_deployment"]
+        
+        for inst, elapsed in instances_to_recycle:
+            if inst.ip_address:
+                instance_ip = str(inst.ip_address)
+                
+                # Check if we can recycle this instance according to rolling deployment rules
+                if rolling_manager.can_recycle_proxy(
+                    provider="vultr",
+                    instance=instance_name,
+                    proxy_ip=instance_ip,
+                    total_healthy=len(ip_ready),
+                    min_available=rolling_config["min_available"],
+                    batch_size=rolling_config["batch_size"],
+                    rolling_enabled=True,
+                    min_scaling=instance_config["scaling"]["min_scaling"]
+                ):
+                    # Mark as recycling and delete
+                    rolling_manager.mark_proxy_recycling("vultr", instance_name, instance_ip)
+                    delete_proxy(inst, instance_config)
+                    rolling_manager.mark_proxy_recycled("vultr", instance_name, instance_ip)
+                    logger.info(
+                        f"Rolling deployment: Recycled Vultr {display_name} instance (age limit) -> {instance_ip}"
+                    )
+                else:
+                    logger.info(
+                        f"Rolling deployment: Deferred recycling Vultr {display_name} instance -> {instance_ip}"
+                    )
+    elif instances_to_recycle and not config["rolling_deployment"]["enabled"]:
+        # Standard non-rolling recycling
+        for inst, elapsed in instances_to_recycle:
+            delete_proxy(inst, instance_config)
+            logger.info(
+                f"Recycling Vultr {display_name} instance, reached age limit -> {str(inst.ip_address)}"
+            )
+    
     return ip_ready
 
 

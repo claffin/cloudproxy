@@ -76,6 +76,8 @@ class TestHetznerMain(unittest.TestCase):
                 return providers_dict
             elif key == "age_limit":
                 return 100  # Return an actual integer
+            elif key == "rolling_deployment":
+                return {"enabled": False, "min_available": 3, "batch_size": 2}
             else:
                 return MagicMock()
                 

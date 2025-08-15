@@ -35,6 +35,7 @@
     </div>
 
     <div class="container">
+      <RollingConfig />
       <div class="card main-card">
         <div class="card-body p-0">
           <ListProxies />
@@ -46,11 +47,13 @@
 
 <script>
 import ListProxies from "./components/ListProxies.vue";
+import RollingConfig from "./components/RollingConfig.vue";
 
 export default {
   name: "App",
   components: {
     ListProxies,
+    RollingConfig,
   },
   setup() {
     const reloadPage = () => {

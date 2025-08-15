@@ -132,7 +132,8 @@ dmypy.json
 .DS_Store
 node_modules
 /dist
-
+cloudproxy-ui/dist
+cloudproxy-ui/node_modules
 
 # local env files
 .env.local
@@ -154,3 +155,22 @@ pnpm-debug.log*
 *.sw?
 .cursor-project-context
 CLAUDE.md
+
+# Testing artifacts
+cloudproxy-ui/coverage
+cloudproxy-ui/.nyc_output
+cloudproxy-ui/cypress/screenshots
+cloudproxy-ui/cypress/videos
+cloudproxy-ui/cypress/downloads
+cloudproxy-ui/test-results
+
+# Package manager
+yarn.lock
+cloudproxy-ui/yarn.lock
+cloudproxy-ui/package-lock.json.bak
+
+# Build artifacts
+*.log
+.cache
+.temp
+.tmp

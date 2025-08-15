@@ -9,8 +9,8 @@ on:
       - 'docs/**'
 
 jobs:
-  test:
-    name: 🧪 Test Suite
+  backend-test:
+    name: 🐍 Backend Test Suite
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout code
@@ -36,10 +36,69 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
+
+  frontend-test:
+    name: 🎨 Frontend Test Suite
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cloudproxy-ui
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cloudproxy-ui/package-lock.json
+      
+      - name: 📦 Cache Cypress binary
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('cloudproxy-ui/package-lock.json') }}
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Run linting
+        run: npm run lint
+        continue-on-error: true
+      
+      - name: 🧪 Run unit tests with coverage
+        run: npm run test:coverage
+      
+      - name: 🏗️ Build production bundle
+        run: npm run build
+      
+      - name: 🌐 Start dev server for E2E tests
+        run: |
+          npm run serve &
+          npx wait-on http://localhost:8080 --timeout 30000
+      
+      - name: 🎭 Run E2E tests
+        run: npm run test:e2e
+      
+      - name: 📸 Upload E2E test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-screenshots
+          path: cloudproxy-ui/cypress/screenshots
+      
+      - name: 📊 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./cloudproxy-ui/coverage
+          flags: frontend
 
   prepare-release:
     name: 🏷️ Prepare Release
-    needs: test
+    needs: [backend-test, frontend-test]
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.set_outputs.outputs.new_version }}

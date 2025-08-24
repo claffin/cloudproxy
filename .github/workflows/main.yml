@@ -9,8 +9,8 @@ on:
       - 'docs/**'
 
 jobs:
-  test:
-    name: 🧪 Test Suite
+  backend-test:
+    name: 🐍 Backend Test Suite
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout code
@@ -36,10 +36,69 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend
+
+  frontend-test:
+    name: 🎨 Frontend Test Suite
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cloudproxy-ui
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cloudproxy-ui/package-lock.json
+      
+      - name: 📦 Cache Cypress binary
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('cloudproxy-ui/package-lock.json') }}
+      
+      - name: 📦 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Run linting
+        run: npm run lint
+        continue-on-error: true
+      
+      - name: 🧪 Run unit tests with coverage
+        run: npm run test:coverage
+      
+      - name: 🏗️ Build production bundle
+        run: npm run build
+      
+      - name: 🌐 Start dev server for E2E tests
+        run: |
+          npm run serve &
+          npx wait-on http://localhost:8080 --timeout 30000
+      
+      - name: 🎭 Run E2E tests
+        run: npm run test:e2e
+      
+      - name: 📸 Upload E2E test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cloudproxy-ui/cypress/screenshots
+      
+      - name: 📊 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./cloudproxy-ui/coverage
+          flags: frontend
 
   prepare-release:
     name: 🏷️ Prepare Release
-    needs: test
+    needs: [backend-test, frontend-test]
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.set_outputs.outputs.new_version }}
@@ -100,15 +159,26 @@ jobs:
           draft: false
           prerelease: false
 
-  publish-docker:
-    name: 🐳 Publish Docker Image
+  build-docker:
+    name: 🐳 Build Docker Image
     needs: prepare-release
     runs-on: ubuntu-latest
     permissions:
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
+
+      - name: 🔧 Prepare platform name
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform////-}" >> $GITHUB_ENV
 
       - name: 🛠️ Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -122,17 +192,66 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 🚢 Build and push Docker image
+      - name: 🚢 Build and push by digest
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          push: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: |
-            laffin/cloudproxy:latest
-            laffin/cloudproxy:${{ needs.prepare-release.outputs.new_version }}
+          platforms: ${{ matrix.platform }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.prepare-release.outputs.new_version }}
+          outputs: type=image,name=laffin/cloudproxy,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=buildkit-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=buildkit-${{ env.PLATFORM_PAIR }}
+
+      - name: 📤 Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: 📦 Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-docker:
+    name: 🚀 Create and Push Docker Manifest
+    needs: [prepare-release, build-docker]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: 📥 Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: 🏗️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔑 Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🏷️ Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< '{"tags":["laffin/cloudproxy:latest","laffin/cloudproxy:${{ needs.prepare-release.outputs.new_version }}"]}') \
+            $(printf 'laffin/cloudproxy@sha256:%s ' *)
+
+      - name: 🔍 Inspect image
+        run: |
+          docker buildx imagetools inspect laffin/cloudproxy:latest
+          docker buildx imagetools inspect laffin/cloudproxy:${{ needs.prepare-release.outputs.new_version }}
 
   publish-pypi:
     name: 📦 Publish PyPI Package

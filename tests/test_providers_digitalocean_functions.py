@@ -77,6 +77,7 @@ def test_instance_config():
         },
         "size": "s-1vcpu-1gb",
         "region": "nyc1",
+        "image": "ubuntu-22-04-x64",
         "min_scaling": 2,
         "max_scaling": 5,
         "display_name": "US East"

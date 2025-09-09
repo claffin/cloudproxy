@@ -67,6 +67,7 @@ def test_instance_config():
         },
         "size": "cx11",
         "location": "hel1",
+        "image": "ubuntu-22.04",
         "min_scaling": 2,
         "max_scaling": 5,
         "display_name": "Europe Hetzner"

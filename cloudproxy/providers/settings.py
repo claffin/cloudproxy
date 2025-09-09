@@ -20,6 +20,7 @@ config = {
             "scaling": {"min_scaling": 0, "max_scaling": 0},
             "size": "",
             "region": "",
+            "image": "",
                     "display_name": "DigitalOcean",
             "secrets": {"access_token": ""},
                 }
@@ -65,6 +66,7 @@ config = {
             "size": "",
             "location": "",
             "datacenter": "",
+            "image": "",
                     "display_name": "Hetzner",
             "secrets": {"access_token": ""},
                 }
@@ -142,6 +144,9 @@ config["providers"]["digitalocean"]["instances"]["default"]["size"] = os.environ
 config["providers"]["digitalocean"]["instances"]["default"]["region"] = os.environ.get(
     "DIGITALOCEAN_REGION", "lon1"
 )
+config["providers"]["digitalocean"]["instances"]["default"]["image"] = os.environ.get(
+    "DIGITALOCEAN_IMAGE", "ubuntu-22-04-x64"
+)
 config["providers"]["digitalocean"]["instances"]["default"]["display_name"] = os.environ.get(
     "DIGITALOCEAN_DISPLAY_NAME", "DigitalOcean"
 )
@@ -203,6 +208,9 @@ config["providers"]["hetzner"]["instances"]["default"]["size"] = os.environ.get(
 )
 config["providers"]["hetzner"]["instances"]["default"]["location"] = os.environ.get(
     "HETZNER_LOCATION", "nbg1"
+)
+config["providers"]["hetzner"]["instances"]["default"]["image"] = os.environ.get(
+    "HETZNER_IMAGE", "ubuntu-22.04"
 )
 config["providers"]["hetzner"]["instances"]["default"]["display_name"] = os.environ.get(
     "HETZNER_DISPLAY_NAME", "Hetzner"
@@ -298,7 +306,7 @@ for provider_key in config["providers"].keys():
                 # Copy relevant fields from default instance
                 default_instance = config["providers"][provider_key]["instances"]["default"]
                 for field in ["region", "zone", "location", "ami", "spot", "datacenter", 
-                             "image_project", "image_family", "project", "plan", "os_id"]:
+                             "image_project", "image_family", "project", "plan", "os_id", "image"]:
                     if field in default_instance:
                         config["providers"][provider_key]["instances"][instance_name][field] = default_instance[field]
                 
@@ -322,7 +330,7 @@ for provider_key in config["providers"].keys():
                     elif setting_name == "display_name":
                         config["providers"][provider_key]["instances"][instance_name]["display_name"] = env_value
                     elif setting_name in ["size", "region", "zone", "location", "ami", "project", 
-                                          "image_project", "image_family", "datacenter", "plan"]:
+                                          "image_project", "image_family", "datacenter", "plan", "image"]:
                         config["providers"][provider_key]["instances"][instance_name][setting_name] = env_value
                     elif setting_name == "os_id":
                         config["providers"][provider_key]["instances"][instance_name]["os_id"] = int(env_value)

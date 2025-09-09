@@ -67,7 +67,7 @@ def create_proxy(instance_config=None):
     response = hetzner_client.servers.create(
         name=f"cloudproxy-{instance_id}-{str(uuid.uuid4())}",
         server_type=ServerType(instance_config["size"]),
-        image=Image(name="ubuntu-20.04"),
+        image=Image(name=instance_config["image"]),
         user_data=user_data,
         datacenter=Datacenter(name=datacenter) if datacenter else None,
         location=Location(name=location) if location else None,

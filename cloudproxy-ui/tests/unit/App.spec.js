@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
 import App from '@/App.vue';
 import ListProxies from '@/components/ListProxies.vue';
 import RollingConfig from '@/components/RollingConfig.vue';

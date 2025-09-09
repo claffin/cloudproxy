@@ -1,4 +1,5 @@
 import { setupServer } from 'msw/node';
+import { beforeAll, afterEach, afterAll } from 'vitest';
 import { handlers } from './handlers';
 
 // Setup mock server with default handlers

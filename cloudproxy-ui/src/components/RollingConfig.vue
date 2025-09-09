@@ -113,7 +113,9 @@ export default {
       try {
         const response = await fetch('/rolling');
         const data = await response.json();
-        config.value = data.config;
+        if (data.config) {
+          config.value = data.config;
+        }
       } catch (error) {
         toast.show('Failed to fetch rolling deployment configuration', {
           title: 'Error',

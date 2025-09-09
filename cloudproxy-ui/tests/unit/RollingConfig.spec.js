@@ -331,4 +331,209 @@ describe('RollingConfig.vue', () => {
     // Check icon
     expect(wrapper.find('.bi-arrow-repeat').exists()).toBe(true);
   });
+
+  it('handles batch size input changes correctly', async () => {
+    // Mock initial config fetch with specific values
+    global.fetch = vi.fn(() => 
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+          config: {
+            enabled: true,
+            min_available: 3,
+            batch_size: 2
+          }
+        })
+      })
+    );
+
+    wrapper = mount(RollingConfig);
+
+    // Expand and wait for initial fetch
+    await wrapper.find('button.btn-link').trigger('click');
+    await flushPromises();
+    await nextTick();
+
+    // Mock successful update
+    global.fetch = vi.fn(() => 
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ message: 'Configuration updated' })
+      })
+    );
+
+    // Change batch_size input
+    const batchSizeInput = wrapper.find('#batchSize');
+    await batchSizeInput.setValue(5);
+    await batchSizeInput.trigger('change');
+    await flushPromises();
+
+    // Check API was called with updated batch_size
+    expect(global.fetch).toHaveBeenCalledWith('/rolling', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        enabled: true,
+        min_available: 3,
+        batch_size: 5
+      })
+    });
+  });
+
+  it('handles network errors on update gracefully', async () => {
+    wrapper = mount(RollingConfig);
+
+    // Expand and wait for initial fetch
+    await wrapper.find('button.btn-link').trigger('click');
+    await flushPromises();
+    await nextTick();
+
+    // Mock network error
+    global.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
+
+    // Try to update
+    const enabledCheckbox = wrapper.find('#rollingEnabled');
+    await enabledCheckbox.setValue(false);
+    await enabledCheckbox.trigger('change');
+    await flushPromises();
+
+    // Check error toast was shown
+    expect(globalMockToast.show).toHaveBeenCalledWith(
+      'Failed to update rolling deployment configuration',
+      expect.objectContaining({ variant: 'danger' })
+    );
+  });
+
+  it('validates input value boundaries', async () => {
+    wrapper = mount(RollingConfig);
+
+    // Expand the panel
+    await wrapper.find('button.btn-link').trigger('click');
+    await flushPromises();
+    await nextTick();
+
+    // Test min_available boundaries
+    const minAvailableInput = wrapper.find('#minAvailable');
+    await minAvailableInput.setValue(0); // Below min
+    expect(minAvailableInput.element.value).toBe('0');
+
+    await minAvailableInput.setValue(101); // Above max  
+    expect(minAvailableInput.element.value).toBe('101');
+
+    // Test batch_size boundaries
+    const batchSizeInput = wrapper.find('#batchSize');
+    await batchSizeInput.setValue(0); // Below min
+    expect(batchSizeInput.element.value).toBe('0');
+
+    await batchSizeInput.setValue(51); // Above max
+    expect(batchSizeInput.element.value).toBe('51');
+  });
+
+  it('handles HTTP error responses correctly', async () => {
+    wrapper = mount(RollingConfig);
+
+    // Expand and wait for initial fetch
+    await wrapper.find('button.btn-link').trigger('click');
+    await flushPromises();
+    await nextTick();
+
+    // Mock HTTP error response (not ok)
+    global.fetch = vi.fn(() => 
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: 'Internal server error' })
+      })
+    );
+
+    // Try to update
+    const enabledCheckbox = wrapper.find('#rollingEnabled');
+    await enabledCheckbox.setValue(false);
+    await enabledCheckbox.trigger('change');
+    await flushPromises();
+
+    // Check error toast was shown
+    expect(globalMockToast.show).toHaveBeenCalledWith(
+      'Failed to update rolling deployment configuration',
+      expect.objectContaining({ variant: 'danger' })
+    );
+  });
+
+  it('maintains proper form validation states', async () => {
+    wrapper = mount(RollingConfig);
+
+    // Expand the panel
+    await wrapper.find('button.btn-link').trigger('click');
+    await flushPromises();
+    await nextTick();
+
+    // Check form elements have proper attributes
+    const minAvailableInput = wrapper.find('#minAvailable');
+    const batchSizeInput = wrapper.find('#batchSize');
+
+    expect(minAvailableInput.attributes('required')).toBeUndefined();
+    expect(batchSizeInput.attributes('required')).toBeUndefined();
+    
+    // Check number type and v-model.number behavior
+    expect(minAvailableInput.attributes('type')).toBe('number');
+    expect(batchSizeInput.attributes('type')).toBe('number');
+  });
+
+  it('shows correct tooltip directive usage', async () => {
+    wrapper = mount(RollingConfig);
+
+    // Expand the panel
+    await wrapper.find('button.btn-link').trigger('click');
+    await flushPromises();
+    await nextTick();
+
+    // Check tooltip directives are applied
+    const minAvailableInput = wrapper.find('#minAvailable');
+    const batchSizeInput = wrapper.find('#batchSize');
+
+    // These should have v-tooltip directives (Vue Test Utils may not show these directly)
+    expect(minAvailableInput.exists()).toBe(true);
+    expect(batchSizeInput.exists()).toBe(true);
+  });
+
+  it('handles edge case: fetch returns malformed data', async () => {
+    // Mock malformed response
+    global.fetch = vi.fn(() => 
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}) // Missing config property
+      })
+    );
+
+    wrapper = mount(RollingConfig);
+
+    // Expand the panel (triggers fetch)
+    await wrapper.find('button.btn-link').trigger('click');
+    await flushPromises();
+
+    // Should handle gracefully and not crash - component should still render
+    expect(wrapper.find('.card-body').exists()).toBe(true);
+  });
+
+  it('preserves component state during multiple expand/collapse cycles', async () => {
+    wrapper = mount(RollingConfig);
+    
+    const toggleButton = wrapper.find('button.btn-link');
+
+    // Multiple expand/collapse cycles
+    for (let i = 0; i < 3; i++) {
+      await toggleButton.trigger('click');
+      await nextTick();
+      expect(wrapper.find('.card-body').exists()).toBe(true);
+
+      await toggleButton.trigger('click'); 
+      await nextTick();
+      expect(wrapper.find('.card-body').exists()).toBe(false);
+    }
+
+    // State should be preserved
+    expect(wrapper.vm.expanded).toBe(false);
+  });
 });

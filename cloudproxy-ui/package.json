@@ -16,7 +16,7 @@
     "test:all": "npm run test:run && npm run test:e2e"
   },
   "dependencies": {
-    "axios": "^1.6.7",
+    "axios": "^1.12.1",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "bootstrap-vue-next": "^0.15.5",

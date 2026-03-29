@@ -39,7 +39,7 @@
     "cypress": "^14.5.4",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.22.0",
-    "happy-dom": "^18.0.1",
+    "happy-dom": "^20.8.9",
     "msw": "^2.10.5",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.4"

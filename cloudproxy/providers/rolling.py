@@ -149,8 +149,8 @@ class RollingDeploymentManager:
         self,
         provider: str,
         instance: str,
-        healthy_ips: List[str],
-        pending_ips: List[str] = None
+        healthy_ips: Set[str],
+        pending_ips: Set[str] = None
     ):
         """
         Update the health status of proxies for a provider instance.
@@ -158,17 +158,17 @@ class RollingDeploymentManager:
         Args:
             provider: The cloud provider name
             instance: The provider instance name
-            healthy_ips: List of IPs that are currently healthy
-            pending_ips: List of IPs that are pending (newly created)
+            healthy_ips: Set of IPs that are currently healthy
+            pending_ips: Set of IPs that are pending (newly created)
         """
         state = self.get_state(provider, instance)
         
         # Update healthy proxies
-        state.healthy_proxies = set(healthy_ips)
+        state.healthy_proxies = healthy_ips
         
         # Update pending proxies if provided
         if pending_ips is not None:
-            state.pending = set(pending_ips)
+            state.pending = pending_ips
             
         # Clean up recycling list if proxies no longer exist
         existing_ips = state.healthy_proxies | state.pending

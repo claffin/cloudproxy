@@ -38,8 +38,8 @@ class TestRollingDeploymentSimple:
         # Update health status first
         rolling_manager.update_proxy_health(
             "test", "default",
-            healthy_ips=["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"],
-            pending_ips=[]
+            healthy_ips=set(["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4"]),
+            pending_ips=set()
         )
         
         # Test recycling with sufficient proxies
@@ -63,8 +63,8 @@ class TestRollingDeploymentSimple:
         # Update health status first
         rolling_manager.update_proxy_health(
             "test", "default",
-            healthy_ips=["1.1.1.1", "2.2.2.2"],
-            pending_ips=[]
+            healthy_ips=set(["1.1.1.1", "2.2.2.2"]),
+            pending_ips=set()
         )
         
         # Test recycling that would go below minimum
@@ -88,8 +88,8 @@ class TestRollingDeploymentSimple:
         # Update health status first
         rolling_manager.update_proxy_health(
             "test", "default",
-            healthy_ips=["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4", "5.5.5.5"],
-            pending_ips=[]
+            healthy_ips=set(["1.1.1.1", "2.2.2.2", "3.3.3.3", "4.4.4.4", "5.5.5.5"]),
+            pending_ips=set()
         )
         
         # Try to recycle multiple proxies with batch_size=2
@@ -132,8 +132,8 @@ class TestRollingDeploymentSimple:
         # Update proxy health
         rolling_manager.update_proxy_health(
             "test", "default",
-            healthy_ips=["1.1.1.1", "2.2.2.2"],
-            pending_ips=["3.3.3.3"]
+            healthy_ips=set(["1.1.1.1", "2.2.2.2"]),
+            pending_ips=set(["3.3.3.3"])
         )
         
         # Check state
@@ -163,8 +163,8 @@ class TestRollingDeploymentSimple:
         # Update health status first
         rolling_manager.update_proxy_health(
             "test", "default",
-            healthy_ips=["1.1.1.1", "2.2.2.2", "3.3.3.3"],
-            pending_ips=[]
+            healthy_ips=set(["1.1.1.1", "2.2.2.2", "3.3.3.3"]),
+            pending_ips=set()
         )
         
         # Test with min_scaling that adjusts effective minimum
@@ -187,14 +187,14 @@ class TestRollingDeploymentSimple:
         # Setup some state
         rolling_manager.update_proxy_health(
             "aws", "default",
-            healthy_ips=["1.1.1.1", "2.2.2.2"],
-            pending_ips=["3.3.3.3"]
+            healthy_ips=set(["1.1.1.1", "2.2.2.2"]),
+            pending_ips=set(["3.3.3.3"])
         )
         
         rolling_manager.update_proxy_health(
             "gcp", "production",
-            healthy_ips=["4.4.4.4"],
-            pending_ips=[]
+            healthy_ips=set(["4.4.4.4"]),
+            pending_ips=set()
         )
         
         # Get status
@@ -213,8 +213,8 @@ class TestRollingDeploymentSimple:
         # Setup state with proxies being recycled
         rolling_manager.update_proxy_health(
             "test", "default",
-            healthy_ips=["1.1.1.1"],
-            pending_ips=[]
+            healthy_ips=set(["1.1.1.1"]),
+            pending_ips=set()
         )
         
         # Test with min_scaling higher than current count

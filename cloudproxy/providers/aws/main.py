@@ -67,8 +67,8 @@ def aws_check_alive(instance_config=None):
         "default"
     )
         
-    ip_ready = []
-    pending_ips = []
+    ip_ready = set()
+    pending_ips = set()
     instances_to_recycle = []
     
     # First pass: identify healthy and pending instances
@@ -78,10 +78,7 @@ def aws_check_alive(instance_config=None):
                 datetime.timezone.utc
             ) - instance["Instances"][0]["LaunchTime"]
             
-            if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                # Queue for potential recycling
-                instances_to_recycle.append((instance, elapsed))
-            elif instance["Instances"][0]["State"]["Name"] == "stopped":
+            if instance["Instances"][0]["State"]["Name"] == "stopped":
                 logger.info(
                     f"Waking up: AWS {instance_config.get('display_name', 'default')} -> Instance " + instance["Instances"][0]["InstanceId"]
                 )
@@ -99,13 +96,16 @@ def aws_check_alive(instance_config=None):
                     f"Pending: AWS {instance_config.get('display_name', 'default')} -> " + instance["Instances"][0]["PublicIpAddress"]
                 )
                 if "PublicIpAddress" in instance["Instances"][0]:
-                    pending_ips.append(instance["Instances"][0]["PublicIpAddress"])
+                    pending_ips.add(instance["Instances"][0]["PublicIpAddress"])
             # Must be "running" if none of the above, check if alive or not.
             elif check_alive(instance["Instances"][0]["PublicIpAddress"]):
                 logger.info(
                     f"Alive: AWS {instance_config.get('display_name', 'default')} -> " + instance["Instances"][0]["PublicIpAddress"]
                 )
-                ip_ready.append(instance["Instances"][0]["PublicIpAddress"])
+                ip_ready.add(instance["Instances"][0]["PublicIpAddress"])
+                if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                    # Queue for potential recycling
+                    instances_to_recycle.append((instance, elapsed))
             else:
                 if elapsed > datetime.timedelta(minutes=10):
                     delete_proxy(instance["Instances"][0]["InstanceId"], instance_config)
@@ -118,7 +118,7 @@ def aws_check_alive(instance_config=None):
                         f"Waiting: AWS {instance_config.get('display_name', 'default')} -> " + instance["Instances"][0]["PublicIpAddress"]
                     )
                     if "PublicIpAddress" in instance["Instances"][0]:
-                        pending_ips.append(instance["Instances"][0]["PublicIpAddress"])
+                        pending_ips.add(instance["Instances"][0]["PublicIpAddress"])
         except (TypeError, KeyError):
             logger.info(f"Pending: AWS {instance_config.get('display_name', 'default')} -> allocating ip")
     
@@ -147,6 +147,7 @@ def aws_check_alive(instance_config=None):
                     # Mark as recycling and delete
                     rolling_manager.mark_proxy_recycling("aws", instance_name, instance_ip)
                     delete_proxy(inst["Instances"][0]["InstanceId"], instance_config)
+                    ip_ready.discard(instance_ip)
                     rolling_manager.mark_proxy_recycled("aws", instance_name, instance_ip)
                     logger.info(
                         f"Rolling deployment: Recycled AWS {instance_config.get('display_name', 'default')} instance (age limit) -> {instance_ip}"
@@ -160,6 +161,7 @@ def aws_check_alive(instance_config=None):
         for inst, elapsed in instances_to_recycle:
             delete_proxy(inst["Instances"][0]["InstanceId"], instance_config)
             if "PublicIpAddress" in inst["Instances"][0]:
+                ip_ready.discard(inst["Instances"][0]["PublicIpAddress"])
                 logger.info(
                     f"Recycling AWS {instance_config.get('display_name', 'default')} instance, reached age limit -> " + inst["Instances"][0]["PublicIpAddress"]
                 )
@@ -168,7 +170,7 @@ def aws_check_alive(instance_config=None):
                     f"Recycling AWS {instance_config.get('display_name', 'default')} instance, reached age limit -> " + inst["Instances"][0]["InstanceId"]
                 )
     
-    return ip_ready
+    return list(ip_ready)
 
 
 def aws_check_delete(instance_config=None):

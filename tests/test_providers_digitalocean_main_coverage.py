@@ -396,6 +396,50 @@ def test_do_check_alive_age_limit(mock_delete_proxy, mock_check_alive, mock_list
 
 @patch('cloudproxy.providers.digitalocean.main.list_droplets')
 @patch('cloudproxy.providers.digitalocean.main.check_alive')
+@patch('cloudproxy.providers.digitalocean.main.delete_proxy')
+def test_do_check_alive_age_limit_with_rolling_deployment(mock_delete_proxy, mock_check_alive, mock_list_droplets):
+    """Test age limit recycling of droplets with rolling deployment enabled"""
+    # Setup
+    # Setup mocks with two old instances (from year 2000)
+    very_old_time = datetime.datetime(2000, 1, 1, tzinfo=timezone.utc).isoformat()
+
+    mock_droplets = [
+        MockDroplet(1, "1.2.3.4", very_old_time),
+        MockDroplet(2, "5.6.7.8", very_old_time),
+    ]
+    mock_list_droplets.return_value = mock_droplets
+    mock_check_alive.return_value = True
+    mock_delete_proxy.return_value = True
+
+    # Set age limit to 1 hour and enable rolling deployment
+    original_age_limit = config["age_limit"]
+    original_rolling = config["rolling_deployment"]["enabled"]
+    config["age_limit"] = 3600  # 1 hour in seconds
+    config["rolling_deployment"]["enabled"] = True
+    config["rolling_deployment"]["min_available"] = 1
+    config["rolling_deployment"]["batch_size"] = 1
+
+    try:
+        # Execute
+        result = do_check_alive()
+
+        # Verify - only the first droplet should be recycled due to rolling deployment min_available rules
+        assert len(result) == 1
+        assert "1.2.3.4" not in result
+        assert "5.6.7.8" in result
+        assert mock_delete_proxy.call_count == 1  # Only one droplet should be deleted
+
+        # Check that delete_proxy was called with the first droplet
+        # Don't verify the exact second parameter as implementation details might vary
+        args, _ = mock_delete_proxy.call_args
+        assert args[0] == mock_droplets[0]  # First parameter should be the first droplet
+    finally:
+        # Restore original settings
+        config["age_limit"] = original_age_limit
+        config["rolling_deployment"]["enabled"] = original_rolling
+
+@patch('cloudproxy.providers.digitalocean.main.list_droplets')
+@patch('cloudproxy.providers.digitalocean.main.check_alive')
 def test_do_check_alive_invalid_timestamp(mock_check_alive, mock_list_droplets, mock_droplets):
     """Test handling of invalid timestamps"""
     # Setup

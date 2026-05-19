@@ -62,8 +62,8 @@ def gcp_check_alive(instance_config=None):
         "default"
     )
 
-    ip_ready = []
-    pending_ips = []
+    ip_ready = set()
+    pending_ips = set()
     instances_to_recycle = []
     
     for instance in list_instances(instance_config):
@@ -72,11 +72,7 @@ def gcp_check_alive(instance_config=None):
                 datetime.timezone.utc
             ) - datetime.datetime.strptime(instance["creationTimestamp"], '%Y-%m-%dT%H:%M:%S.%f%z')
             
-            if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                # Queue for potential recycling
-                instances_to_recycle.append((instance, elapsed))
-            
-            elif instance['status'] == "TERMINATED":
+            if instance['status'] == "TERMINATED":
                 logger.info("Waking up: GCP -> Instance " + instance['name'])
                 started = start_proxy(instance['name'], instance_config)
                 if not started:
@@ -92,14 +88,17 @@ def gcp_check_alive(instance_config=None):
                 msg = f"{instance['name']} {access_configs['natIP'] if 'natIP' in access_configs else ''}"
                 logger.info("Provisioning: GCP -> " + msg)
                 if 'natIP' in access_configs:
-                    pending_ips.append(access_configs['natIP'])
+                    pending_ips.add(access_configs['natIP'])
             
             # If none of the above, check if alive or not.
             elif check_alive(instance['networkInterfaces'][0]['accessConfigs'][0]['natIP']):
                 access_configs = instance['networkInterfaces'][0]['accessConfigs'][0]
                 msg = f"{instance['name']} {access_configs['natIP']}"
                 logger.info("Alive: GCP -> " + msg)
-                ip_ready.append(access_configs['natIP'])
+                ip_ready.add(access_configs['natIP'])
+                if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                    # Queue for potential recycling
+                    instances_to_recycle.append((instance, elapsed))
             
             else:
                 access_configs = instance['networkInterfaces'][0]['accessConfigs'][0]
@@ -110,7 +109,7 @@ def gcp_check_alive(instance_config=None):
                 else:
                     logger.info("Waiting: GCP -> " + msg)
                     if 'natIP' in access_configs:
-                        pending_ips.append(access_configs['natIP'])
+                        pending_ips.add(access_configs['natIP'])
         except (TypeError, KeyError):
             logger.info("Pending: GCP -> Allocating IP")
     
@@ -140,6 +139,7 @@ def gcp_check_alive(instance_config=None):
                     # Mark as recycling and delete
                     rolling_manager.mark_proxy_recycling("gcp", instance_name, instance_ip)
                     delete_proxy(inst['name'], instance_config)
+                    ip_ready.discard(instance_ip)
                     rolling_manager.mark_proxy_recycled("gcp", instance_name, instance_ip)
                     logger.info(f"Rolling deployment: Recycled GCP instance (age limit) -> {inst['name']} {instance_ip}")
                 else:
@@ -150,9 +150,10 @@ def gcp_check_alive(instance_config=None):
             access_configs = inst['networkInterfaces'][0]['accessConfigs'][0]
             msg = f"{inst['name']} {access_configs['natIP'] if 'natIP' in access_configs else ''}"
             delete_proxy(inst['name'], instance_config)
+            ip_ready.discard(access_configs['natIP'])
             logger.info("Recycling instance, reached age limit -> " + msg)
     
-    return ip_ready
+    return list(ip_ready)
 
 def gcp_check_delete(instance_config=None):
     """

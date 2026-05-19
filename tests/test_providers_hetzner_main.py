@@ -109,11 +109,72 @@ class TestHetznerMain(unittest.TestCase):
                 mock_parse.return_value = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
                 
                 # Run the function
-                hetzner_check_alive(mock_instance_config)
+                result = hetzner_check_alive(mock_instance_config)
 
-        # Use the instance config directly in assertion
-        mock_delete_proxy.assert_called_once_with(mock_proxy, mock_instance_config)
-        mock_check_alive.assert_not_called()
+                # Use the instance config directly in assertion
+                mock_delete_proxy.assert_called_once_with(mock_proxy, mock_instance_config)
+                assert len(result) == 0
+
+    @patch("cloudproxy.providers.hetzner.main.config", new_callable=MagicMock)
+    @patch("cloudproxy.providers.hetzner.main.check_alive")
+    @patch("cloudproxy.providers.hetzner.main.delete_proxy")
+    @patch("cloudproxy.providers.hetzner.main.list_proxies")
+    def test_hetzner_check_alive_recycling_with_rolling_deployment(self, mock_list_proxies, mock_delete_proxy, mock_check_alive, mock_config):
+        """Test recycling of Hetzner proxies based on age limit with rolling deployment."""
+        # Setup proxy
+        mock_proxy = MagicMock(public_net=MagicMock(ipv4=MagicMock(ip="1.1.1.1")))
+        mock_proxy.created = "2023-01-01T00:00:00Z"
+        mock_proxy_2 = MagicMock(public_net=MagicMock(ipv4=MagicMock(ip="2.2.2.2")))
+        mock_proxy_2.created = "2023-01-01T00:00:00Z"
+        mock_list_proxies.return_value = [mock_proxy, mock_proxy_2]
+        mock_instance_config = {"display_name": "test", "scaling": {"min_scaling": 1}}
+
+        # Configure the mock config
+        providers_dict = {"hetzner": {"instances": {"default": mock_instance_config}}}
+
+        def config_getitem(key):
+            if key == "providers":
+                return providers_dict
+            elif key == "age_limit":
+                return 100  # Return an actual integer
+            elif key == "rolling_deployment":
+                return {"enabled": True, "min_available": 1, "batch_size": 1}
+            else:
+                return MagicMock()
+
+        mock_config.__getitem__.side_effect = config_getitem
+
+        # Create a module-level function to replace the datetime operations
+        # This function will be called when the implementation calculates elapsed time
+        def mock_elapsed_time(*args, **kwargs):
+            # Return a timedelta that's greater than age_limit (100 seconds)
+            return datetime.timedelta(seconds=101)
+
+        # Patch the module-level function
+        with patch("cloudproxy.providers.hetzner.main.datetime") as mock_datetime:
+            # Setup the datetime mock to return our custom elapsed time
+            mock_datetime.timedelta = datetime.timedelta
+            mock_datetime.timezone = datetime.timezone
+
+            # Create a mock datetime class with a now method
+            class MockDatetime:
+                @staticmethod
+                def now(tz=None):
+                    return datetime.datetime(2023, 1, 1, 0, 2, 0, tzinfo=datetime.timezone.utc)
+
+            # Replace the datetime.datetime class with our mock
+            mock_datetime.datetime = MockDatetime
+
+            # Mock dateparser.parse to return a fixed datetime
+            with patch("cloudproxy.providers.hetzner.main.dateparser.parse") as mock_parse:
+                mock_parse.return_value = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc)
+
+                # Run the function
+                result = hetzner_check_alive(mock_instance_config)
+
+                # Should delete only one instance due to rolling deployment min_available rules
+                mock_delete_proxy.assert_called_once_with(mock_proxy, mock_instance_config)
+                assert len(result) == 1
 
     @patch("cloudproxy.providers.hetzner.main.config", new_callable=MagicMock)
     @patch("cloudproxy.providers.hetzner.main.check_alive")

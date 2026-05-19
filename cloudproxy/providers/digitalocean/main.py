@@ -69,8 +69,8 @@ def do_check_alive(instance_config=None):
         "default"
     )
     
-    ip_ready = []
-    pending_ips = []
+    ip_ready = set()
+    pending_ips = set()
     droplets_to_recycle = []
     
     # First pass: identify healthy and pending droplets
@@ -81,18 +81,18 @@ def do_check_alive(instance_config=None):
             if created_at is None:
                 # If parsing fails but doesn't raise an exception, log and continue
                 logger.info(f"Pending: DO {display_name} allocating (invalid timestamp)")
-                pending_ips.append(str(droplet.ip_address))
+                pending_ips.add(str(droplet.ip_address))
                 continue
                 
             # Calculate elapsed time
             elapsed = datetime.datetime.now(datetime.timezone.utc) - created_at
             
-            # Check if the droplet has reached the age limit
-            if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
-                droplets_to_recycle.append((droplet, elapsed))
-            elif check_alive(droplet.ip_address):
+            if check_alive(droplet.ip_address):
                 logger.info(f"Alive: DO {display_name} -> {str(droplet.ip_address)}")
-                ip_ready.append(droplet.ip_address)
+                ip_ready.add(droplet.ip_address)
+                # Check if the droplet has reached the age limit
+                if config["age_limit"] > 0 and elapsed > datetime.timedelta(seconds=config["age_limit"]):
+                    droplets_to_recycle.append((droplet, elapsed))
             else:
                 # Check if the droplet has been pending for too long
                 if elapsed > datetime.timedelta(minutes=10):
@@ -102,12 +102,12 @@ def do_check_alive(instance_config=None):
                     )
                 else:
                     logger.info(f"Waiting: DO {display_name} -> {str(droplet.ip_address)}")
-                    pending_ips.append(str(droplet.ip_address))
+                    pending_ips.add(str(droplet.ip_address))
         except TypeError:
             # This happens when dateparser.parse raises a TypeError
             logger.info(f"Pending: DO {display_name} allocating")
             if hasattr(droplet, 'ip_address'):
-                pending_ips.append(str(droplet.ip_address))
+                pending_ips.add(str(droplet.ip_address))
     
     # Update rolling manager with current proxy health status
     rolling_manager.update_proxy_health("digitalocean", instance_name, ip_ready, pending_ips)
@@ -133,6 +133,7 @@ def do_check_alive(instance_config=None):
                 # Mark as recycling and delete
                 rolling_manager.mark_proxy_recycling("digitalocean", instance_name, droplet_ip)
                 delete_proxy(droplet, instance_config)
+                ip_ready.discard(droplet.ip_address)
                 rolling_manager.mark_proxy_recycled("digitalocean", instance_name, droplet_ip)
                 logger.info(
                     f"Rolling deployment: Recycled DO {display_name} droplet (age limit) -> {droplet_ip}"
@@ -145,11 +146,12 @@ def do_check_alive(instance_config=None):
         # Standard non-rolling recycling
         for droplet, elapsed in droplets_to_recycle:
             delete_proxy(droplet, instance_config)
+            ip_ready.discard(droplet.ip_address)
             logger.info(
                 f"Recycling DO {display_name} droplet, reached age limit -> {str(droplet.ip_address)}"
             )
     
-    return ip_ready
+    return list(ip_ready)
 
 
 def do_check_delete(instance_config=None):

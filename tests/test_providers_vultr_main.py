@@ -41,7 +41,23 @@ class TestVultrMain:
                 "rolling_deployment": {"enabled": False, "min_available": 3, "batch_size": 2}
             }.get(x, {})
             yield mock_cfg
-    
+
+    @pytest.fixture
+    def mock_config_rolling(self, mock_instance_config):
+        with patch('cloudproxy.providers.vultr.main.config') as mock_cfg:
+            mock_cfg.__getitem__.side_effect = lambda x: {
+                "providers": {
+                    "vultr": {
+                        "instances": {
+                            "default": mock_instance_config
+                        }
+                    }
+                },
+                "age_limit": 3600,  # 1 hour
+                "rolling_deployment": {"enabled": True, "min_available": 1, "batch_size": 1}
+            }.get(x, {})
+            yield mock_cfg
+
     @pytest.fixture
     def mock_instances(self):
         """Create mock Vultr instances."""
@@ -164,7 +180,40 @@ class TestVultrMain:
         # Should delete the old instance
         mock_delete.assert_called_once_with(mock_instance, mock_instance_config)
         assert len(result) == 0
-    
+
+    @patch('cloudproxy.providers.vultr.main.check_alive')
+    @patch('cloudproxy.providers.vultr.main.delete_proxy')
+    @patch('cloudproxy.providers.vultr.main.list_instances')
+    @patch('cloudproxy.providers.vultr.main.dateparser.parse')
+    def test_vultr_check_alive_age_limit_with_rolling_deployment(self, mock_parse, mock_list, mock_delete, 
+                                        mock_check_alive, mock_config_rolling, mock_instance_config):
+        # Setup - instances are older than age limit
+        mock_instances = [
+            VultrInstance({
+                "id": "old-instance",
+                "main_ip": "192.168.1.1",
+                "status": "active",
+                "date_created": "2024-01-01T00:00:00Z"
+            }),
+            VultrInstance({
+                "id": "old-instance-",
+                "main_ip": "192.168.1.2",
+                "status": "active",
+                "date_created": "2024-01-01T00:00:00Z"
+            })
+        ]
+        mock_list.return_value = mock_instances
+        # Instance created 2 hours ago, age limit is 1 hour
+        mock_parse.return_value = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)
+        mock_check_alive.return_value = True
+
+        # Call function
+        result = vultr_check_alive(mock_instance_config)
+
+        # Should delete only one instance due to rolling deployment min_available rules
+        mock_delete.assert_called_once_with(mock_instances[0], mock_instance_config)
+        assert len(result) == 1
+
     @patch('cloudproxy.providers.vultr.main.check_alive')
     @patch('cloudproxy.providers.vultr.main.delete_proxy')
     @patch('cloudproxy.providers.vultr.main.list_instances')

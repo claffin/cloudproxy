@@ -316,6 +316,55 @@ def test_aws_check_alive_age_limit_exceeded_directly():
         config["age_limit"] = original_age_limit
         config["rolling_deployment"]["enabled"] = original_rolling
 
+def test_aws_check_alive_age_limit_exceeded_with_rolling_deployment():
+    """Test the aws_check_alive function with rolling deployment enabled and simulated old instance"""
+    # Save original age limit value
+    original_age_limit = config["age_limit"]
+    original_rolling = config["rolling_deployment"]["enabled"]
+
+    try:
+        # Set age limit to a small value to make instances expire quickly
+        config["age_limit"] = 60  # 60 seconds
+        # Enable rolling deployment to allow for recycling
+        config["rolling_deployment"]["enabled"] = True
+        config["rolling_deployment"]["min_available"] = 1
+        config["rolling_deployment"]["batch_size"] = 1
+
+        # Create a mock instance with a launch time far in the past
+        with patch('cloudproxy.providers.aws.main.list_instances') as mock_list_instances:
+            with patch('cloudproxy.providers.aws.main.check_alive') as mock_check_alive:
+                with patch('cloudproxy.providers.aws.main.delete_proxy') as mock_delete_proxy:
+                    with patch('cloudproxy.providers.aws.main.start_proxy') as mock_start_proxy:
+                        # Setup mocks with two old instances (from year 2000)
+                        very_old_time = datetime.datetime(2000, 1, 1, tzinfo=timezone.utc)
+                        mock_list_instances.return_value = [{
+                            "Instances": [{
+                                "InstanceId": "i-12345",
+                                "PublicIpAddress": "1.2.3.4",
+                                "State": {"Name": "running"},
+                                "LaunchTime": very_old_time
+                            }]},
+                            {"Instances": [{
+                                "InstanceId": "i-67890",
+                                "PublicIpAddress": "5.6.7.8",
+                                "State": {"Name": "running"},
+                                "LaunchTime": very_old_time
+                            }]
+                        }]
+                        mock_check_alive.return_value = True
+                        mock_delete_proxy.return_value = True
+
+                        # Execute
+                        result = aws_check_alive()
+
+                        # Verify
+                        assert mock_delete_proxy.call_count == 1  # Should delete only one expired instance
+                        assert len(result) == 1  # One IP in result as the instance was kept due to rolling deployment min_available rules
+    finally:
+        # Restore original settings
+        config["age_limit"] = original_age_limit
+        config["rolling_deployment"]["enabled"] = original_rolling
+
 @patch('cloudproxy.providers.aws.main.list_instances')
 @patch('cloudproxy.providers.aws.main.delete_proxy')
 def test_aws_check_delete(mock_delete_proxy, mock_list_instances, setup_instances):

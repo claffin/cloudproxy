@@ -71,8 +71,8 @@ def vultr_check_alive(instance_config=None):
         "default"
     )
 
-    ip_ready = []
-    pending_ips = []
+    ip_ready = set()
+    pending_ips = set()
     instances_to_recycle = []
     
     for instance in list_instances(instance_config):
@@ -89,15 +89,15 @@ def vultr_check_alive(instance_config=None):
             # Calculate elapsed time
             elapsed = datetime.datetime.now(datetime.timezone.utc) - created_at
 
-            # Check if the instance has reached the age limit
-            if config["age_limit"] > 0 and elapsed > datetime.timedelta(
-                    seconds=config["age_limit"]):
-                # Queue for potential recycling
-                instances_to_recycle.append((instance, elapsed))
-            elif instance.status == "active" and instance.ip_address and check_alive(instance.ip_address):
+            if instance.status == "active" and instance.ip_address and check_alive(instance.ip_address):
                 logger.info(
                     f"Alive: Vultr {display_name} -> {str(instance.ip_address)}")
-                ip_ready.append(instance.ip_address)
+                ip_ready.add(instance.ip_address)
+                # Check if the instance has reached the age limit
+                if config["age_limit"] > 0 and elapsed > datetime.timedelta(
+                        seconds=config["age_limit"]):
+                    # Queue for potential recycling
+                    instances_to_recycle.append((instance, elapsed))
             else:
                 # Check if the instance has been pending for too long
                 if elapsed > datetime.timedelta(minutes=10):
@@ -109,12 +109,12 @@ def vultr_check_alive(instance_config=None):
                     logger.info(
                         f"Waiting: Vultr {display_name} -> {str(instance.ip_address)}")
                     if instance.ip_address:
-                        pending_ips.append(instance.ip_address)
+                        pending_ips.add(instance.ip_address)
         except TypeError:
             # This happens when dateparser.parse raises a TypeError
             logger.info(f"Pending: Vultr {display_name} allocating")
             if hasattr(instance, 'ip_address') and instance.ip_address:
-                pending_ips.append(instance.ip_address)
+                pending_ips.add(instance.ip_address)
     
     # Update rolling manager with current proxy health status
     rolling_manager.update_proxy_health("vultr", instance_name, ip_ready, pending_ips)
@@ -141,6 +141,7 @@ def vultr_check_alive(instance_config=None):
                     # Mark as recycling and delete
                     rolling_manager.mark_proxy_recycling("vultr", instance_name, instance_ip)
                     delete_proxy(inst, instance_config)
+                    ip_ready.discard(instance_ip)
                     rolling_manager.mark_proxy_recycled("vultr", instance_name, instance_ip)
                     logger.info(
                         f"Rolling deployment: Recycled Vultr {display_name} instance (age limit) -> {instance_ip}"
@@ -153,11 +154,12 @@ def vultr_check_alive(instance_config=None):
         # Standard non-rolling recycling
         for inst, elapsed in instances_to_recycle:
             delete_proxy(inst, instance_config)
+            ip_ready.discard(inst.ip_address)
             logger.info(
                 f"Recycling Vultr {display_name} instance, reached age limit -> {str(inst.ip_address)}"
             )
     
-    return ip_ready
+    return list(ip_ready)
 
 
 def vultr_check_delete(instance_config=None):

@@ -174,7 +174,7 @@ class TestRollingDeploymentManager:
         healthy_ips = ["192.168.1.1", "192.168.1.2"]
         pending_ips = ["192.168.1.3"]
         
-        self.manager.update_proxy_health("aws", "default", healthy_ips, pending_ips)
+        self.manager.update_proxy_health("aws", "default", set(healthy_ips), set(pending_ips))
         
         state = self.manager.get_state("aws", "default")
         assert state.healthy_proxies == {"192.168.1.1", "192.168.1.2"}
@@ -188,7 +188,7 @@ class TestRollingDeploymentManager:
         state.pending_recycle.add("192.168.1.3")  # No longer exists
         
         healthy_ips = ["192.168.1.2"]
-        self.manager.update_proxy_health("aws", "default", healthy_ips, [])
+        self.manager.update_proxy_health("aws", "default", set(healthy_ips), set())
         
         assert "192.168.1.1" not in state.recycling
         assert "192.168.1.2" in state.recycling
@@ -246,7 +246,7 @@ class TestRollingDeploymentManager:
         """Test a complex rolling deployment scenario."""
         # Initial state: 5 healthy proxies
         healthy_ips = [f"192.168.1.{i}" for i in range(1, 6)]
-        self.manager.update_proxy_health("aws", "default", healthy_ips, [])
+        self.manager.update_proxy_health("aws", "default", set(healthy_ips), set())
         
         # Try to recycle 3 proxies with batch_size=2, min_available=3
         results = []

@@ -36,7 +36,7 @@
     "@vue/cli-service": "~5.0.8",
     "@vue/compiler-sfc": "^3.4.21",
     "@vue/test-utils": "^2.4.6",
-    "cypress": "^14.5.4",
+    "cypress": "^15.18.0",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.22.0",
     "happy-dom": "^18.0.1",

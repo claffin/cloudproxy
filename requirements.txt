@@ -3,7 +3,7 @@ apscheduler==3.10.4
 dateparser==1.2.0
 fastapi==0.110.0
 loguru==0.7.2
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 uvicorn==0.27.1
 uvicorn-loguru-integration==0.3.1
 python-digitalocean==1.17.0

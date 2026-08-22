@@ -15,7 +15,7 @@ hcloud==2.3.0
 google-api-python-client==2.122.0
 anyio==3.7.1
 starlette==0.36.3
-pytest==8.0.2
+pytest==9.0.3
 pytest-cov==4.1.0
 pytest-mock==3.12.0
 httpx==0.27.0
